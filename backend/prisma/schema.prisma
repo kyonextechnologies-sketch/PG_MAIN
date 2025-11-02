@@ -1,0 +1,375 @@
+// Prisma Schema for PG Management System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  OWNER
+  TENANT
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BillStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum InvoiceStatus {
+  DUE
+  PAID
+  PARTIAL
+  OVERDUE
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NETBANKING
+  WALLET
+  CASH
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  PLUMBING
+  ELECTRICAL
+  CLEANING
+  WIFI
+  AC
+  OTHER
+}
+
+enum BillingCycle {
+  MONTHLY
+  BI_MONTHLY
+  QUARTERLY
+}
+
+// User Model
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  properties            Property[]
+  ownedTenants          TenantProfile[]       @relation("OwnerToTenants")
+  tenantProfile         TenantProfile?        @relation("UserToTenant")
+  electricitySettings   ElectricitySettings?
+  electricityBills      ElectricityBill[]
+  invoices              Invoice[]
+  maintenanceTickets    MaintenanceTicket[]
+  refreshTokens         RefreshToken[]
+  passwordResets        PasswordReset[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// Refresh Token Model (for JWT refresh token management)
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// Password Reset Model (for password reset tokens)
+model PasswordReset {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// Property Model
+model Property {
+  id         String   @id @default(uuid())
+  ownerId    String
+  name       String
+  address    String?  @db.Text
+  city       String?
+  state      String?
+  pincode    String?
+  totalRooms Int
+  totalBeds  Int
+  amenities  Json?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  owner              User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rooms              Room[]
+  tenants            TenantProfile[]
+  maintenanceTickets MaintenanceTicket[]
+
+  @@index([ownerId])
+  @@index([city])
+  @@index([active])
+}
+
+// Room Model
+model Room {
+  id         String   @id @default(uuid())
+  propertyId String
+  name       String
+  roomNumber String
+  floor      Int
+  capacity   Int
+  occupied   Int      @default(0)
+  rentPerBed Decimal  @db.Decimal(10, 2)
+  sharingType String  @default("double") // single, double, triple
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  beds     Bed[]
+  tenants  TenantProfile[]
+
+  @@unique([propertyId, roomNumber])
+  @@index([propertyId])
+}
+
+// Bed Model
+model Bed {
+  id        String   @id @default(uuid())
+  roomId    String
+  name      String
+  bedNumber String
+  occupied  Boolean  @default(false)
+  tenantId  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  room   Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  tenant TenantProfile? @relation(fields: [tenantId], references: [id])
+
+  @@unique([roomId, bedNumber])
+  @@index([roomId])
+  @@index([occupied])
+}
+
+// Tenant Profile Model
+model TenantProfile {
+  id              String        @id @default(uuid())
+  userId          String        @unique
+  ownerId         String
+  name            String
+  email           String        @unique
+  phone           String
+  kycId           String?
+  kycDocument     String?
+  propertyId      String?
+  roomId          String?
+  bedId           String?
+  status          TenantStatus  @default(ACTIVE)
+  moveInDate      DateTime?
+  moveOutDate     DateTime?
+  securityDeposit Decimal       @db.Decimal(10, 2)
+  monthlyRent     Decimal       @db.Decimal(10, 2)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user               User                @relation("UserToTenant", fields: [userId], references: [id], onDelete: Cascade)
+  owner              User                @relation("OwnerToTenants", fields: [ownerId], references: [id])
+  property           Property?           @relation(fields: [propertyId], references: [id])
+  room               Room?               @relation(fields: [roomId], references: [id])
+  bed                Bed?
+  electricityBills   ElectricityBill[]
+  invoices           Invoice[]
+  payments           Payment[]
+  maintenanceTickets MaintenanceTicket[]
+
+  @@index([ownerId])
+  @@index([userId])
+  @@index([email])
+  @@index([status])
+  @@index([propertyId])
+}
+
+// Electricity Settings Model
+model ElectricitySettings {
+  id                 String        @id @default(uuid())
+  ownerId            String        @unique
+  ratePerUnit        Decimal       @db.Decimal(10, 2)
+  dueDate            Int
+  isEnabled          Boolean       @default(true)
+  lateFeePercentage  Decimal       @default(0) @db.Decimal(5, 2)
+  minimumUnits       Decimal       @default(0) @db.Decimal(10, 2)
+  maximumUnits       Decimal       @default(1000) @db.Decimal(10, 2)
+  billingCycle       BillingCycle  @default(MONTHLY)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+}
+
+// Electricity Bill Model
+model ElectricityBill {
+  id              String      @id @default(uuid())
+  ownerId         String
+  tenantId        String
+  month           String
+  previousReading Decimal     @db.Decimal(10, 2)
+  currentReading  Decimal     @db.Decimal(10, 2)
+  units           Decimal     @db.Decimal(10, 2)
+  ratePerUnit     Decimal     @db.Decimal(10, 2)
+  amount          Decimal     @db.Decimal(10, 2)
+  status          BillStatus  @default(PENDING)
+  imageUrl        String?
+  notes           String?     @db.Text
+  submittedAt     DateTime    @default(now())
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  owner  User          @relation(fields: [ownerId], references: [id])
+  tenant TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, month])
+  @@index([ownerId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([month])
+}
+
+// Invoice Model
+model Invoice {
+  id                 String        @id @default(uuid())
+  ownerId            String
+  tenantId           String
+  month              String
+  amount             Decimal       @db.Decimal(10, 2)
+  baseRent           Decimal       @db.Decimal(10, 2)
+  electricityCharges Decimal       @default(0) @db.Decimal(10, 2)
+  otherCharges       Decimal       @default(0) @db.Decimal(10, 2)
+  lateFees           Decimal       @default(0) @db.Decimal(10, 2)
+  status             InvoiceStatus @default(DUE)
+  dueDate            DateTime
+  paidAt             DateTime?
+  receiptNo          String?       @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  owner    User          @relation(fields: [ownerId], references: [id])
+  tenant   TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@unique([tenantId, month])
+  @@index([ownerId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([month])
+  @@index([dueDate])
+}
+
+// Payment Model
+model Payment {
+  id               String        @id @default(uuid())
+  invoiceId        String
+  tenantId         String
+  amount           Decimal       @db.Decimal(10, 2)
+  method           PaymentMethod
+  status           PaymentStatus @default(PENDING)
+  transactionId    String?       @unique
+  upiTransactionId String?
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  invoice Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant  TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+// Maintenance Ticket Model
+model MaintenanceTicket {
+  id          String         @id @default(uuid())
+  ownerId     String
+  tenantId    String
+  propertyId  String
+  title       String
+  description String?        @db.Text
+  status      TicketStatus   @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  category    TicketCategory
+  assignedTo  String?
+  images      Json?
+  resolvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  owner    User          @relation(fields: [ownerId], references: [id])
+  tenant   TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([status])
+  @@index([priority])
+}
+
