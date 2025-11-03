@@ -16,7 +16,7 @@
     "dev": "next dev",
     "dev:fast": "NEXT_TELEMETRY_DISABLED=1 node --max-old-space-size=4096 node_modules/next/dist/bin/next dev --turbo",
     "dev:turbo": "next dev --turbo",
-    "build": "react-scripts build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",

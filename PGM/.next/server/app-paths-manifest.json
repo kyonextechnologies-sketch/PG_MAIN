@@ -1,0 +1,22 @@
+{
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/reset-password/page": "app/(auth)/reset-password/page.js",
+  "/owner/billing/page": "app/owner/billing/page.js",
+  "/owner/dashboard/page": "app/owner/dashboard/page.js",
+  "/owner/requests/page": "app/owner/requests/page.js",
+  "/owner/electricity/page": "app/owner/electricity/page.js",
+  "/owner/properties/page": "app/owner/properties/page.js",
+  "/owner/tenants/page": "app/owner/tenants/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/owner/reports/page": "app/owner/reports/page.js",
+  "/owner/settings/page": "app/owner/settings/page.js",
+  "/tenant/dashboard/page": "app/tenant/dashboard/page.js",
+  "/page": "app/page.js",
+  "/tenant/payments/page": "app/tenant/payments/page.js",
+  "/tenant/requests/page": "app/tenant/requests/page.js",
+  "/tenant/profile/page": "app/tenant/profile/page.js",
+  "/tenant/electricity/page": "app/tenant/electricity/page.js"
+}
