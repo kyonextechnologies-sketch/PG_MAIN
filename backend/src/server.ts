@@ -18,6 +18,10 @@ const app: Application = express();
 const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';
 
+// ✅ Trust proxy for Render and other reverse proxies
+// This is required for rate limiting and IP detection behind proxies
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
