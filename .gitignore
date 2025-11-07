@@ -18,7 +18,7 @@ dist/
 build/
 out/
 coverage/
-.next/
+.next
 
 # OS files
 .DS_Store
