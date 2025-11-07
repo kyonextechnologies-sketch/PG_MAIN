@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from './providers';
@@ -24,9 +24,13 @@ export const metadata: Metadata = {
   description: "A comprehensive PG management system for owners and tenants",
   keywords: ["PG management", "property management", "electricity bills"],
   authors: [{ name: "Smart PG Manager Team" }],
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#3b82f6",
   robots: "index, follow",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({
