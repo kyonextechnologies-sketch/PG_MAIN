@@ -15,8 +15,22 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // Get baseURL and ensure proper protocol
+          let baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+          
+          // Ensure baseURL has proper protocol
+          if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+            // Default to HTTPS in production, HTTP in development
+            baseURL = `https://${baseURL}`;
+          }
+          
+          // Remove trailing slash
+          baseURL = baseURL.replace(/\/$/, '');
+          
           // Call the backend login endpoint
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/auth/login`, {
+          const apiUrl = `${baseURL}/auth/login`;
+          
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

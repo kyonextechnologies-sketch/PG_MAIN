@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, Crown, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
+import { apiClient } from '@/lib/apiClient';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -37,16 +38,55 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // In a real app, this would make an API call to register the user
-      console.log('Registering user:', data);
+      // Prepare registration payload
+      const payload = {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+        name: data.name.trim(),
+        role: data.role || 'OWNER', // Default to OWNER for registration page
+      };
+
+      console.log('Registering user:', { ...payload, password: '***' });
+
+      // Call the backend API
+      const response = await apiClient.post<{ user: { id: string; email: string; name: string; role: string } }>(
+        '/auth/register',
+        payload
+      );
+
+      if (!response.success) {
+        throw new Error(response.error || response.message || 'Registration failed');
+      }
+
+      console.log('Registration successful:', response.data);
+
+      // Show success message and redirect to login
+      setError('');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirect to login page
-      router.push('/login');
+      // Redirect to login page with success message
+      router.push('/login?registered=true');
     } catch (error) {
-      setError('Registration failed. Please try again.');
+      console.error('Registration error:', error);
+      
+      // Extract error message
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message.includes('already exists') || error.message.includes('email')) {
+          errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+        } else if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('CORS')) {
+          errorMessage = 'CORS error. Please contact support if this issue persists.';
+        } else if (error.message.includes('Invalid API URL') || error.message.includes('protocol')) {
+          errorMessage = 'Configuration error. Please contact support.';
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
