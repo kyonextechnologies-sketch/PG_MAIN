@@ -10,19 +10,37 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
+  connectionTimeout: 10000, // 10 seconds timeout
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
-// ✅ Verify transporter configuration (fixed unused parameter warning)
-transporter.verify((error: Error | null, _success: boolean) => {
-  if (error) {
-    console.error('Email transporter error:', error);
-  } else {
-    console.log('✅ Email service is ready');
-  }
-});
+// ✅ Verify transporter configuration asynchronously (non-blocking)
+// Only verify if SMTP credentials are provided
+if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+  // Use setTimeout to make verification non-blocking
+  setTimeout(() => {
+    transporter.verify((error: Error | null, _success: boolean) => {
+      if (error) {
+        console.warn('⚠️ Email transporter verification failed (emails may not work):', error.message);
+        console.warn('   This is non-critical - the server will continue running.');
+      } else {
+        console.log('✅ Email service is ready');
+      }
+    });
+  }, 1000); // Delay verification by 1 second to not block server startup
+} else {
+  console.warn('⚠️ SMTP credentials not configured - email functionality will be disabled');
+}
 
 // Send email
 export const sendEmail = async (emailData: EmailData): Promise<void> => {
+  // Check if SMTP is configured
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.warn(`⚠️ Email not sent to ${emailData.to}: SMTP not configured`);
+    return; // Silently fail if email is not configured
+  }
+
   try {
     const htmlContent = getEmailTemplate(emailData.template, emailData.data);
 
@@ -33,10 +51,11 @@ export const sendEmail = async (emailData: EmailData): Promise<void> => {
       html: htmlContent,
     });
 
-    console.log(`Email sent to ${emailData.to}: ${emailData.subject}`);
+    console.log(`✅ Email sent to ${emailData.to}: ${emailData.subject}`);
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+    console.error('❌ Error sending email:', error instanceof Error ? error.message : error);
+    // Don't throw error - email failures shouldn't break the application
+    // Log the error but allow the application to continue
   }
 };
 
