@@ -22,12 +22,78 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 // This is required for rate limiting and IP detection behind proxies
 app.set('trust proxy', true);
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+// ✅ CORS Configuration
+// Parse allowed origins from environment variable (comma-separated) or use defaults
+const getAllowedOrigins = (): string[] => {
+  const envOrigins = process.env.CORS_ORIGIN;
+  if (envOrigins) {
+    // Split by comma and trim whitespace
+    return envOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
+  }
+  // Default origins for development and production
+  return [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://localhost:3000',
+  ];
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+// CORS configuration
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps, Postman, curl, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // In development, allow all origins for easier testing
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`⚠️  CORS: Allowing origin ${origin} in development mode`);
+        callback(null, true);
+      } else {
+        console.warn(`🚫 CORS: Blocked origin ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-User-ID',
+    'X-User-Role',
+    'Accept',
+    'Origin',
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400, // 24 hours - cache preflight requests
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11) choke on 204
+};
+
+// Security middleware - Configure Helmet to not interfere with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false, // Allow embedding if needed
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
 }));
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Compression middleware
 app.use(compression());
@@ -42,7 +108,11 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Request logging
 app.use(requestLogger);
 
-// Rate limiting
+// ✅ Handle OPTIONS preflight requests before rate limiting
+// This ensures CORS preflight requests are not blocked by rate limiting
+app.options('*', cors(corsOptions));
+
+// Rate limiting (applied after OPTIONS handling)
 app.use(rateLimiter);
 
 // API Documentation

@@ -9,6 +9,8 @@ export const rateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for OPTIONS preflight requests
+  skip: (req) => req.method === 'OPTIONS',
 });
 
 // Stricter rate limiter for auth endpoints
@@ -20,5 +22,7 @@ export const authRateLimiter = rateLimit({
     message: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true,
+  // Skip rate limiting for OPTIONS preflight requests
+  skip: (req) => req.method === 'OPTIONS',
 });
 
