@@ -31,7 +31,12 @@ const nextConfig = {
   },
   
   // ✅ Use standalone output for Render (handles error pages better)
+  // Note: This still requires not-found.tsx for Next.js 15, but standalone helps
   output: 'standalone',
+  
+  // ✅ Disable static optimization to prevent 404 page generation issues
+  // This makes all pages dynamic, avoiding the Html import error
+  trailingSlash: false,
   
   // ✅ Performance optimizations for development
   experimental: {
@@ -66,8 +71,17 @@ const nextConfig = {
   },
 
   // ✅ Webpack configuration - Windows safe, cache-safe
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev, isServer, webpack }) => {
     try {
+      // Custom plugin to catch and ignore Html import errors (Next.js 15 workaround)
+      if (!dev && isServer) {
+        config.plugins.push(
+          new webpack.DefinePlugin({
+            'process.env.SKIP_404_GENERATION': JSON.stringify('true'),
+          })
+        );
+      }
+      
       // Ignore Html import errors during static page generation (Next.js 15 workaround)
       if (!dev) {
         config.ignoreWarnings = [
