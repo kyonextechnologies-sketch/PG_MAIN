@@ -23,7 +23,9 @@ if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     transporter.verify((error: Error | null, _success: boolean) => {
       if (error) {
         // Only log timeout/connection errors once, not repeatedly
-        if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+        // Check if error has a code property (Node.js errors have this)
+        const errorWithCode = error as Error & { code?: string };
+        if (errorWithCode.code === 'ETIMEDOUT' || errorWithCode.code === 'ECONNREFUSED') {
           // Suppress repeated timeout errors - they're expected if SMTP is not accessible
           // Only log once on startup
           if (!process.env.EMAIL_VERIFICATION_LOGGED) {
