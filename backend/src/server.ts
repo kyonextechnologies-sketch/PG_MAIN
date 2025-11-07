@@ -44,6 +44,15 @@ app.use(rateLimiter);
 // API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Root endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'API is running',
+    version: API_VERSION,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -53,7 +62,18 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// API routes
+// API routes - All routes are mounted under /api/v1
+// Routes are organized in src/routes/index.ts:
+// - /api/v1/auth - Authentication routes
+// - /api/v1/properties - Property management routes
+// - /api/v1/rooms - Room and bed management routes
+// - /api/v1/tenants - Tenant management routes
+// - /api/v1/electricity - Electricity bill management routes
+// - /api/v1/invoices - Invoice management routes
+// - /api/v1/payments - Payment processing routes
+// - /api/v1/maintenance - Maintenance ticket routes
+// - /api/v1/reports - Reports and analytics routes
+// - /api/v1/upload - File upload routes
 app.use(`/api/${API_VERSION}`, routes);
 
 // 404 handler
