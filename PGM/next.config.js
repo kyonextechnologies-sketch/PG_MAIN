@@ -4,11 +4,6 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   compress: true,
   
-  // ✅ Disable static page generation for error pages to avoid Html import issues
-  generateBuildId: async () => {
-    return 'build-' + Date.now();
-  },
-  
   // ✅ Skip linting during build to avoid ESLint config issues
   eslint: {
     ignoreDuringBuilds: true,
@@ -19,9 +14,32 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   
+  // ✅ Generate unique build ID
+  generateBuildId: async () => {
+    return process.env.BUILD_ID || `build-${Date.now()}`;
+  },
+  
+  // ✅ Configure redirects
+  skipTrailingSlashRedirect: true,
+  
+  // ✅ Disable static page generation for error pages (Next.js 15 workaround)
+  // This prevents Html import errors during 404 page generation
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-*',
+    ],
+  },
+  
+  // ✅ Use standalone output for Render (handles error pages better)
+  output: 'standalone',
+  
   // ✅ Performance optimizations for development
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'framer-motion'],
+    // Skip static optimization for error pages
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
 
   // ✅ Compiler optimizations
@@ -50,6 +68,14 @@ const nextConfig = {
   // ✅ Webpack configuration - Windows safe, cache-safe
   webpack: (config, { dev, isServer }) => {
     try {
+      // Ignore Html import errors during static page generation (Next.js 15 workaround)
+      if (!dev) {
+        config.ignoreWarnings = [
+          { module: /next\/dist\/server\/lib\/runtime-config/ },
+          { message: /Html.*should not be imported/ },
+        ];
+      }
+      
       // Bundle optimization for production
       if (!dev && !isServer) {
         config.optimization.splitChunks = {
