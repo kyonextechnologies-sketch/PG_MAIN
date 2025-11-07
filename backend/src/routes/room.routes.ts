@@ -18,7 +18,7 @@ import { isOwner } from '../middleware/rbac';
 const router = Router();
 
 // ✅ Diagnostic endpoint (PUBLIC - no auth required)
-router.get('/diagnostic', require('../controllers/room.controller').diagnosticBeds);
+router.get('/diagnostic', diagnosticBeds);
 
 // ✅ Middleware for authentication and role check
 router.use(authenticate, isOwner);

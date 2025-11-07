@@ -51,7 +51,8 @@ export const isResourceOwner = (resourceOwnerIdField: string = 'ownerId') => {
     }
 
     // Owner can access their own resources
-    const resourceOwnerId = req.params[resourceOwnerIdField] || req.body[resourceOwnerIdField];
+    const resourceOwnerId = (req.params as Record<string, string>)[resourceOwnerIdField] || 
+                           (req.body as Record<string, string>)[resourceOwnerIdField];
 
     if (req.user.role === 'OWNER' && req.user.id !== resourceOwnerId) {
       throw new AppError('You can only access your own resources', 403);
