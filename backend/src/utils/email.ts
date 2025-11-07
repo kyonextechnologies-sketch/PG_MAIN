@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ✅ Verify transporter configuration (fixed unused parameter warning)
-transporter.verify((error, _success) => {
+transporter.verify((error: Error | null, _success: boolean) => {
   if (error) {
     console.error('Email transporter error:', error);
   } else {

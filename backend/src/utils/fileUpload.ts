@@ -17,7 +17,7 @@ directories.forEach((dir) => {
 
 // Storage configuration
 const storage = multer.diskStorage({
-  destination: (_req, file, cb) => {
+  destination: (_req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
     let folder = 'others';
 
     if (file.fieldname === 'kycDocument') {
@@ -30,14 +30,14 @@ const storage = multer.diskStorage({
 
     cb(null, path.join(uploadDir, folder));
   },
-  filename: (_req, file, cb) => {
+  filename: (_req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   },
 });
 
 // File filter
-const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // Allowed file types
   const allowedMimeTypes = [
     'image/jpeg',
