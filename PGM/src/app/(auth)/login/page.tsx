@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building, Eye, EyeOff, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Sparkles, Home, Lock, Mail } from 'lucide-react';
+import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
 import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';

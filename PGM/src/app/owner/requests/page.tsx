@@ -133,8 +133,8 @@ export default function OwnerRequestsPage() {
     setSaveStatus({ type: null, message: '' });
     
     try {
-      // ✅ Update with proper data object
-      const result = await updateTicket(requestId, { status: newStatus });
+      // ✅ Update with proper data object - only pass the status being updated
+      const result = await updateTicket(requestId, { status: newStatus as 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | undefined });
       
       if (result) {
         setSaveStatus({ type: 'success', message: `Request status updated to ${newStatus}` });
@@ -477,7 +477,7 @@ export default function OwnerRequestsPage() {
                         </Button>
                         
                         {request.status === 'OPEN' && (
-                          <Select onValueChange={(value) => {
+                          <Select onValueChange={(value: string) => {
                             console.log('📝 Assigning to:', value);
                             handleAssignTo(request.id, value).catch(err => {
                               console.error('❌ Assignment error:', err);
@@ -496,7 +496,7 @@ export default function OwnerRequestsPage() {
                         )}
 
                         {request.status !== 'RESOLVED' && (
-                          <Select onValueChange={(value) => {
+                          <Select onValueChange={(value: string) => {
                             console.log('🔄 Updating status to:', value);
                             handleStatusUpdate(request.id, value).catch(err => {
                               console.error('❌ Status update error:', err);

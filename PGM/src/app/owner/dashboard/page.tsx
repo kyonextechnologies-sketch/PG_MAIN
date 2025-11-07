@@ -35,6 +35,7 @@ import { useMaintenanceTickets } from '@/hooks/useMaintenanceTickets';
 import { useUIStore } from '@/store/ui';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // Mock data for owner dashboard
@@ -99,7 +100,18 @@ const revenueData = [
 
 
 export default function OwnerDashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 Dashboard Debug - Session Status:', status);
+    console.log('🔍 Dashboard Debug - Session Data:', session);
+    if (session?.user) {
+      console.log('🔍 Dashboard Debug - User ID:', session.user.id);
+      console.log('🔍 Dashboard Debug - User Role:', session.user.role);
+    }
+  }, [session, status]);
   
   // ✅ DATA ISOLATION - All data is automatically filtered by ownerId at backend level
   // - properties: Only this owner's properties
@@ -115,11 +127,17 @@ export default function OwnerDashboard() {
   // Calculate stats from real data
   const totalRevenue = invoices
     .filter(inv => inv.status === 'PAID')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+    .reduce((sum, inv) => {
+      const amount = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
 
   const outstandingDues = invoices
     .filter(inv => inv.status === 'DUE' || inv.status === 'OVERDUE')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+    .reduce((sum, inv) => {
+      const amount = typeof inv.amount === 'string' ? parseFloat(inv.amount) : inv.amount;
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
 
   // Calculate occupancy rate from real data
   const totalRoomCapacity = properties.reduce((sum, prop) => sum + (prop.totalBeds || 0), 0);
@@ -208,7 +226,7 @@ export default function OwnerDashboard() {
             </h1>
               <p className="text-xl text-gray-800 max-w-2xl mx-auto font-semibold">
                 Welcome back, <span className="font-bold text-blue-800">{session?.user?.name}</span>! 
-                Here's what's happening with your properties.
+                Here&apos;s what&apos;s happening with your properties.
               </p>
           </motion.div>
 

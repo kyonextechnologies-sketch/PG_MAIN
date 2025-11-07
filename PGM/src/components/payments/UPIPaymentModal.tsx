@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,8 +92,47 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string>('');
 
   if (!isOpen) return null;
+
+  // Handle payment URL redirect in useEffect to avoid immutability issues
+  useEffect(() => {
+    if (!paymentUrl) return;
+
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      const timer = setTimeout(() => {
+        try {
+          window.location.href = paymentUrl;
+        } catch (err) {
+          console.log('Direct redirect failed, trying alternative method');
+          
+          const link = document.createElement('a');
+          link.href = paymentUrl;
+          link.target = '_self';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+          }, 1000);
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    } else {
+      try {
+        window.open(paymentUrl, '_blank');
+      } catch (err) {
+        console.error('Failed to open UPI app:', err);
+      }
+    }
+  }, [paymentUrl]);
 
   const handleAppSelection = (appId: string) => {
     setSelectedApp(appId);
@@ -107,50 +146,18 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     // Create UPI payment URL
     const upiParams = `pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
     
-    let paymentUrl = '';
+    let url = '';
     
     if (appId === 'upi') {
       // Standard UPI deep link
-      paymentUrl = `upi://pay?${upiParams}`;
+      url = `upi://pay?${upiParams}`;
     } else {
       // App-specific deep links
-      paymentUrl = `${app.scheme}?${upiParams}`;
+      url = `${app.scheme}?${upiParams}`;
     }
 
-    // For mobile devices, try different approaches
-    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // Method 1: Try to open the app directly using window.location
-      try {
-        window.location.href = paymentUrl;
-      } catch (error) {
-        console.log('Direct redirect failed, trying alternative method');
-        
-        // Method 2: Create a temporary link and click it
-        const link = document.createElement('a');
-        link.href = paymentUrl;
-        link.target = '_self';
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Clean up after a short delay
-        setTimeout(() => {
-          if (document.body.contains(link)) {
-            document.body.removeChild(link);
-          }
-        }, 1000);
-      }
-    } else {
-      // For desktop, use window.open
-      try {
-        window.open(paymentUrl, '_blank');
-      } catch (error) {
-        console.error('Failed to open UPI app:', error);
-        copyUPIDetails();
-      }
-    }
+    // Set the payment URL which triggers the useEffect
+    setPaymentUrl(url);
 
     // Show success message
     setTimeout(() => {
@@ -290,14 +297,14 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
             <div className="mt-4 sm:mt-6 bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
               <h4 className="font-semibold text-yellow-900 mb-2 flex items-center text-sm sm:text-base">
                 <AlertTriangle className="h-4 w-4 mr-2" />
-                App didn't open?
+                App didn&apos;t open?
               </h4>
               <p className="text-xs sm:text-sm text-yellow-800 mb-3">
-                If the UPI app didn't open automatically, you can:
+                If the UPI app didn&apos;t open automatically, you can:
               </p>
               <div className="space-y-2 text-xs sm:text-sm text-yellow-800">
                 <p>1. Open your UPI app manually</p>
-                <p>2. Use the "Copy Details" button below</p>
+                <p>2. Use the &quot;Copy Details&quot; button below</p>
                 <p>3. Enter the UPI ID and amount in your app</p>
               </div>
             </div>

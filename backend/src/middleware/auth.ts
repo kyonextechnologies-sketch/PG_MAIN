@@ -20,7 +20,7 @@ export const authenticate = async (
       try {
         const decoded = jwt.verify(
           token,
-          process.env.JWT_SECRET || 'your-secret-key'
+          process.env.JWT_SECRET || '3nshd7rhdn839jshydbchs74jsnheyn6'
         ) as JwtPayload;
         userId = decoded.id;
       } catch (tokenError) {

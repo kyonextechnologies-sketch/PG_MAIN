@@ -422,11 +422,11 @@ export default function PropertiesPage() {
   const handleFixMissingBeds = async () => {
     try {
       const result = await fixMissingBeds();
-      if (result) {
+      if (result && typeof result === 'object' && 'fixedCount' in result) {
         addNotification({
           type: 'success',
           title: 'Beds Fixed',
-          message: `Fixed ${result.fixedCount} rooms by creating missing beds.`,
+          message: `Fixed ${(result as { fixedCount: number }).fixedCount} rooms by creating missing beds.`,
           read: false,
         });
         // Refresh all rooms
@@ -529,7 +529,7 @@ export default function PropertiesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-900">
-                  {properties.reduce((sum, p) => sum + p.totalRooms, 0)}
+                  {properties.reduce((sum, p) => sum + (p.totalRooms || 0), 0)}
                 </div>
                 <p className="text-sm text-purple-700 font-semibold">Rooms available</p>
               </CardContent>
@@ -544,7 +544,7 @@ export default function PropertiesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-orange-900">
-                  {properties.reduce((sum, p) => sum + p.totalBeds, 0)}
+                  {properties.reduce((sum, p) => sum + (p.totalBeds || 0), 0)}
                 </div>
                 <p className="text-sm text-orange-700 font-semibold">Beds available</p>
               </CardContent>
@@ -771,7 +771,7 @@ export default function PropertiesPage() {
                     <div className="text-center py-8">
                       <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 font-medium">No room details available</p>
-                      <p className="text-sm text-gray-500 mt-2">Click "Add Room" to create rooms for this property</p>
+                      <p className="text-sm text-gray-500 mt-2">Click &quot;Add Room&quot; to create rooms for this property</p>
                     </div>
                   )}
                 </CardContent>

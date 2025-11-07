@@ -3,19 +3,33 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
 
-interface Property {
+interface Room {
   id: string;
-  ownerId: string;
+  propertyId: string;
+  roomNumber: string;
+  capacity: number;
+  amenities?: string[];
+  sharingType?: string;
+  status?: string;
+}
+
+interface PropertyData {
+  id?: string;
   name: string;
   address: string;
   city: string;
-  totalRooms: number;
-  totalBeds: number;
+  totalRooms?: number;
+  totalBeds?: number;
   amenities?: string[];
-  active: boolean;
+  active?: boolean;
+}
+
+interface Property extends PropertyData {
+  id: string;
+  ownerId: string;
   createdAt?: string;
   updatedAt?: string;
-  rooms?: any[];
+  rooms?: Room[];
 }
 
 interface UsePropertiesReturn {
@@ -23,8 +37,8 @@ interface UsePropertiesReturn {
   loading: boolean;
   error: string | null;
   fetchProperties: () => Promise<void>;
-  createProperty: (data: any) => Promise<Property | null>;
-  updateProperty: (id: string, data: any) => Promise<Property | null>;
+  createProperty: (data: PropertyData) => Promise<Property | null>;
+  updateProperty: (id: string, data: PropertyData) => Promise<Property | null>;
   deleteProperty: (id: string) => Promise<boolean>;
   getPropertyById: (id: string) => Promise<Property | null>;
 }
@@ -48,15 +62,15 @@ export const useProperties = (): UsePropertiesReturn => {
     setError(null);
     try {
       console.log('🔄 Fetching properties...');
-      const response = await apiClient.get('/properties');
-      if (response.success) {
-        const responseData = response.data as any;
-        const properties = Array.isArray(responseData) ? responseData : (responseData?.data || []);
-        setProperties(properties as Property[]);
+      const response = await apiClient.get<Property[]>('/properties');
+      if (response.success && response.data) {
+        const responseData = response.data;
+        const properties = Array.isArray(responseData) ? responseData : (typeof responseData === 'object' && responseData !== null && 'data' in responseData && Array.isArray((responseData as any).data) ? (responseData as any).data : []);
+        setProperties(properties);
         console.log('✅ Properties fetched:', properties?.length || 0);
       }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to fetch properties';
+    } catch (err: unknown) {
+      const errorMsg = (err instanceof Error ? err.message : 'Failed to fetch properties') || 'Failed to fetch properties';
       setError(errorMsg);
       console.error('❌ Error fetching properties:', errorMsg);
     } finally {
@@ -65,19 +79,20 @@ export const useProperties = (): UsePropertiesReturn => {
     }
   }, []);  // ✅ Empty dependency array - no recreations!
 
-  const createProperty = useCallback(async (data: any) => {
+  const createProperty = useCallback(async (data: PropertyData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/properties', data);
-      if (response.success) {
-        const newProperty = response.data as Property;
+      const response = await apiClient.post<Property>('/properties', data);
+      if (response.success && response.data) {
+        const newProperty = response.data;
         setProperties(prev => [...prev, newProperty]);
         return newProperty;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create property');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create property';
+      setError(errorMsg);
       console.error('Error creating property:', err);
       return null;
     } finally {
@@ -85,19 +100,20 @@ export const useProperties = (): UsePropertiesReturn => {
     }
   }, []);
 
-  const updateProperty = useCallback(async (id: string, data: any) => {
+  const updateProperty = useCallback(async (id: string, data: PropertyData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.put(`/properties/${id}`, data);
-      if (response.success) {
-        const updatedProperty = response.data as Property;
+      const response = await apiClient.put<Property>(`/properties/${id}`, data);
+      if (response.success && response.data) {
+        const updatedProperty = response.data;
         setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));
         return updatedProperty;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update property');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update property';
+      setError(errorMsg);
       console.error('Error updating property:', err);
       return null;
     } finally {
@@ -115,8 +131,9 @@ export const useProperties = (): UsePropertiesReturn => {
         return true;
       }
       return false;
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete property');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete property';
+      setError(errorMsg);
       console.error('Error deleting property:', err);
       return false;
     } finally {
@@ -128,13 +145,14 @@ export const useProperties = (): UsePropertiesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get(`/properties/${id}`);
-      if (response.success) {
-        return response.data as Property;
+      const response = await apiClient.get<Property>(`/properties/${id}`);
+      if (response.success && response.data) {
+        return response.data;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch property');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch property';
+      setError(errorMsg);
       console.error('Error fetching property:', err);
       return null;
     } finally {

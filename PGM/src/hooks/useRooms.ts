@@ -3,6 +3,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
 
+export interface Bed {
+  id: string;
+  roomId?: string;
+  bedNumber?: number;
+  name: string;
+  status?: string;
+}
+
 export interface Room {
   id: string;
   propertyId: string;
@@ -15,7 +23,7 @@ export interface Room {
   sharingType?: string;
   createdAt?: string;
   updatedAt?: string;
-  beds?: any[];
+  beds?: Bed[];
 }
 
 interface UseRoomsReturn {
@@ -27,7 +35,7 @@ interface UseRoomsReturn {
   updateRoom: (id: string, data: Partial<Room>) => Promise<Room | null>;
   deleteRoom: (id: string) => Promise<boolean>;
   getRoomById: (id: string) => Promise<Room | null>;
-  fixMissingBeds: () => Promise<any>;
+  fixMissingBeds: () => Promise<unknown>;
 }
 
 // ✅ GLOBAL CACHE - Survives component re-renders

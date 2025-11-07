@@ -51,8 +51,8 @@ export const useTenants = (): UseTenantsReturn => {
         setTenants(tenantsData as Tenant[]);
         console.log('✅ Tenants fetched:', tenantsData.length || 0);
       }
-    } catch (err: any) {
-      const msg = err.message || 'Failed to fetch tenants';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch tenants';
       setError(msg);
       console.error('❌ Error fetching tenants:', msg);
     } finally {
@@ -75,9 +75,9 @@ export const useTenants = (): UseTenantsReturn => {
         setError(response.message || 'Failed to create tenant');
         return false;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.message || err.message || 'Failed to create tenant';
+        (err instanceof Error ? err.message : 'Failed to create tenant') || 'Failed to create tenant';
       console.error('❌ createTenant:', msg);
       setError(msg);
       return false;
@@ -100,9 +100,9 @@ export const useTenants = (): UseTenantsReturn => {
         setError(response.message || 'Failed to update tenant');
         return false;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.message || err.message || 'Failed to update tenant';
+        (err instanceof Error ? err.message : 'Failed to update tenant') || 'Failed to update tenant';
       console.error('❌ updateTenant:', msg);
       setError(msg);
       return false;
@@ -125,9 +125,9 @@ export const useTenants = (): UseTenantsReturn => {
         setError(response.message || 'Failed to delete tenant');
         return false;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.message || err.message || 'Failed to delete tenant';
+        (err instanceof Error ? err.message : 'Failed to delete tenant') || 'Failed to delete tenant';
       console.error('❌ deleteTenant:', msg);
       setError(msg);
       return false;

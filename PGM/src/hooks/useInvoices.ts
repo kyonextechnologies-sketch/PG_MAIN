@@ -17,13 +17,22 @@ interface Invoice {
   updatedAt?: string;
 }
 
+interface InvoiceData {
+  month: string;
+  amount: number;
+  status?: 'PAID' | 'DUE' | 'OVERDUE' | 'PARTIAL';
+  dueDate?: string;
+  paidAt?: string;
+  receiptNo?: string;
+}
+
 interface UseInvoicesReturn {
   invoices: Invoice[];
   loading: boolean;
   error: string | null;
   fetchInvoices: () => Promise<void>;
-  createInvoice: (data: any) => Promise<Invoice | null>;
-  updateInvoice: (id: string, data: any) => Promise<Invoice | null>;
+  createInvoice: (data: InvoiceData) => Promise<Invoice | null>;
+  updateInvoice: (id: string, data: InvoiceData) => Promise<Invoice | null>;
   deleteInvoice: (id: string) => Promise<boolean>;
   getInvoiceById: (id: string) => Promise<Invoice | null>;
 }
@@ -37,33 +46,48 @@ export const useInvoices = (): UseInvoicesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/invoices');
-      if (response.success) {
-        const responseData = response.data as any;
-        const data = Array.isArray(responseData) ? responseData : (responseData?.data || []);
-        setInvoices(data as Invoice[]);
+      console.log('🔄 Fetching invoices...');
+      const response = await apiClient.get<Invoice[]>('/invoices');
+      console.log('📨 Invoices API Response:', response);
+      if (response.success && response.data) {
+        const responseData = response.data;
+        const data = Array.isArray(responseData) ? responseData : (typeof responseData === 'object' && responseData !== null && 'data' in responseData && Array.isArray((responseData as any).data) ? (responseData as any).data : []);
+        // Ensure amount is a number
+        const normalizedData = data.map((invoice: Invoice) => ({
+          ...invoice,
+          amount: typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount,
+        }));
+        setInvoices(normalizedData);
+        console.log('✅ Invoices fetched:', normalizedData?.length || 0);
+      } else {
+        console.warn('⚠️ API response not successful:', response);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch invoices');
-      console.error('Error fetching invoices:', err);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch invoices';
+      setError(errorMsg);
+      console.error('❌ Error fetching invoices:', errorMsg, err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createInvoice = useCallback(async (data: any): Promise<Invoice | null> => {
+  const createInvoice = useCallback(async (data: InvoiceData): Promise<Invoice | null> => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/invoices', data);
-      if (response.success) {
-        const newInvoice = response.data as Invoice;
+      const response = await apiClient.post<Invoice>('/invoices', data);
+      if (response.success && response.data) {
+        const newInvoice = {
+          ...response.data,
+          amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) : response.data.amount,
+        };
         setInvoices(prev => [...prev, newInvoice]);
         return newInvoice;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create invoice');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create invoice';
+      setError(errorMsg);
       console.error('Error creating invoice:', err);
       return null;
     } finally {
@@ -71,19 +95,23 @@ export const useInvoices = (): UseInvoicesReturn => {
     }
   }, []);
 
-  const updateInvoice = useCallback(async (id: string, data: any) => {
+  const updateInvoice = useCallback(async (id: string, data: InvoiceData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.put(`/invoices/${id}`, data);
-      if (response.success) {
-        const updatedInvoice = response.data as Invoice;
+      const response = await apiClient.put<Invoice>(`/invoices/${id}`, data);
+      if (response.success && response.data) {
+        const updatedInvoice = {
+          ...response.data,
+          amount: typeof response.data.amount === 'string' ? parseFloat(response.data.amount) : response.data.amount,
+        };
         setInvoices(prev => prev.map(inv => inv.id === id ? updatedInvoice : inv));
         return updatedInvoice;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update invoice');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update invoice';
+      setError(errorMsg);
       console.error('Error updating invoice:', err);
       return null;
     } finally {
@@ -101,8 +129,9 @@ export const useInvoices = (): UseInvoicesReturn => {
         return true;
       }
       return false;
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete invoice');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete invoice';
+      setError(errorMsg);
       console.error('Error deleting invoice:', err);
       return false;
     } finally {
@@ -114,13 +143,14 @@ export const useInvoices = (): UseInvoicesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get(`/invoices/${id}`);
-      if (response.success) {
-        return response.data as Invoice;
+      const response = await apiClient.get<Invoice>(`/invoices/${id}`);
+      if (response.success && response.data) {
+        return response.data;
       }
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch invoice');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch invoice';
+      setError(errorMsg);
       console.error('Error fetching invoice:', err);
       return null;
     } finally {

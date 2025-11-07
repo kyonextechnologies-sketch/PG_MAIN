@@ -72,16 +72,16 @@ class ApiClient {
     return this.request<T>('GET', endpoint, undefined, config);
   }
 
-  async post<T>(endpoint: string, data?: any, config?: ApiRequestConfig) {
-    return this.request<T>('POST', endpoint, data, config);
+  async post<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
+    return this.request<T>('POST', endpoint, data as Record<string, unknown>, config);
   }
 
-  async put<T>(endpoint: string, data?: any, config?: ApiRequestConfig) {
-    return this.request<T>('PUT', endpoint, data, config);
+  async put<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
+    return this.request<T>('PUT', endpoint, data as Record<string, unknown>, config);
   }
 
-  async patch<T>(endpoint: string, data?: any, config?: ApiRequestConfig) {
-    return this.request<T>('PATCH', endpoint, data, config);
+  async patch<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
+    return this.request<T>('PATCH', endpoint, data as Record<string, unknown>, config);
   }
 
   async delete<T>(endpoint: string, config?: ApiRequestConfig) {
@@ -93,7 +93,7 @@ class ApiClient {
   private async request<T>(
     method: string,
     endpoint: string,
-    data?: any,
+    data?: Record<string, unknown>,
     config?: ApiRequestConfig
   ): Promise<ApiResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`;
@@ -130,9 +130,13 @@ class ApiClient {
           message: json?.message ?? 'Success',
           timestamp: new Date().toISOString(),
         };
-      } catch (err: any) {
-        lastError = err;
-        console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          lastError = err;
+        } else {
+          lastError = new Error(String(err));
+        }
+        console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
 
         if (attempt < retries && this.shouldRetry(err)) {
           await this.delay(retryDelay * (attempt + 1));
@@ -143,14 +147,14 @@ class ApiClient {
     }
 
     console.error('🚨 [ApiClient] Final failure:', lastError?.message);
-    return this.handleError(lastError);
+    return this.handleError(lastError) as ApiResponse<T>;
   }
 
   // ----------------------- Helpers -----------------------
 
   private async buildRequestConfig(
     method: string,
-    data?: any,
+    data?: Record<string, unknown>,
     config?: ApiRequestConfig
   ): Promise<RequestInit> {
     let requestConfig: RequestInit = {
@@ -170,6 +174,7 @@ class ApiClient {
       requestConfig = await interceptor(requestConfig);
     }
 
+    console.log('📤 API Request Headers:', requestConfig.headers);
     return requestConfig;
   }
 
@@ -195,7 +200,8 @@ class ApiClient {
     }
   }
 
-  private shouldRetry(error: Error): boolean {
+  private shouldRetry(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
     return (
       error.name === 'AbortError' ||
       error.message.includes('Failed to fetch') ||
@@ -209,18 +215,19 @@ class ApiClient {
 
   // ----------------------- Error Handling -----------------------
 
-  private handleError(error: any): ApiResponse<any> {
+  private handleError(error: unknown): ApiResponse<unknown> {
     const message =
-      error?.response?.data?.message ||
-      error?.message ||
+      (error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unexpected error occurred while processing request')) ||
       'Unexpected error occurred while processing request';
+
+    const statusCode = (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response) ? (error.response.status as number) : 400;
 
     console.error('🔴 [ApiClient] Error Details:', { message });
 
     ErrorHandler.handle({
       code: 'HTTP_ERROR',
       message,
-      statusCode: error?.response?.status || 400,
+      statusCode,
     });
 
     return {

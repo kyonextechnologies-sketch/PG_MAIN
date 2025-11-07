@@ -98,8 +98,7 @@ export default function TenantRequestsPage() {
         const result = await createTicket({
           title: newRequest.title,
           description: newRequest.description,
-          priority: newRequest.priority,
-          category: newRequest.category,
+          priority: newRequest.priority as 'LOW' | 'MEDIUM' | 'HIGH' | undefined,
           status: 'OPEN',
         });
 
@@ -225,7 +224,7 @@ export default function TenantRequestsPage() {
                   </Label>
                   <Select
                     value={newRequest.priority}
-                    onValueChange={(value) =>
+                    onValueChange={(value: string) =>
                       setNewRequest({ ...newRequest, priority: value as 'LOW' | 'MEDIUM' | 'HIGH' })
                     }
                   >
@@ -246,7 +245,7 @@ export default function TenantRequestsPage() {
                   </Label>
                   <Select
                     value={newRequest.category}
-                    onValueChange={(value) =>
+                    onValueChange={(value: string) =>
                       setNewRequest({ ...newRequest, category: value as 'OTHER' | 'ELECTRICAL' | 'PLUMBING' | 'MECHANICAL' | 'CLEANING' | 'SECURITY' | 'OTHER' })
                     }
                   >

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Eye, EyeOff, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Sparkles, Home, Lock, Mail, User, Phone, MapPin, Crown, CheckCircle, Star } from 'lucide-react';
+import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, Crown, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
 import Link from 'next/link';
@@ -24,8 +24,6 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -33,8 +31,6 @@ export default function RegisterPage() {
       role: 'OWNER' // Default to owner only
     }
   });
-
-  const selectedRole = watch('role');
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
