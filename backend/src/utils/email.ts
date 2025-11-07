@@ -22,10 +22,21 @@ if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
   setTimeout(() => {
     transporter.verify((error: Error | null, _success: boolean) => {
       if (error) {
-        console.warn('⚠️ Email transporter verification failed (emails may not work):', error.message);
-        console.warn('   This is non-critical - the server will continue running.');
+        // Only log timeout/connection errors once, not repeatedly
+        if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+          // Suppress repeated timeout errors - they're expected if SMTP is not accessible
+          // Only log once on startup
+          if (!process.env.EMAIL_VERIFICATION_LOGGED) {
+            console.warn('⚠️ Email service unavailable (SMTP connection timeout)');
+            console.warn('   Emails will be skipped if SMTP is not accessible.');
+            process.env.EMAIL_VERIFICATION_LOGGED = 'true';
+          }
+        } else {
+          console.warn('⚠️ Email transporter verification failed:', error.message);
+        }
       } else {
         console.log('✅ Email service is ready');
+        process.env.EMAIL_VERIFICATION_LOGGED = 'true';
       }
     });
   }, 1000); // Delay verification by 1 second to not block server startup
