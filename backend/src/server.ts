@@ -44,21 +44,40 @@ const allowedOrigins = getAllowedOrigins();
 const isOriginAllowed = (origin: string | undefined): boolean => {
   // Allow requests with no origin (like mobile apps, Postman, curl, etc.)
   if (!origin) {
+    console.log('✅ CORS: Allowing request with no origin');
     return true;
   }
   
-  // Check if origin is in allowed list
+  // Log the origin being checked
+  console.log(`🔍 CORS: Checking origin: "${origin}"`);
+  console.log(`📋 CORS: Allowed origins: [${allowedOrigins.join(', ')}]`);
+  
+  // Check if origin is in allowed list (exact match)
   if (allowedOrigins.includes(origin)) {
+    console.log(`✅ CORS: Origin "${origin}" is allowed`);
+    return true;
+  }
+  
+  // Check for Vercel patterns (more flexible matching)
+  const isVercelOrigin = origin.includes('.vercel.app') || origin.includes('vercel.app');
+  if (isVercelOrigin && allowedOrigins.some(allowed => allowed.includes('vercel.app'))) {
+    console.log(`✅ CORS: Allowing Vercel origin "${origin}"`);
     return true;
   }
   
   // In development, allow all origins for easier testing
   if (process.env.NODE_ENV === 'development') {
-    console.warn(`⚠️  CORS: Allowing origin ${origin} in development mode`);
+    console.warn(`⚠️  CORS: Allowing origin "${origin}" in development mode`);
     return true;
   }
   
-  console.warn(`🚫 CORS: Blocked origin ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+  // In production, be more lenient if CORS_ORIGIN is not set
+  if (allowedOrigins.length === 3 && allowedOrigins.every(o => o.includes('localhost'))) {
+    console.warn(`⚠️  CORS: CORS_ORIGIN not set in production, allowing origin "${origin}"`);
+    return true;
+  }
+  
+  console.warn(`🚫 CORS: Blocked origin "${origin}". Allowed origins: [${allowedOrigins.join(', ')}]`);
   return false;
 };
 
@@ -98,21 +117,38 @@ const corsOptions = {
 app.options('*', (req: Request, res: Response) => {
   const origin = req.headers.origin;
   
+  console.log(`🔍 OPTIONS preflight request from origin: "${origin}"`);
+  console.log(`📋 Request headers:`, {
+    origin: req.headers.origin,
+    'access-control-request-method': req.headers['access-control-request-method'],
+    'access-control-request-headers': req.headers['access-control-request-headers'],
+  });
+  
   // Check if origin is allowed
-  if (isOriginAllowed(origin)) {
+  const allowed = isOriginAllowed(origin);
+  
+  if (allowed) {
     // Set CORS headers manually for OPTIONS
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    const allowOrigin = origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, Accept, Origin');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
+    
+    console.log(`✅ OPTIONS: Allowed origin "${allowOrigin}"`);
     res.status(200).end();
   } else {
-    // Still send CORS headers but deny the request
-    res.setHeader('Access-Control-Allow-Origin', 'null');
+    // Log the rejection but still send some CORS headers
+    console.error(`❌ OPTIONS: Rejected origin "${origin}"`);
+    console.error(`📋 Allowed origins: [${allowedOrigins.join(', ')}]`);
+    
+    // Don't set Access-Control-Allow-Origin for rejected origins
+    // This will cause browser to show CORS error (which is correct)
     res.status(403).json({
       success: false,
-      message: 'CORS: Origin not allowed',
+      message: `CORS: Origin "${origin}" not allowed. Allowed origins: ${allowedOrigins.join(', ')}`,
+      allowedOrigins: allowedOrigins,
     });
   }
 });
@@ -201,6 +237,11 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS Configuration:`);
+  console.log(`   - Allowed Origins: [${allowedOrigins.join(', ')}]`);
+  console.log(`   - CORS_ORIGIN env: ${process.env.CORS_ORIGIN || 'NOT SET'}`);
+  console.log(`   - Credentials: enabled`);
+  console.log(`   - Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS`);
 });
 
 export default app;
