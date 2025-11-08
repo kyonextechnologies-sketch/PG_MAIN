@@ -40,26 +40,38 @@ const getAllowedOrigins = (): string[] => {
 
 const allowedOrigins = getAllowedOrigins();
 
-// CORS configuration
+// Helper function to check if origin is allowed
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  // Allow requests with no origin (like mobile apps, Postman, curl, etc.)
+  if (!origin) {
+    return true;
+  }
+  
+  // Check if origin is in allowed list
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+  
+  // In development, allow all origins for easier testing
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`⚠️  CORS: Allowing origin ${origin} in development mode`);
+    return true;
+  }
+  
+  console.warn(`🚫 CORS: Blocked origin ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+  return false;
+};
+
+// CORS configuration with safe error handling
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (like mobile apps, Postman, curl, etc.)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // In development, allow all origins for easier testing
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`⚠️  CORS: Allowing origin ${origin} in development mode`);
-        callback(null, true);
-      } else {
-        console.warn(`🚫 CORS: Blocked origin ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
-        callback(new Error('Not allowed by CORS'));
-      }
+    try {
+      const allowed = isOriginAllowed(origin);
+      callback(null, allowed);
+    } catch (error) {
+      // Never throw errors in CORS callback - always call callback
+      console.error('CORS origin check error:', error);
+      callback(null, false);
     }
   },
   credentials: true,
@@ -72,11 +84,38 @@ const corsOptions = {
     'X-User-Role',
     'Accept',
     'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
   ],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   maxAge: 86400, // 24 hours - cache preflight requests
   optionsSuccessStatus: 200, // Some legacy browsers (IE11) choke on 204
+  preflightContinue: false, // End preflight request immediately
 };
+
+// ✅ Handle OPTIONS preflight requests FIRST (before any other middleware)
+// This must be before body parsing, rate limiting, and other middleware
+app.options('*', (req: Request, res: Response) => {
+  const origin = req.headers.origin;
+  
+  // Check if origin is allowed
+  if (isOriginAllowed(origin)) {
+    // Set CORS headers manually for OPTIONS
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, Accept, Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.status(200).end();
+  } else {
+    // Still send CORS headers but deny the request
+    res.setHeader('Access-Control-Allow-Origin', 'null');
+    res.status(403).json({
+      success: false,
+      message: 'CORS: Origin not allowed',
+    });
+  }
+});
 
 // Security middleware - Configure Helmet to not interfere with CORS
 app.use(helmet({
@@ -92,13 +131,13 @@ app.use(helmet({
   },
 }));
 
-// Apply CORS middleware
+// Apply CORS middleware for all other requests
 app.use(cors(corsOptions));
 
 // Compression middleware
 app.use(compression());
 
-// Body parsing middleware
+// Body parsing middleware (OPTIONS requests are handled before this)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -107,10 +146,6 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging
 app.use(requestLogger);
-
-// ✅ Handle OPTIONS preflight requests before rate limiting
-// This ensures CORS preflight requests are not blocked by rate limiting
-app.options('*', cors(corsOptions));
 
 // Rate limiting (applied after OPTIONS handling)
 app.use(rateLimiter);

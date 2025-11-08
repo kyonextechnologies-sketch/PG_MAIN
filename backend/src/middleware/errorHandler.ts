@@ -15,7 +15,7 @@ export class AppError extends Error {
 
 export const errorHandler = (
   err: Error | AppError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
@@ -63,6 +63,18 @@ export const errorHandler = (
   else if (err.name === 'MulterError') {
     statusCode = 400;
     message = `File upload error: ${err.message}`;
+  }
+
+  // ✅ Add CORS headers to error responses
+  // This ensures CORS errors don't prevent the error response from being sent
+  const origin = req.headers.origin;
+  if (origin) {
+    // Check if origin is in allowed list (simple check - you can enhance this)
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [];
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
   }
 
   // Log error in development
