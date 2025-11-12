@@ -98,13 +98,13 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {process.env.NODE_ENV === 'development' && this.state.error ? (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     Error Details (Development Only):
                   </p>
                   <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-words">
-                    {this.state.error.toString()}
+                    {this.state.error?.toString() || 'Unknown error'}
                     {this.state.errorInfo?.componentStack ? (
                       <div className="mt-2 text-gray-600 dark:text-gray-400">
                         {this.state.errorInfo.componentStack}
@@ -112,7 +112,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     ) : null}
                   </pre>
                 </div>
-              )}
+              ) : null}
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
