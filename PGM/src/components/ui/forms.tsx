@@ -102,13 +102,13 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
   return (
     <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
       <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-        <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+        <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:text-black-200">
           <div className="p-2 bg-blue-500 rounded-lg mr-3">
             <Calendar className="h-5 w-5 text-white" />
           </div>
           {isEditing ? 'Edit Property' : 'Add New Property'}
         </CardTitle>
-        <CardDescription className="text-sm text-gray-600 font-semibold">
+        <CardDescription className="text-sm text-gray-600 font-semibold dark:text-black">
           {isEditing ? 'Update property information' : 'Create a new property listing'}
         </CardDescription>
       </CardHeader>
@@ -120,7 +120,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
               <Input
                 id="name"
                 {...register('name')}
-                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black"
                 placeholder="Enter property name"
               />
               {errors.name && <p className="text-red-600 text-sm mt-1">{typeof errors.name.message === 'string' ? errors.name.message : 'Invalid input'}</p>}
@@ -131,7 +131,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
               <Input
                 id="city"
                 {...register('city')}
-                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter city"
               />
               {errors.city && <p className="text-red-600 text-sm mt-1">{typeof errors.city.message === 'string' ? errors.city.message : 'Invalid input'}</p>}
@@ -143,7 +143,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
             <Textarea
               id="address"
               {...register('address')}
-              className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+              className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
               placeholder="Enter full address"
               rows={3}
             />
@@ -157,7 +157,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
                 id="totalRooms"
                 type="number"
                 {...register('totalRooms', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Number of rooms"
               />
               {errors.totalRooms && <p className="text-red-600 text-sm mt-1">{typeof errors.totalRooms.message === 'string' ? errors.totalRooms.message : 'Invalid input'}</p>}
@@ -169,7 +169,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
                 id="totalBeds"
                 type="number"
                 {...register('totalBeds', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Number of beds"
               />
               {errors.totalBeds && <p className="text-red-600 text-sm mt-1">{typeof errors.totalBeds.message === 'string' ? errors.totalBeds.message : 'Invalid input'}</p>}
@@ -183,7 +183,7 @@ export function PropertyForm({ onSubmit, initialData, isEditing = false }: {
                 value={newAmenity}
                 onChange={(e) => setNewAmenity(e.target.value)}
                 placeholder="Add amenity"
-                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
               />
               <Button type="button" onClick={addAmenity} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4" />
@@ -317,13 +317,13 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
   return (
     <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
       <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 rounded-t-lg">
-        <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+        <CardTitle className="flex items-center text-lg font-bold text-black-200 dark:text-black">
           <div className="p-2 bg-green-500 rounded-lg mr-3">
             <Calendar className="h-5 w-5 text-white" />
           </div>
           {isEditing ? 'Edit Tenant' : 'Add New Tenant'}
         </CardTitle>
-        <CardDescription className="text-sm text-gray-600 font-semibold">
+        <CardDescription className="text-sm text-gray-600 dark:text-black-200 font-semibold">
           {isEditing ? 'Update tenant information' : 'Register a new tenant'}
         </CardDescription>
       </CardHeader>
@@ -335,7 +335,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Input
                 id="name"
                 {...register('name')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter full name"
               />
               {errors.name && <p className="text-red-600 text-sm mt-1">{typeof errors.name.message === 'string' ? errors.name.message : 'Invalid input'}</p>}
@@ -347,7 +347,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                 id="email"
                 type="email"
                 {...register('email')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter email address"
               />
               {errors.email && <p className="text-red-600 text-sm mt-1">{typeof errors.email.message === 'string' ? errors.email.message : 'Invalid input'}</p>}
@@ -360,7 +360,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Input
                 id="phone"
                 {...register('phone')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter phone number"
               />
               {errors.phone && <p className="text-red-600 text-sm mt-1">{typeof errors.phone.message === 'string' ? errors.phone.message : 'Invalid input'}</p>}
@@ -371,7 +371,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Input
                 id="emergencyContact"
                 {...register('emergencyContact')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Emergency contact number"
               />
               {errors.emergencyContact && <p className="text-red-600 text-sm mt-1">{typeof errors.emergencyContact.message === 'string' ? errors.emergencyContact.message : 'Invalid input'}</p>}
@@ -379,14 +379,14 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
           </div>
 
           <div>
-            <Label htmlFor="propertyId" className="text-gray-700 font-semibold">Property</Label>
+            <Label htmlFor="propertyId" className="text-gray-700  font-semibold">Property</Label>
             <Select onValueChange={(value) => setValue('propertyId', value)}>
-              <SelectTrigger className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300">
+              <SelectTrigger className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 [&>span]:!text-black [&_span]:!text-black [&_*]:!text-black">
                 <SelectValue placeholder="Select property" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {properties.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
+                  <SelectItem key={property.id} value={property.id} className="!text-black hover:!text-white focus:!text-white">
                     {property.name}
                   </SelectItem>
                 ))}
@@ -405,12 +405,12 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                   setValue('roomId', value);
                   trigger('roomId');  // ✅ Trigger validation immediately
                 }}>
-                <SelectTrigger className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300">
+                <SelectTrigger className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 [&>span]:!text-black [&_span]:!text-black [&_*]:!text-black">
                   <SelectValue placeholder="Select room" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   {propertyRooms.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
+                    <SelectItem key={room.id} value={room.id} className="!text-black hover:!text-white focus:!text-black">
                       <div className="flex flex-col">
                         <span className="font-semibold">{room.name}</span>
                         <span className="text-sm text-gray-500">
@@ -435,15 +435,16 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                   setValue('bedId', value);
                   trigger('bedId');  // ✅ Trigger validation immediately
                 }}>
-                <SelectTrigger className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300">
+                <SelectTrigger className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 [&>span]:!text-black [&_span]:!text-black [&_*]:!text-black">
                   <SelectValue placeholder="Select bed" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   {propertyRooms.find(r => r.id === selectedRoom)?.beds?.map((bed: any) => (
                     <SelectItem 
                       key={bed.id} 
                       value={bed.id}
                       disabled={false}
+                      className="!text-black hover:!text-white focus:!text-white"
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="font-semibold">
@@ -500,7 +501,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
             <Textarea
               id="address"
               {...register('address')}
-              className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+              className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
               placeholder="Enter permanent address"
               rows={3}
             />
@@ -553,7 +554,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                   step="0.01"
                   min="0"
                   {...register('monthlyRent', { valueAsNumber: true })}
-                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                   placeholder="Enter monthly rent amount"
                 />
                 {errors.monthlyRent && <p className="text-red-600 text-sm mt-1">{typeof errors.monthlyRent.message === 'string' ? errors.monthlyRent.message : 'Invalid input'}</p>}
@@ -567,7 +568,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                   step="0.01"
                   min="0"
                   {...register('securityDeposit', { valueAsNumber: true })}
-                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                   placeholder="Enter security deposit amount"
                 />
                 {errors.securityDeposit && <p className="text-red-600 text-sm mt-1">{typeof errors.securityDeposit.message === 'string' ? errors.securityDeposit.message : 'Invalid input'}</p>}
@@ -581,7 +582,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                   id="moveInDate"
                   type="date"
                   {...register('moveInDate')}
-                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 !text-black"
                 />
                 {errors.moveInDate && <p className="text-red-600 text-sm mt-1">{typeof errors.moveInDate.message === 'string' ? errors.moveInDate.message : 'Invalid input'}</p>}
               </div>
@@ -591,7 +592,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                 <Input
                   id="kycId"
                   {...register('kycId')}
-                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                  className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                   placeholder="Enter KYC ID (Aadhaar, PAN, etc.)"
                 />
                 {errors.kycId && <p className="text-red-600 text-sm mt-1">{typeof errors.kycId.message === 'string' ? errors.kycId.message : 'Invalid input'}</p>}
@@ -603,7 +604,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Input
                 id="kycDocument"
                 {...register('kycDocument')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="URL to KYC document image"
               />
               {errors.kycDocument && <p className="text-red-600 text-sm mt-1">{typeof errors.kycDocument.message === 'string' ? errors.kycDocument.message : 'Invalid input'}</p>}
@@ -623,7 +624,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                 id="password"
                 type="password"
                 {...register('password')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Leave blank for auto-generated password"
               />
               {errors.password && <p className="text-red-600 text-sm mt-1">{typeof errors.password.message === 'string' ? errors.password.message : 'Invalid input'}</p>}
@@ -669,13 +670,13 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
   return (
     <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
-        <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+        <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:text-gray-900">
           <div className="p-2 bg-purple-500 rounded-lg mr-3">
             <Calendar className="h-5 w-5 text-white" />
           </div>
           {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
         </CardTitle>
-        <CardDescription className="text-sm text-gray-600 font-semibold">
+        <CardDescription className="text-sm text-black-900 dark:text-gray-900 font-semibold">
           {isEditing ? 'Update invoice details' : 'Generate a new invoice for tenant'}
         </CardDescription>
       </CardHeader>
@@ -684,7 +685,7 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
           <div>
             <Label htmlFor="tenantId" className="text-gray-700 font-semibold">Tenant</Label>
             <Select onValueChange={(value) => setValue('tenantId', value)}>
-              <SelectTrigger className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300">
+              <SelectTrigger className="text-black border-gray-600 bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300">
                 <SelectValue placeholder="Select tenant" />
               </SelectTrigger>
               <SelectContent>
@@ -705,7 +706,7 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
                 id="month"
                 type="month"
                 {...register('month')}
-                className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300 !text-black"
               />
               {errors.month && <p className="text-red-600 text-sm mt-1">{typeof errors.month.message === 'string' ? errors.month.message : 'Invalid input'}</p>}
             </div>
@@ -716,7 +717,7 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
                 id="amount"
                 type="number"
                 {...register('amount', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter amount"
               />
               {errors.amount && <p className="text-red-600 text-sm mt-1">{typeof errors.amount.message === 'string' ? errors.amount.message : 'Invalid input'}</p>}
@@ -729,7 +730,7 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
               id="dueDate"
               type="date"
               {...register('dueDate')}
-              className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300"
+              className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300 !text-black"
             />
             {errors.dueDate && <p className="text-red-600 text-sm mt-1">{typeof errors.dueDate.message === 'string' ? errors.dueDate.message : 'Invalid input'}</p>}
           </div>
@@ -739,7 +740,7 @@ export function InvoiceForm({ onSubmit, initialData, isEditing = false, tenants 
             <Textarea
               id="description"
               {...register('description')}
-              className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300"
+              className="bg-gradient-to-r from-gray-50 to-purple-50 border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
               placeholder="Additional notes or description"
               rows={3}
             />
@@ -798,13 +799,13 @@ export function RoomDetailsForm({ onSubmit, initialData, isEditing = false, prop
   return (
     <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
       <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 rounded-t-lg">
-        <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+        <CardTitle className="flex items-center text-lg font-bold dark:text-black">
           <div className="p-2 bg-green-500 rounded-lg mr-3">
             <Home className="h-5 w-5 text-white" />
           </div>
           {isEditing ? 'Edit Room Details' : 'Add Room Configuration'}
         </CardTitle>
-        <CardDescription className="text-sm text-gray-600 font-semibold">
+        <CardDescription className="text-sm dark:text-black-200 font-semibold">
           {isEditing ? 'Update room configuration' : 'Create a new room with sharing type and bed capacity'}
         </CardDescription>
       </CardHeader>
@@ -871,7 +872,7 @@ export function RoomDetailsForm({ onSubmit, initialData, isEditing = false, prop
               <Input
                 id="roomNumber"
                 {...register('roomNumber')}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="e.g., 101, 102, 201"
               />
               {errors.roomNumber && <p className="text-red-600 text-sm mt-1">{typeof errors.roomNumber.message === 'string' ? errors.roomNumber.message : 'Invalid input'}</p>}
@@ -884,7 +885,7 @@ export function RoomDetailsForm({ onSubmit, initialData, isEditing = false, prop
                 id="floor"
                 type="number"
                 {...register('floor', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="0 for Ground Floor"
               />
               {errors.floor && <p className="text-red-600 text-sm mt-1">{typeof errors.floor.message === 'string' ? errors.floor.message : 'Invalid input'}</p>}
@@ -900,7 +901,7 @@ export function RoomDetailsForm({ onSubmit, initialData, isEditing = false, prop
                 id="capacity"
                 type="number"
                 {...register('capacity', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Number of beds/members"
                 min="1"
                 max="6"
@@ -916,7 +917,7 @@ export function RoomDetailsForm({ onSubmit, initialData, isEditing = false, prop
                 id="rentPerBed"
                 type="number"
                 {...register('rentPerBed', { valueAsNumber: true })}
-                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Enter monthly rent per bed"
                 min="0"
               />

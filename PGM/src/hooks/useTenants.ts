@@ -15,6 +15,8 @@ interface Tenant {
   rentAmount?: number;
   leaseStart?: string;
   leaseEnd?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface UseTenantsReturn {

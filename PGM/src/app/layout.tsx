@@ -23,11 +23,12 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Smart PG Manager - Professional Property Management System",
-    template: "%s | Smart PG Manager",
+    default: "StayTrack - Modern PG Management System",
+    template: "%s | StayTrack",
   },
-  description: "A comprehensive, production-ready PG (Paying Guest) management system for property owners and tenants. Manage properties, tenants, billing, electricity bills, and maintenance requests with ease.",
+  description: "StayTrack - A modern PG (Paying Guest) management system for efficiently managing tenants, rent, and utilities. Streamline your property management with our professional platform.",
   keywords: [
+    "StayTrack",
     "PG management",
     "property management",
     "electricity bills",
@@ -37,9 +38,9 @@ export const metadata: Metadata = {
     "property software",
     "SaaS property management",
   ],
-  authors: [{ name: "Smart PG Manager Team" }],
-  creator: "Smart PG Manager",
-  publisher: "Smart PG Manager",
+  authors: [{ name: "StayTrack Team" }],
+  creator: "StayTrack",
+  publisher: "StayTrack",
   robots: {
     index: true,
     follow: true,
@@ -54,26 +55,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://pgmanager.com",
-    siteName: "Smart PG Manager",
-    title: "Smart PG Manager - Professional Property Management System",
-    description: "Manage your PG properties efficiently with our comprehensive management platform",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://staytrack.com",
+    siteName: "StayTrack",
+    title: "StayTrack - Modern PG Management System",
+    description: "StayTrack helps you manage your PG properties efficiently with our modern management platform",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Smart PG Manager",
+        alt: "StayTrack",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Smart PG Manager - Professional Property Management System",
-    description: "Manage your PG properties efficiently with our comprehensive management platform",
+    title: "StayTrack - Modern PG Management System",
+    description: "StayTrack helps you manage your PG properties efficiently with our modern management platform",
     images: ["/og-image.png"],
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://pgmanager.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://staytrack.com"),
   alternates: {
     canonical: "/",
   },
@@ -82,7 +83,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3b82f6",
+  themeColor: "#0b3b5a",
 };
 
 export default function RootLayout({
@@ -96,8 +97,12 @@ export default function RootLayout({
         <ThemeScript />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="manifest" href="/manifest.json" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#3b82f6" />
+        <meta name="theme-color" content="#0b3b5a" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="StayTrack" />
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}

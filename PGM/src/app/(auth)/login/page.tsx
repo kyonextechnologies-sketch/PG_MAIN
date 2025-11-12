@@ -11,10 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail } from 'lucide-react';
+import { Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
 import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
+import { StayTrackLogo } from '@/components/common/StayTrackLogo';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -62,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50" suppressHydrationWarning>
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50" suppressHydrationWarning>
       <BackgroundElements variant="login" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -77,22 +78,12 @@ export default function LoginPage() {
           >
             <div className="space-y-6">
               <motion.div 
-                className="flex items-center justify-center lg:justify-start space-x-3"
+                className="flex items-center justify-center lg:justify-start"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <div className="relative">
-                  <Building className="w-12 h-12 text-blue-600" />
-                  <motion.div
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Smart PG Manager
-                </h1>
+                <StayTrackLogo size={48} color="rgb(11, 59, 90)" showText={true} />
               </motion.div>
               
               <motion.h2 
@@ -135,7 +126,7 @@ export default function LoginPage() {
                   transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
                   whileHover={{ scale: 1.05, x: 5 }}
                 >
-                  <feature.icon className="w-5 h-5 text-blue-600" />
+                  <feature.icon className="w-5 h-5 text-[#0b3b5a]" />
                   <span className="text-sm font-medium text-gray-700">{feature.text}</span>
                 </motion.div>
               ))}
@@ -156,12 +147,12 @@ export default function LoginPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-[#0b3b5a] rounded-2xl flex items-center justify-center mx-auto mb-4"
                 >
                   <Lock className="w-8 h-8 text-white" />
                 </motion.div>
                 <CardTitle className="text-2xl font-bold text-gray-900">Sign In</CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-black dark:text-black">
                   Enter your credentials to access your account
                 </CardDescription>
               </CardHeader>
@@ -193,7 +184,7 @@ export default function LoginPage() {
                         type="email"
                         placeholder="Enter your email"
                         {...register('email')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${errors.email ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.email ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.email && (
@@ -215,7 +206,7 @@ export default function LoginPage() {
                         type="password"
                         placeholder="Enter your password"
                         {...register('password')}
-                        className={`pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${errors.password ? 'border-red-500' : ''}`}
+                        className={`pl-10 pr-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.password ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.password && (
@@ -237,7 +228,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setIsForgotPasswordOpen(true)}
                       suppressHydrationWarning={true}
-                      className="text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors"
+                      className="text-sm text-[#0b3b5a] hover:text-[#5c9fc9] font-medium transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -250,7 +241,7 @@ export default function LoginPage() {
                   >
                     <Button 
                       type="submit" 
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50" 
+                      className="w-full h-12 bg-[#0b3b5a] hover:bg-[#0a2f43] text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50" 
                       disabled={isLoading}
                       suppressHydrationWarning={true}
                     >
@@ -277,7 +268,7 @@ export default function LoginPage() {
                 >
                   <p className="text-sm text-gray-600">
                     Don&apos;t have an account?{' '}
-                    <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium transition-colors">
+                    <Link href="/register" className="text-[#0b3b5a] hover:text-[#5c9fc9] font-medium transition-colors">
                       Create Owner Account
                     </Link>
                   </p>

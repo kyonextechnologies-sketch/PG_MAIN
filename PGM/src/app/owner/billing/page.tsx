@@ -164,8 +164,8 @@ export default function BillingPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Billing</h1>
-              <p className="text-gray-700 font-medium">Manage invoices and payments</p>
+              <h1 className="text-3xl text-white font-bold text-gray-900">Billing</h1>
+              <p className="text-gray-200 font-medium">Manage invoices and payments</p>
             </div>
             <Button 
               onClick={() => {
@@ -183,16 +183,16 @@ export default function BillingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-green-800">Total Revenue</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-green-800 dark:text-green-800">Total Revenue</CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
                   <DollarSign className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900">
+                <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-800">
                   {formatCurrency(totalRevenue)}
                 </div>
-                <p className="text-sm text-green-700 font-semibold">
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold">
                   From paid invoices
                 </p>
               </CardContent>
@@ -200,16 +200,16 @@ export default function BillingPage() {
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-orange-800">Outstanding Dues</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-orange-800 dark:text-orange-800">Outstanding Dues</CardTitle>
                 <div className="p-2 bg-orange-500 rounded-lg">
                   <AlertCircle className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-900">
+                <div className="text-2xl sm:text-3xl font-bold text-orange-900 dark:text-orange-800">
                   {formatCurrency(outstandingDues)}
                 </div>
-                <p className="text-sm text-orange-700 font-semibold">
+                <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 font-semibold">
                   Pending payments
                 </p>
               </CardContent>
@@ -217,16 +217,16 @@ export default function BillingPage() {
 
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-blue-800">Total Invoices</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-blue-800 dark:text-blue-800">Total Invoices</CardTitle>
                 <div className="p-2 bg-blue-500 rounded-lg">
                   <CreditCard className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-800">
                   {invoices.length}
                 </div>
-                <p className="text-sm text-blue-700 font-semibold">
+                <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-semibold">
                   All invoices
                 </p>
               </CardContent>

@@ -370,8 +370,8 @@ export default function OwnerDashboard() {
             {/* Recent Activity */}
             <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-t-lg">
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">Recent Activity</CardTitle>
-                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 font-medium">Latest updates from your properties</CardDescription>
+                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Recent Activity</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-medium">Latest updates from your properties</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -434,8 +434,8 @@ export default function OwnerDashboard() {
             {/* Upcoming Dues */}
             <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 rounded-t-lg">
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">Upcoming Dues</CardTitle>
-                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tenants with pending payments</CardDescription>
+                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Upcoming Dues</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-medium">Tenants with pending payments</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -495,16 +495,16 @@ export default function OwnerDashboard() {
           >
             <Card className="bg-gradient-to-br from-red-50 to-red-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-red-800">Outstanding Dues</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-red-800 dark:text-red-800">Outstanding Dues</CardTitle>
                 <div className="p-2 bg-red-500 rounded-lg">
                   <AlertCircle className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-900">
+                <div className="text-2xl sm:text-3xl font-bold text-red-900 dark:text-red-800">
                   {formatCurrency(outstandingDues)}
                 </div>
-                <p className="text-sm text-red-700 font-medium">
+                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400 font-medium">
                   Pending payments
                 </p>
               </CardContent>
@@ -512,16 +512,16 @@ export default function OwnerDashboard() {
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-orange-800">Maintenance Requests</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-orange-800 dark:text-orange-800">Maintenance Requests</CardTitle>
                 <div className="p-2 bg-orange-500 rounded-lg">
                   <AlertCircle className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-900">
+                <div className="text-2xl sm:text-3xl font-bold text-orange-900 dark:text-orange-800">
                   {ticketStats.open}
                 </div>
-                <p className="text-sm text-orange-700 font-medium">
+                <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 font-medium">
                   Open requests
                 </p>
               </CardContent>
@@ -529,14 +529,14 @@ export default function OwnerDashboard() {
 
             <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-green-800">Revenue Growth</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-green-800 dark:text-green-800">Revenue Growth</CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900">+{revenueGrowth}%</div>
-                <p className="text-sm text-green-700 font-medium">
+                <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-800">+{revenueGrowth}%</div>
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-medium">
                   vs last month
                 </p>
               </CardContent>

@@ -1,0 +1,20 @@
+{
+  "name": "StayTrack - Modern PG Management System",
+  "short_name": "StayTrack",
+  "description": "A modern PG (Paying Guest) management system for efficiently managing tenants, rent, and utilities",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3b5a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "orientation": "portrait-primary"
+}
+

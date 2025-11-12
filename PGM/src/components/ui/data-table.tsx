@@ -85,27 +85,27 @@ export function DataTable<T extends Record<string, any>>({
       case 'active':
       case 'paid':
       case 'verified':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300';
       case 'inactive':
       case 'due':
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300';
       case 'cancelled':
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Data Table</h3>
-            <p className="text-sm text-gray-600 font-medium">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Data Table</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
               Showing {paginatedData.length} of {sortedData.length} entries
             </p>
           </div>
@@ -113,7 +113,7 @@ export function DataTable<T extends Record<string, any>>({
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {searchable && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <Input
                   placeholder="Search..."
                   value={searchTerm}
@@ -124,7 +124,7 @@ export function DataTable<T extends Record<string, any>>({
             )}
             
             {filterable && (
-              <Button variant="outline" className="bg-white text-black border-gray-300 hover:bg-gray-50">
+              <Button variant="outline" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </Button>
@@ -136,19 +136,19 @@ export function DataTable<T extends Record<string, any>>({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
-                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                  className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
                 >
                   <div className="flex items-center space-x-1">
                     <span>{column.label}</span>
                     {column.sortable && (
                       <button
                         onClick={() => handleSort(column.key)}
-                        className="hover:bg-gray-200 rounded p-1 transition-colors"
+                        className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors"
                       >
                         {sortKey === column.key ? (
                           sortDirection === 'asc' ? (
@@ -167,14 +167,14 @@ export function DataTable<T extends Record<string, any>>({
                   </div>
                 </th>
               ))}
-              {actions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>}
+              {actions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {paginatedData.map((row, index) => (
               <tr
                 key={index}
-                className={`hover:bg-gray-50 transition-colors ${
+                className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                   onRowClick ? 'cursor-pointer' : ''
                 }`}
                 onClick={() => onRowClick?.(row)}
@@ -184,7 +184,7 @@ export function DataTable<T extends Record<string, any>>({
                     {column.render ? (
                       column.render(row[column.key], row)
                     ) : (
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {String(row[column.key])}
                       </div>
                     )}
@@ -212,9 +212,9 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
               Showing {startIndex + 1} to {Math.min(endIndex, sortedData.length)} of {sortedData.length} entries
             </div>
             <div className="flex space-x-2">
@@ -227,7 +227,7 @@ export function DataTable<T extends Record<string, any>>({
               >
                 Previous
               </Button>
-              <span className="flex items-center px-3 py-2 text-sm text-gray-700">
+              <span className="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                 Page {currentPage} of {totalPages}
               </span>
               <Button

@@ -5,12 +5,13 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, CreditCard, BarChart3, Home as HomeIcon, ArrowRight, Star, CheckCircle, Shield, Zap, Globe } from 'lucide-react';
+import { Users, CreditCard, BarChart3, Home as HomeIcon, ArrowRight, Star, CheckCircle, Shield, Zap, Globe } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useUIStore } from '@/store/ui';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ClientOnly } from '@/components/common/ClientOnly';
+import { StayTrackLogo } from '@/components/common/StayTrackLogo';
 import Link from 'next/link';
 
 export default function Home() {
@@ -48,34 +49,26 @@ export default function Home() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#0b3b5a]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20 sticky top-0 z-50">
+      <header className="bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-gray-800/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="relative">
-                <Building className="h-8 w-8 text-blue-600" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-              </div>
-              <h1 className="ml-3 text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Smart PG Manager
-              </h1>
-            </div>
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            <StayTrackLogo size={32} color="#0b3b5a" showText={true} className="sm:w-auto" />
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Link href="/login">
-                <Button variant="outline" className="hidden md:block border-blue-200 hover:border-blue-300 transition-all duration-300 hover:scale-105">
+                <Button variant="outline" className="hidden sm:block border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white transition-all duration-300 hover:scale-105 text-sm sm:text-base px-3 sm:px-4">
                   Sign In
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="hidden md:block bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105">
+                <Button className="hidden sm:block bg-[#0b3b5a] hover:bg-[#0a2f43] text-white transition-all duration-300 hover:scale-105 text-sm sm:text-base px-3 sm:px-4">
                   Get Started
                 </Button>
               </Link>
@@ -85,38 +78,38 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="text-center">
           <div className="animate-fade-in">
-            <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl lg:text-7xl">
-              Smart PG Management
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient">
-                {" "}Made Simple
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white px-4">
+              Modern PG Management
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0b3b5a] via-[#5c9fc9] to-[#0b3b5a] animate-gradient">
+                {" "}with StayTrack
               </span>
           </h1>
           </div>
           
-          <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-700 sm:text-xl md:text-2xl animate-fade-in-delay font-semibold">
-            A comprehensive solution for PG owners and tenants to manage properties, 
-            payments, and maintenance requests efficiently.
+          <p className="mt-4 sm:mt-6 max-w-2xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 px-4 animate-fade-in-delay font-semibold">
+            A modern PG management system for efficiently managing tenants, rent, 
+            and utilities with ease.
           </p>
           
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-delay-2">
-            <Link href="/register">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4 animate-fade-in-delay-2">
+            <Link href="/register" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                className="w-full sm:w-auto bg-[#0b3b5a] hover:bg-[#0a2f43] text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
               >
                 Get Started 
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             
-            <Link href="/login">
+            <Link href="/login" className="w-full sm:w-auto">
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-blue-200 hover:border-blue-300 px-8 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105"
+                className="w-full sm:w-auto border-2 border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300 hover:scale-105"
               >
                 Sign In
               </Button>
@@ -125,23 +118,23 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="mt-32">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl md:text-5xl">
-              Why Choose Smart PG Manager?
+        <div className="mt-16 sm:mt-24 lg:mt-32">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16 px-4 animate-fade-in">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+              Why Choose StayTrack?
             </h2>
-            <p className="mt-4 text-lg text-gray-700 max-w-2xl mx-auto font-semibold">
+            <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-300 max-w-2xl mx-auto font-semibold">
               Powerful features designed to streamline your PG management experience
             </p>
           </div>
           
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               {
                 icon: HomeIcon,
                 title: "Property Management",
                 description: "Manage multiple properties, rooms, and beds with ease",
-                color: "text-blue-600",
+                color: "text-[#0b3b5a]",
                 bgColor: "bg-blue-50"
               },
               {
@@ -155,8 +148,8 @@ export default function Home() {
                 icon: CreditCard,
                 title: "Billing & Payments",
                 description: "Automated invoicing and UPI payment integration",
-                color: "text-purple-600", 
-                bgColor: "bg-purple-50"
+                color: "text-[#0b3b5a]", 
+                bgColor: "bg-cyan-50"
               },
               {
                 icon: BarChart3,
@@ -171,15 +164,15 @@ export default function Home() {
                 className="group animate-fade-in"
                 style={{ animationDelay: `${0.1 + index * 0.1}s` }}
               >
-                <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm hover:-translate-y-2">
-                  <CardHeader className="text-center p-8">
-                    <div className={`w-16 h-16 ${feature.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className={`h-8 w-8 ${feature.color}`} />
+                <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-gray-800/80 backdrop-blur-sm hover:-translate-y-2">
+                  <CardHeader className="text-center p-4 sm:p-6 lg:p-8">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 ${feature.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                      <feature.icon className={`h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 ${feature.color}`} />
                     </div>
-                    <CardTitle className="text-xl font-bold text-gray-900 mb-3">
+                    <CardTitle className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3">
                       {feature.title}
                     </CardTitle>
-                    <CardDescription className="text-gray-700 leading-relaxed font-medium">
+                    <CardDescription className="text-sm sm:text-base text-gray-300 leading-relaxed font-medium px-2 sm:px-0">
                       {feature.description}
                     </CardDescription>
                   </CardHeader>
@@ -192,31 +185,30 @@ export default function Home() {
         
 
         {/* Footer */}
-        <footer className="mt-32 bg-gradient-to-r from-gray-900 to-gray-800 text-white animate-fade-in">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="md:col-span-2 animate-fade-in">
-                <div className="flex items-center mb-6">
-                  <Building className="h-8 w-8 text-blue-400 mr-3" />
-                  <h3 className="text-2xl font-bold">Smart PG Manager</h3>
+        <footer className="mt-16 sm:mt-24 lg:mt-32 bg-gradient-to-r from-gray-900 to-gray-800 text-white animate-fade-in">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+              <div className="sm:col-span-2 animate-fade-in">
+                <div className="mb-4 sm:mb-6">
+                  <StayTrackLogo size={32} color="#ffffff" textColor="#ffffff" showText={true} className="sm:w-auto" />
                 </div>
-                <p className="text-gray-300 mb-6 max-w-md">
-                  The most comprehensive solution for PG owners and tenants to manage properties, 
-                  payments, and maintenance requests efficiently.
+                <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6 max-w-md">
+                  StayTrack is a modern PG management system for efficiently managing tenants, rent, 
+                  and utilities. The comprehensive solution for PG owners.
                 </p>
                 <div className="flex space-x-4">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                  <div className="w-10 h-10 bg-[#0b3b5a] rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
                     <Globe className="h-5 w-5" />
                   </div>
-                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                  <div className="w-10 h-10 bg-[#5c9fc9] rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
                     <Zap className="h-5 w-5" />
                   </div>
                 </div>
               </div>
               
               <div className="animate-fade-in-delay">
-                <h4 className="text-lg font-semibold mb-4">Features</h4>
-                <ul className="space-y-2 text-gray-300">
+                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Features</h4>
+                <ul className="space-y-1 sm:space-y-2 text-sm sm:text-base text-gray-300">
                   <li>Property Management</li>
                   <li>Tenant Management</li>
                   <li>Billing & Payments</li>
@@ -225,8 +217,8 @@ export default function Home() {
               </div>
               
               <div className="animate-fade-in-delay-2">
-                <h4 className="text-lg font-semibold mb-4">Support</h4>
-                <ul className="space-y-2 text-gray-300">
+                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Support</h4>
+                <ul className="space-y-1 sm:space-y-2 text-sm sm:text-base text-gray-300">
                   <li>Help Center</li>
                   <li>Documentation</li>
                   <li>Contact Us</li>
@@ -235,8 +227,8 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400 animate-fade-in-delay-2">
-              <p>&copy; 2024 Smart PG Manager. All rights reserved.</p>
+            <div className="border-t border-gray-700 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center text-sm sm:text-base text-gray-400 animate-fade-in-delay-2">
+              <p>&copy; 2024 StayTrack. All rights reserved.</p>
             </div>
           </div>
         </footer>

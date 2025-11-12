@@ -20,26 +20,8 @@ import {
   FileText
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
-
-// ❌ MOCK DATA DISABLED - Showing raw/empty state
-// Mock data for reports
-// const mockRevenueData = [
-//   { month: 'Jan 2024', revenue: 270000, occupancy: 85 },
-//   { month: 'Feb 2024', revenue: 240000, occupancy: 80 },
-//   { month: 'Mar 2024', revenue: 300000, occupancy: 90 },
-//   { month: 'Apr 2024', revenue: 285000, occupancy: 88 },
-// ];
-
-// const mockOccupancyData = [
-//   { property: 'Sunshine PG', totalBeds: 20, occupiedBeds: 18, occupancy: 90 },
-//   { property: 'Green Valley PG', totalBeds: 16, occupiedBeds: 12, occupancy: 75 },
-// ];
-
-// const mockAgingReport = [
-//   { tenant: 'Jane Smith', property: 'Sunshine PG', amount: 15000, daysOverdue: 5 },
-//   { tenant: 'Mike Johnson', property: 'Sunshine PG', amount: 12000, daysOverdue: 10 },
-//   { tenant: 'Sarah Wilson', property: 'Green Valley PG', amount: 8000, daysOverdue: 15 },
-// ];
+import { PageHeader } from '@/components/common/PageHeader';
+import { motion } from 'framer-motion';
 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState('REVENUE');
@@ -55,279 +37,312 @@ export default function ReportsPage() {
   return (
     <RequireRole role="OWNER">
       <MainLayout>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-              <p className="text-gray-700 font-medium">Generate and export detailed reports</p>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => handleExport('PDF')}>
-                <Download className="mr-2 h-4 w-4" />
-                Export PDF
-              </Button>
-              <Button variant="outline" onClick={() => handleExport('CSV')}>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
-          </div>
+          <PageHeader
+            title="Reports"
+            description="Generate and export detailed reports"
+            breadcrumbs={[
+              { label: 'Dashboard', href: '/owner/dashboard' },
+              { label: 'Reports' }
+            ]}
+            actions={
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleExport('PDF')}
+                  className="w-full sm:w-auto text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Export PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleExport('CSV')}
+                  className="w-full sm:w-auto text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Export CSV</span>
+                  <span className="sm:hidden">CSV</span>
+                </Button>
+              </div>
+            }
+          />
 
           {/* Report Filters */}
-          <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-              <CardTitle className="text-lg font-bold text-gray-900">Report Configuration</CardTitle>
-              <CardDescription className="text-sm text-gray-600 font-medium">Select report type and date range</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="reportType" className="text-gray-900 font-semibold">Report Type</Label>
-                  <Select value={reportType} onValueChange={setReportType}>
-                    <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                      <SelectValue placeholder="Select report type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="REVENUE">Revenue Report</SelectItem>
-                      <SelectItem value="OCCUPANCY">Occupancy Report</SelectItem>
-                      <SelectItem value="AGING">Aging Report</SelectItem>
-                      <SelectItem value="TENANT">Tenant Report</SelectItem>
-                    </SelectContent>
-                  </Select>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-t-lg">
+                <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">Report Configuration</CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 font-medium">Select report type and date range</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reportType" className="text-gray-900 dark:text-gray-100 font-semibold text-sm">Report Type</Label>
+                    <Select value={reportType} onValueChange={setReportType}>
+                      <SelectTrigger className="!text-black bg-white dark:bg-gray-700 dark:!text-white border-gray-300 dark:border-gray-600 w-full [&>span]:!text-black dark:[&>span]:!text-white">
+                        <SelectValue placeholder="Select report type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-gray-800">
+                        <SelectItem value="REVENUE" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Revenue Report</SelectItem>
+                        <SelectItem value="OCCUPANCY" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Occupancy Report</SelectItem>
+                        <SelectItem value="AGING" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Aging Report</SelectItem>
+                        <SelectItem value="TENANT" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Tenant Report</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dateRange" className="text-gray-900 dark:text-gray-100 font-semibold text-sm">Date Range</Label>
+                    <Select value={dateRange} onValueChange={setDateRange}>
+                      <SelectTrigger className="!text-black bg-white dark:bg-gray-700 dark:!text-white border-gray-300 dark:border-gray-600 w-full [&>span]:!text-black dark:[&>span]:!text-white">
+                        <SelectValue placeholder="Select date range" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-gray-800">
+                        <SelectItem value="LAST_7_DAYS" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Last 7 Days</SelectItem>
+                        <SelectItem value="LAST_30_DAYS" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Last 30 Days</SelectItem>
+                        <SelectItem value="LAST_3_MONTHS" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Last 3 Months</SelectItem>
+                        <SelectItem value="LAST_6_MONTHS" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Last 6 Months</SelectItem>
+                        <SelectItem value="LAST_YEAR" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Last Year</SelectItem>
+                        <SelectItem value="CUSTOM" className="!text-black dark:!text-white hover:!text-white focus:!text-white">Custom Date Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {dateRange === 'CUSTOM' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate" className="text-gray-900 dark:text-gray-100 text-sm">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate" className="text-gray-900 dark:text-gray-100 text-sm">End Date</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 w-full"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
-                
-                <div>
-                  <Label htmlFor="dateRange" className="text-gray-900 font-semibold">Date Range</Label>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                      <SelectValue placeholder="Select date range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LAST_7_DAYS">Last 7 Days</SelectItem>
-                      <SelectItem value="LAST_30_DAYS">Last 30 Days</SelectItem>
-                      <SelectItem value="LAST_3_MONTHS">Last 3 Months</SelectItem>
-                      <SelectItem value="LAST_6_MONTHS">Last 6 Months</SelectItem>
-                      <SelectItem value="LAST_YEAR">Last Year</SelectItem>
-                      <SelectItem value="CUSTOM">Custom Date Range</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {dateRange === 'CUSTOM' && (
-                  <>
-                    <div>
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Revenue Report */}
           {reportType === 'REVENUE' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-green-100 to-green-200 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-green-900">
-                    <div className="p-2 bg-green-500 rounded-lg mr-3">
-                      <TrendingUp className="h-5 w-5 text-white" />
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/50 dark:to-green-800/50 rounded-t-lg p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg font-bold text-green-900 dark:text-green-100">
+                    <div className="p-2 bg-green-500 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                      <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                    Revenue Trend
+                    <span>Revenue Trend</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* {mockRevenueData.map((data, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                        <span className="text-sm font-bold text-gray-900">{data.month}</span>
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm text-green-700 font-semibold bg-green-100 px-2 py-1 rounded-full">{data.occupancy}% occupancy</span>
-                          <span className="font-bold text-green-800 text-lg">
-                            {formatCurrency(data.revenue)}
-                          </span>
-                        </div>
-                      </div>
-                    ))} */}
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    {/* Chart or data visualization would go here */}
+                    <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Revenue trend chart will appear here</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-100 to-blue-200 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-blue-900">
-                    <div className="p-2 bg-blue-500 rounded-lg mr-3">
-                      <DollarSign className="h-5 w-5 text-white" />
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 rounded-t-lg p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg font-bold text-blue-900 dark:text-blue-100">
+                    <div className="p-2 bg-blue-500 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                      <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                    Revenue Summary
+                    <span>Revenue Summary</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between p-3 bg-white rounded-lg shadow-sm">
-                      <span className="text-sm font-bold text-gray-900">Total Revenue</span>
-                      <span className="font-bold text-blue-900 text-xl">
-                        {/* {formatCurrency(mockRevenueData.reduce((sum, data) => sum + data.revenue, 0))} */}
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
+                      <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Total Revenue</span>
+                      <span className="font-bold text-blue-900 dark:text-blue-300 text-lg sm:text-xl">
+                        ₹0.00
                       </span>
                     </div>
-                    <div className="flex justify-between p-3 bg-white rounded-lg shadow-sm">
-                      <span className="text-sm font-bold text-gray-900">Average Monthly</span>
-                      <span className="font-bold text-blue-800 text-lg">
-                        {/* {formatCurrency(mockRevenueData.reduce((sum, data) => sum + data.revenue, 0) / mockRevenueData.length)} */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
+                      <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Average Monthly</span>
+                      <span className="font-bold text-blue-800 dark:text-blue-300 text-base sm:text-lg">
+                        ₹0.00
                       </span>
                     </div>
-                    <div className="flex justify-between p-3 bg-white rounded-lg shadow-sm">
-                      <span className="text-sm font-bold text-gray-900">Growth Rate</span>
-                      <span className="font-bold text-green-700 text-lg bg-green-100 px-3 py-1 rounded-full">+12.5%</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
+                      <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Growth Rate</span>
+                      <span className="font-bold text-green-700 dark:text-green-400 text-base sm:text-lg bg-green-100 dark:bg-green-900/50 px-3 py-1 rounded-full inline-block w-fit">+12.5%</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
           )}
 
           {/* Occupancy Report */}
           {reportType === 'OCCUPANCY' && (
-            <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-                <CardTitle className="flex items-center text-lg font-bold text-gray-900">
-                  <div className="p-2 bg-blue-500 rounded-lg mr-3">
-                    <Building className="h-5 w-5 text-white" />
-                  </div>
-                  Occupancy by Property
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* {mockOccupancyData.map((property, index) => (
-                    <div key={index} className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all duration-300">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-bold text-gray-900 text-lg">{property.property}</h4>
-                        <span className="text-sm text-gray-700 font-semibold bg-blue-100 px-3 py-1 rounded-full">
-                          {property.occupiedBeds}/{property.totalBeds} beds
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full shadow-sm"
-                          style={{ width: `${property.occupancy}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="font-semibold text-gray-700">Occupancy Rate</span>
-                        <span className="font-bold text-blue-800 text-lg">{property.occupancy}%</span>
-                      </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-t-lg p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
+                    <div className="p-2 bg-blue-500 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                      <Building className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                  ))} */}
-                </div>
-              </CardContent>
-            </Card>
+                    <span>Occupancy by Property</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {/* Occupancy data will appear here */}
+                    <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                      <Building className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Occupancy data will appear here</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
 
           {/* Aging Report */}
           {reportType === 'AGING' && (
-            <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 rounded-t-lg">
-                <CardTitle className="flex items-center text-lg font-bold text-gray-900">
-                  <div className="p-2 bg-red-500 rounded-lg mr-3">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                  Aging Report
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600 font-medium">Outstanding dues by tenant</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* {mockAgingReport.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-6 hover:shadow-md transition-all duration-300">
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-lg">{item.tenant}</h4>
-                        <p className="text-sm text-gray-700 font-semibold">{item.property}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-red-700">
-                          {formatCurrency(item.amount)}
-                        </div>
-                        <div className="text-sm text-red-600 font-semibold bg-red-100 px-3 py-1 rounded-full mt-1">
-                          {item.daysOverdue} days overdue
-                        </div>
-                      </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 rounded-t-lg p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
+                    <div className="p-2 bg-red-500 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                  ))} */}
-                </div>
-              </CardContent>
-            </Card>
+                    <span>Aging Report</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-2">Outstanding dues by tenant</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {/* Aging data will appear here */}
+                    <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                      <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Aging report data will appear here</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
 
           {/* Tenant Report */}
           {reportType === 'TENANT' && (
-            <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
-                <CardTitle className="flex items-center text-lg font-bold text-gray-900">
-                  <div className="p-2 bg-purple-500 rounded-lg mr-3">
-                    <Users className="h-5 w-5 text-white" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-t-lg p-4 sm:p-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
+                    <div className="p-2 bg-purple-500 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                      <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                    <span>Tenant Summary</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="text-center p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-blue-800 dark:text-blue-300">18</div>
+                      <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-semibold mt-2">Active Tenants</div>
+                    </div>
+                    <div className="text-center p-4 sm:p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-green-800 dark:text-green-300">85%</div>
+                      <div className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold mt-2">Occupancy Rate</div>
+                    </div>
+                    <div className="text-center p-4 sm:p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-purple-800 dark:text-purple-300">2</div>
+                      <div className="text-xs sm:text-sm text-purple-700 dark:text-purple-400 font-semibold mt-2">Properties</div>
+                    </div>
                   </div>
-                  Tenant Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <div className="text-4xl font-bold text-blue-800">18</div>
-                    <div className="text-sm text-blue-700 font-semibold mt-2">Active Tenants</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                    <div className="text-4xl font-bold text-green-800">85%</div>
-                    <div className="text-sm text-green-700 font-semibold mt-2">Occupancy Rate</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                    <div className="text-4xl font-bold text-purple-800">2</div>
-                    <div className="text-sm text-purple-700 font-semibold mt-2">Properties</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
 
           {/* Export Options */}
-          <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 rounded-t-lg">
-              <CardTitle className="text-lg font-bold text-gray-900">Export Options</CardTitle>
-              <CardDescription className="text-sm text-gray-600 font-medium">Download your report in various formats</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex space-x-4">
-                <Button onClick={() => handleExport('PDF')} className="flex items-center">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Export as PDF
-                </Button>
-                <Button variant="outline" onClick={() => handleExport('CSV')} className="!text-white flex items-center">
-                  <Download className="mr-2 h-4 w-4 text-white" />
-                  Export as CSV
-                </Button>
-                <Button variant="outline" onClick={() => handleExport('EXCEL')} className="flex items-center !text-white">
-                  <Download className="mr-2 h-4 w-4 text-white" />
-                  Export as Excel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 rounded-t-lg p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">Export Options</CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-1">Download your report in various formats</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <Button 
+                    onClick={() => handleExport('PDF')} 
+                    className="flex items-center justify-center w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Export as PDF</span>
+                    <span className="sm:hidden">PDF</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleExport('CSV')} 
+                    className="flex items-center justify-center w-full sm:w-auto border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Export as CSV</span>
+                    <span className="sm:hidden">CSV</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleExport('EXCEL')} 
+                    className="flex items-center justify-center w-full sm:w-auto border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Export as Excel</span>
+                    <span className="sm:hidden">Excel</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </MainLayout>
     </RequireRole>

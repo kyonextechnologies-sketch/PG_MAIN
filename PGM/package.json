@@ -1,16 +1,18 @@
 {
-  "name": "smart-pg-manager",
+  "name": "staytrack",
   "version": "1.0.0",
   "private": true,
-  "description": "Industry-level PG management system with advanced electricity bill management",
+  "description": "StayTrack - A modern PG (Paying Guest) management system for efficiently managing tenants, rent, and utilities",
   "keywords": [
+    "staytrack",
     "pg-management",
     "property-management",
     "electricity-bills",
+    "tenant-management",
     "nextjs",
     "typescript"
   ],
-  "author": "Smart PG Manager Team",
+  "author": "StayTrack Team",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",

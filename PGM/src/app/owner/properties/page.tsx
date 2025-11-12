@@ -210,9 +210,14 @@ export default function PropertiesPage() {
     occupancyStatus: 'all', // all, empty, partial, full
   });
 
-  // ✅ Filtered rooms based on filters
-  const getFilteredRooms = () => {
+  // ✅ Filtered rooms based on filters and property ID
+  const getFilteredRooms = (propertyId?: string) => {
     return rooms.filter(room => {
+      // ✅ First filter by property ID if provided
+      if (propertyId && room.propertyId !== propertyId) {
+        return false;
+      }
+
       // Search by room number or name
       const matchesSearch = 
         room.roomNumber.toLowerCase().includes(roomFilters.searchTerm.toLowerCase()) ||
@@ -466,17 +471,17 @@ export default function PropertiesPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
-              <p className="text-gray-700 font-semibold">Manage your PG properties</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">Properties</h1>
+              <p className="text-sm sm:text-base text-white font-semibold">Manage your PG properties</p>
             </div>
             <div className="flex gap-2">
-              <Button 
+              {/* <Button 
                 onClick={handleFixMissingBeds}
                 className="bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-lg"
               >
                 <Bed className="mr-2 h-4 w-4" />
                 Fix Missing Beds
-              </Button>
+              </Button> */}
               <Button 
                 onClick={() => {
                   setEditingProperty(null);
@@ -494,59 +499,59 @@ export default function PropertiesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-blue-800">Total Properties</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-blue-800 dark:text-blue-800">Total Properties</CardTitle>
                 <div className="p-2 bg-blue-500 rounded-lg">
                   <Building className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900">{properties.length}</div>
-                <p className="text-sm text-blue-700 font-semibold">Properties managed</p>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-800">{properties.length}</div>
+                <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-semibold">Properties managed</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-green-800">Active Properties</CardTitle>
+                  <CardTitle className="text-sm sm:text-base font-bold text-green-800 dark:text-green-800">Active Properties</CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
                   <Home className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900">
+                <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-800">
                   {properties.filter(p => p.active).length}
                 </div>
-                <p className="text-sm text-green-700 font-semibold">Currently active</p>
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold">Currently active</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-purple-800">Total Rooms</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-purple-800 dark:text-purple-800">Total Rooms</CardTitle>
                 <div className="p-2 bg-purple-500 rounded-lg">
                   <Bed className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-900">
+                <div className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-800">
                   {properties.reduce((sum, p) => sum + (p.totalRooms || 0), 0)}
                 </div>
-                <p className="text-sm text-purple-700 font-semibold">Rooms available</p>
+                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-400 font-semibold">Rooms available</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-orange-800">Total Beds</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-orange-800 dark:text-orange-800">Total Beds</CardTitle>
                 <div className="p-2 bg-orange-500 rounded-lg">
                   <Users className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-900">
+                <div className="text-2xl sm:text-3xl font-bold text-orange-900 dark:text-orange-800">
                   {properties.reduce((sum, p) => sum + (p.totalBeds || 0), 0)}
                 </div>
-                <p className="text-sm text-orange-700 font-semibold">Beds available</p>
+                <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 font-semibold">Beds available</p>
               </CardContent>
             </Card>
           </div>
@@ -610,21 +615,21 @@ export default function PropertiesPage() {
             actions={(row) => (
               <>
                 <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+                  className="w-full px-4 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-blue-800 flex items-center"
                   onClick={() => handleEditProperty(row)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </button>
                 <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+                  className="w-full px-4 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-blue-800 flex items-center"
                   onClick={() => handleViewProperty(row)}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </button>
                 <button 
-                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center"
+                  className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-blue-800 flex items-center"
                   onClick={() => handleDeleteProperty(row.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -637,7 +642,7 @@ export default function PropertiesPage() {
           {/* Room Details for Each Property */}
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Room Occupancy Details</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Room Occupancy Details</h2>
               <Button 
                 onClick={() => {
                   setEditingRoom(null);
@@ -652,24 +657,24 @@ export default function PropertiesPage() {
             {properties.map((property) => (
               <Card key={property.id} className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-                  <CardTitle className="text-lg font-bold text-gray-900">{property.name}</CardTitle>
-                  <CardDescription className="text-sm text-gray-600 font-medium">
+                  <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-black">{property.name}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-700 font-medium">
                     {property.address} • {property.city}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
-                  {/* ✅ FILTER SECTION */}
-                  {rooms && rooms.length > 0 && (
+                  {/* ✅ FILTER SECTION - Only show if this property has rooms */}
+                  {rooms && rooms.filter(r => r.propertyId === property.id).length > 0 && (
                     <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                        <Search className="h-5 w-5 mr-2 text-blue-600" />
-                        Filter Rooms
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-700 mb-4 flex items-center">
+                        <Search className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+                        Filter Rooms for {property.name}
                       </h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Search Input */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Search Room</label>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-gray-700 mb-2">Search Room</label>
                           <input
                             type="text"
                             placeholder="Search by room number or name..."
@@ -681,7 +686,7 @@ export default function PropertiesPage() {
 
                         {/* Sharing Type Filter */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Sharing Type</label>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-gray-700 mb-2">Sharing Type</label>
                           <select
                             value={roomFilters.sharingType}
                             onChange={(e) => setRoomFilters({...roomFilters, sharingType: e.target.value})}
@@ -696,7 +701,7 @@ export default function PropertiesPage() {
 
                         {/* Occupancy Status Filter */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status</label>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-gray-700 mb-2">Occupancy Status</label>
                           <select
                             value={roomFilters.occupancyStatus}
                             onChange={(e) => setRoomFilters({...roomFilters, occupancyStatus: e.target.value})}
@@ -711,45 +716,45 @@ export default function PropertiesPage() {
                       </div>
 
                       {/* Results Count */}
-                      <div className="mt-3 text-sm text-gray-600 font-medium">
-                        Showing <span className="font-bold text-blue-700">{getFilteredRooms().length}</span> of <span className="font-bold text-gray-700">{rooms.length}</span> rooms
+                      <div className="mt-3 text-sm text-gray-700 dark:text-gray-700 font-medium">
+                        Showing <span className="font-bold text-blue-700 dark:text-blue-400">{getFilteredRooms(property.id).length}</span> of <span className="font-bold text-gray-900 dark:text-gray-200">{rooms.filter(r => r.propertyId === property.id).length}</span> rooms for this property
                       </div>
                     </div>
                   )}
 
                   {/* Filter rooms for this specific property */}
-                  {rooms && getFilteredRooms().length > 0 ? (
+                  {rooms && getFilteredRooms(property.id).length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {getFilteredRooms().map((room) => (
+                      {getFilteredRooms(property.id).map((room) => (
                         <div key={room.id} className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-bold text-gray-900">Room {room.roomNumber}</h4>
+                            <h4 className="font-bold text-gray-900 dark:text-gray-700">Room {room.roomNumber}</h4>
                             <span className={`text-xs px-2 py-1 rounded-full ${
                               room.occupied === room.capacity 
-                                ? "bg-red-100 text-red-600" 
+                                ? "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400" 
                                 : room.occupied > 0 
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "bg-green-100 text-green-600"
+                                  ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400"
+                                  : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
                             }`}>
                               {room.occupied === room.capacity ? "Full" : room.occupied > 0 ? "Partial" : "Empty"}
                             </span>
                           </div>
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Capacity:</span>
-                              <span className="font-semibold">{room.capacity} tenants</span>
+                              <span className="text-gray-600 dark:text-gray-400">Capacity:</span>
+                              <span className="font-semibold text-gray-900 dark:text-green-400">{room.capacity} tenants</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Occupied:</span>
-                              <span className="font-semibold">{room.occupied} tenants</span>
+                              <span className="text-gray-600 dark:text-gray-400">Occupied:</span>
+                              <span className="font-semibold text-gray-900 dark:text-orange-300">{room.occupied} tenants</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Available:</span>
-                              <span className="font-semibold text-green-600">{room.capacity - room.occupied} beds</span>
+                              <span className="text-gray-600 dark:text-gray-400">Available:</span>
+                              <span className="font-semibold text-green-600 dark:text-green-400">{room.capacity - room.occupied} beds</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Sharing:</span>
-                              <span className="font-semibold text-blue-600 capitalize">{room.sharingType || 'double'}</span>
+                              <span className="text-gray-600 dark:text-gray-400">Sharing:</span>
+                              <span className="font-semibold text-blue-600 dark:text-blue-400 capitalize">{room.sharingType || 'double'}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                               <div 
@@ -769,9 +774,9 @@ export default function PropertiesPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 font-medium">No room details available</p>
-                      <p className="text-sm text-gray-500 mt-2">Click &quot;Add Room&quot; to create rooms for this property</p>
+                      <Building className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">No room details available</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Click &quot;Add Room&quot; to create rooms for this property</p>
                     </div>
                   )}
                 </CardContent>

@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  MessageSquare, 
-  AlertTriangle, 
-  Clock, 
+import {
+  MessageSquare,
+  AlertTriangle,
+  Clock,
   CheckCircle,
   Eye,
   Calendar,
@@ -117,35 +117,35 @@ export default function OwnerRequestsPage() {
   }, [tickets.length]);
 
   const filteredRequests = tickets.filter(request => {
-    const matchesSearch = 
+    const matchesSearch =
       request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.tenantId?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'ALL' || request.status === statusFilter;
     const matchesPriority = priorityFilter === 'ALL' || request.priority === priorityFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const handleStatusUpdate = async (requestId: string, newStatus: string) => {
     setIsLoading(true);
     setSaveStatus({ type: null, message: '' });
-    
+
     try {
       // ✅ Update with proper data object - only pass the status being updated
       const result = await updateTicket(requestId, { status: newStatus as 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | undefined });
-      
+
       if (result) {
         setSaveStatus({ type: 'success', message: `Request status updated to ${newStatus}` });
-        
+
         addNotification({
           type: 'success',
           title: 'Status Updated',
           message: `Request status updated to ${newStatus}`,
           read: false,
         });
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSaveStatus({ type: null, message: '' });
@@ -153,13 +153,13 @@ export default function OwnerRequestsPage() {
       } else {
         throw new Error('Failed to update ticket');
       }
-      
+
     } catch (error) {
-      setSaveStatus({ 
-        type: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to update status' 
+      setSaveStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to update status'
       });
-      
+
       addNotification({
         type: 'error',
         title: 'Update Failed',
@@ -174,14 +174,14 @@ export default function OwnerRequestsPage() {
   const handleAssignTo = async (requestId: string, assignee: string) => {
     setIsLoading(true);
     setSaveStatus({ type: null, message: '' });
-    
+
     try {
       // ✅ Update with proper data object including status
-      const result = await updateTicket(requestId, { 
-        assignedTo: assignee, 
-        status: 'IN_PROGRESS' 
+      const result = await updateTicket(requestId, {
+        assignedTo: assignee,
+        status: 'IN_PROGRESS'
       });
-      
+
       if (result) {
         addNotification({
           type: 'success',
@@ -241,11 +241,10 @@ export default function OwnerRequestsPage() {
         <div className="space-y-6">
           {/* Status Message */}
           {saveStatus.type && (
-            <div className={`p-4 rounded-lg border ${
-              saveStatus.type === 'success' 
-                ? 'bg-green-50 border-green-200 text-green-800' 
-                : 'bg-red-50 border-red-200 text-red-800'
-            }`}>
+            <div className={`p-4 rounded-lg border ${saveStatus.type === 'success'
+                ? 'bg-green-900/50 border-green-700 text-green-200'
+                : 'bg-red-900/50 border-red-700 text-red-200'
+              }`}>
               <div className="flex items-center">
                 {saveStatus.type === 'success' ? (
                   <CheckCircle className="h-5 w-5 mr-2" />
@@ -256,12 +255,12 @@ export default function OwnerRequestsPage() {
               </div>
             </div>
           )}
-          
+
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Maintenance Requests</h1>
-              <p className="text-gray-700 font-semibold">Manage and track tenant maintenance requests</p>
+              <h1 className="text-3xl font-bold text-white">Maintenance Requests</h1>
+              <p className="text-gray-300 font-semibold">Manage and track tenant maintenance requests</p>
             </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" onClick={() => window.location.reload()}>
@@ -275,53 +274,57 @@ export default function OwnerRequestsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-gradient-to-br from-red-50 to-red-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-red-800">Open Requests</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-red-800 dark:text-red-800">Open Requests</CardTitle>
                 <div className="p-2 bg-red-500 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-900">{openRequests}</div>
-                <p className="text-sm text-red-700 font-semibold">Require attention</p>
+                <div className="text-2xl sm:text-3xl font-bold text-red-900 dark:text-red-800">{openRequests}</div>
+                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400 font-semibold">Require attention</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-yellow-800">In Progress</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-yellow-800 dark:text-yellow-800">In Progress</CardTitle>
                 <div className="p-2 bg-yellow-500 rounded-lg">
                   <Clock className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-yellow-900">{inProgressRequests}</div>
-                <p className="text-sm text-yellow-700 font-semibold">Being worked on</p>
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-900 dark:text-yellow-800">{inProgressRequests}</div>
+                <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-400 font-semibold">Being worked on</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-green-800">Resolved</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-green-800 dark:text-green-800">Resolved</CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
                   <CheckCircle className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900">{resolvedRequests}</div>
-                <p className="text-sm text-green-700 font-semibold">Completed</p>
+                <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-800">{resolvedRequests}</div>
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold">Completed</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Filters */}
-          <Card className="bg-white shadow-xl border-0">
+          <Card className="bg-gray-800 shadow-xl border-0 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-gray-900">Filters</CardTitle>
+              <CardTitle className="flex items-center text-4xl font-bold text-white">
+                <Search className="h-6 w-6 mr-2 text-blue-400" />
+                Filters
+              </CardTitle>
             </CardHeader>
+
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Search</label>
+                  <label className="text-sm font-semibold text-white mb-2 block">Search</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
@@ -329,50 +332,50 @@ export default function OwnerRequestsPage() {
                       placeholder="Search requests..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
                     />
                   </div>
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Status</label>
+                  <label className="text-sm font-semibold text-white mb-2 block">Status</label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-700 text-white border-gray-600">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">All Status</SelectItem>
-                      <SelectItem value="OPEN">Open</SelectItem>
-                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                      <SelectItem value="RESOLVED">Resolved</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="ALL" className="text-white hover:bg-gray-700">All Status</SelectItem>
+                      <SelectItem value="OPEN" className="text-white hover:bg-gray-700">Open</SelectItem>
+                      <SelectItem value="IN_PROGRESS" className="text-white hover:bg-gray-700">In Progress</SelectItem>
+                      <SelectItem value="RESOLVED" className="text-white hover:bg-gray-700">Resolved</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Priority</label>
+                  <label className="text-sm font-semibold text-white mb-2 block">Priority</label>
                   <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-700 text-white border-gray-600">
                       <SelectValue placeholder="All Priority" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">All Priority</SelectItem>
-                      <SelectItem value="LOW">Low</SelectItem>
-                      <SelectItem value="MEDIUM">Medium</SelectItem>
-                      <SelectItem value="HIGH">High</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="ALL" className="text-white hover:bg-gray-700">All Priority</SelectItem>
+                      <SelectItem value="LOW" className="text-white hover:bg-gray-700">Low</SelectItem>
+                      <SelectItem value="MEDIUM" className="text-white hover:bg-gray-700">Medium</SelectItem>
+                      <SelectItem value="HIGH" className="text-white hover:bg-gray-700">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="flex items-end">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setSearchTerm('');
                       setStatusFilter('ALL');
                       setPriorityFilter('ALL');
                     }}
-                    className="w-full"
+                    className="w-full "
                   >
                     Clear Filters
                   </Button>
@@ -382,12 +385,12 @@ export default function OwnerRequestsPage() {
           </Card>
 
           {/* Requests List */}
-          <Card className="bg-white shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-              <CardTitle className="text-lg font-bold text-gray-900">
+          <Card className="bg-gray-800 shadow-xl border-0 border-gray-700">
+            <CardHeader className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-t-lg">
+              <CardTitle className="text-base sm:text-lg font-bold text-white">
                 Maintenance Requests ({filteredRequests.length})
               </CardTitle>
-              <CardDescription className="text-sm text-gray-600 font-semibold">
+              <CardDescription className="text-xs sm:text-sm text-gray-300 font-semibold">
                 Manage tenant maintenance requests
               </CardDescription>
             </CardHeader>
@@ -396,16 +399,16 @@ export default function OwnerRequestsPage() {
                 {filteredRequests.map((request) => (
                   <div
                     key={request.id}
-                    className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all duration-300"
+                    className="bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 rounded-lg p-6 hover:shadow-md transition-all duration-300"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-blue-900/50 rounded-full flex items-center justify-center">
                           {getStatusIcon(request.status)}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <h4 className="font-bold text-lg text-gray-900">{request.title}</h4>
+                            <h4 className="font-bold text-lg text-white">{request.title}</h4>
                             <Badge className={getStatusColor(request.status)}>
                               {request.status}
                             </Badge>
@@ -413,39 +416,39 @@ export default function OwnerRequestsPage() {
                               {request.priority}
                             </Badge>
                           </div>
-                          <p className="text-gray-700 mb-3">{request.description}</p>
-                          
+                          <p className="text-gray-300 mb-3">{request.description}</p>
+
                           {/* Tenant Details */}
-                          <div className="bg-white rounded-lg p-4 mb-3">
-                            <h5 className="font-semibold text-gray-900 mb-2 flex items-center">
+                          <div className="bg-gray-700 rounded-lg p-4 mb-3">
+                            <h5 className="font-semibold text-white mb-2 flex items-center">
                               <User className="h-4 w-4 mr-2" />
                               Tenant Details
                             </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                               <div className="flex items-center">
-                                <User className="h-3 w-3 mr-2 text-gray-500" />
-                                <span className="font-medium">{(request as any).tenant?.name || 'N/A'}</span>
+                                <User className="h-3 w-3 mr-2 text-gray-400" />
+                                <span className="font-medium text-white">{(request as any).tenant?.name || 'N/A'}</span>
                               </div>
                               <div className="flex items-center">
-                                <Mail className="h-3 w-3 mr-2 text-gray-500" />
-                                <span>{(request as any).tenant?.email || 'N/A'}</span>
+                                <Mail className="h-3 w-3 mr-2 text-gray-400" />
+                                <span className="text-gray-300">{(request as any).tenant?.email || 'N/A'}</span>
                               </div>
                               <div className="flex items-center">
-                                <Phone className="h-3 w-3 mr-2 text-gray-500" />
-                                <span>{(request as any).tenant?.phone || 'N/A'}</span>
+                                <Phone className="h-3 w-3 mr-2 text-gray-400" />
+                                <span className="text-gray-300">{(request as any).tenant?.phone || 'N/A'}</span>
                               </div>
                               <div className="flex items-center">
-                                <Building className="h-3 w-3 mr-2 text-gray-500" />
-                                <span>{(request as any).tenant?.property || 'N/A'}</span>
+                                <Building className="h-3 w-3 mr-2 text-gray-400" />
+                                <span className="text-gray-300">{(request as any).tenant?.property || 'N/A'}</span>
                               </div>
                               <div className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-2 text-gray-500" />
-                                <span>{(request as any).tenant?.room || 'N/A'} - {(request as any).tenant?.bed || 'N/A'}</span>
+                                <MapPin className="h-3 w-3 mr-2 text-gray-400" />
+                                <span className="text-gray-300">{(request as any).tenant?.room || 'N/A'} - {(request as any).tenant?.bed || 'N/A'}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <div className="flex items-center space-x-4 text-xs text-gray-400">
                             <span className="flex items-center">
                               <Calendar className="h-3 w-3 mr-1" />
                               Created: {formatDate(request.createdAt)}
@@ -457,7 +460,7 @@ export default function OwnerRequestsPage() {
                               </span>
                             )}
                             {request.resolvedAt && (
-                              <span className="flex items-center text-green-600">
+                              <span className="flex items-center text-green-400">
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 Resolved: {formatDate(request.resolvedAt)}
                               </span>
@@ -467,15 +470,15 @@ export default function OwnerRequestsPage() {
                       </div>
 
                       <div className="flex flex-col space-y-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleViewRequest(request)}
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
-                        
+
                         {request.status === 'OPEN' && (
                           <Select onValueChange={(value: string) => {
                             console.log('📝 Assigning to:', value);
@@ -511,11 +514,11 @@ export default function OwnerRequestsPage() {
                             </SelectContent>
                           </Select>
                         )}
-                        
+
                         {request.status === 'OPEN' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleAcknowledgeNotification(request.id)}
                             className="w-32 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                           >

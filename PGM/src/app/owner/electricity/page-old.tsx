@@ -32,75 +32,6 @@ import { motion } from 'framer-motion';
 import { useUIStore } from '@/store/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
-// ❌ MOCK DATA DISABLED - Showing raw/empty state
-// Mock electricity settings data
-// const mockElectricitySettings = {
-//   ratePerUnit: 8.5,
-//   dueDate: 28, // day of month
-//   isEnabled: true,
-//   lateFeePercentage: 2,
-//   minimumUnits: 0,
-//   maximumUnits: 1000,
-//   billingCycle: 'MONTHLY',
-//   lastUpdated: '2024-02-15'
-// };
-// 
-// // Mock electricity bills from tenants
-// const mockTenantBills = [
-//   {
-//     id: '1',
-//     tenantName: 'Jane Smith',
-//     property: 'Sunshine PG',
-//     room: 'Room 101',
-//     month: 'February 2024',
-//     previousReading: 1250,
-//     currentReading: 1350,
-//     units: 100,
-//     amount: 850,
-//     status: 'PENDING',
-//     submittedAt: '2024-02-10',
-//     imageUrl: '/api/placeholder/400/300'
-//   },
-//   {
-//     id: '2',
-//     tenantName: 'Mike Johnson',
-//     property: 'Green Valley PG',
-//     room: 'Room 205',
-//     month: 'February 2024',
-//     previousReading: 2100,
-//     currentReading: 2180,
-//     units: 80,
-//     amount: 680,
-//     status: 'APPROVED',
-//     submittedAt: '2024-02-12',
-//     imageUrl: '/api/placeholder/400/300'
-//   },
-//   {
-//     id: '3',
-//     tenantName: 'Sarah Wilson',
-//     property: 'Sunshine PG',
-//     room: 'Room 102',
-//     month: 'February 2024',
-//     previousReading: 950,
-//     currentReading: 1020,
-//     units: 70,
-//     amount: 595,
-//     status: 'REJECTED',
-//     submittedAt: '2024-02-08',
-//     imageUrl: '/api/placeholder/400/300'
-//   }
-// ];
-// 
-// // Mock electricity statistics
-// const mockStats = {
-//   totalBills: 45,
-//   pendingBills: 12,
-//   approvedBills: 28,
-//   rejectedBills: 5,
-//   totalAmount: 38250,
-//   averageBill: 850
-// };
-
 export default function OwnerElectricityPage() {
   const { addNotification } = useUIStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -196,10 +127,10 @@ export default function OwnerElectricityPage() {
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
               <span className="text-black text-sm font-semibold text-gray-700">Electricity Bill Management</span>
             </div>
-            <h1 className="text-black text-4xl sm:text-5xl font-bold text-gray-900">
+            <h1 className="text-black text-4xl text-white sm:text-5xl font-bold text-black dark:text-black">
               Electricity Settings
             </h1>
-            <p className="text-black text-black text-xl text-gray-800 max-w-2xl mx-auto font-semibold">
+            <p className="text-black text-black text-xl text-gray-800 max-w-2xl text-white mx-auto font-semibold">
               Manage electricity rates and review tenant bill submissions
             </p>
           </motion.div>
@@ -406,11 +337,11 @@ export default function OwnerElectricityPage() {
           >
             <Card className="text-black bg-gradient-to-br from-green-50 to-emerald-100 border-0 shadow-xl">
               <CardHeader>
-                <CardTitle className="text-black text-xl font-bold text-gray-900 flex items-center">
+                <CardTitle className="text-black text-xl font-bold text-gray-900 dark:!text-black-900 flex items-center">
                   <Users className=" text-black h-6 w-6 text-green-600 mr-2" />
                   Tenant Bill Submissions
                 </CardTitle>
-                <CardDescription className='text-black'>Review and approve electricity bills submitted by tenants</CardDescription>
+                <CardDescription className='text-black dark:!text-black-200'>Review and approve electricity bills submitted by tenants</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">

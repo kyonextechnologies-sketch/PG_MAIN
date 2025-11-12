@@ -49,10 +49,10 @@ export function StatCard({
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              <p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 {title}
               </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-50">
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 {value}
               </p>
               {description && (
@@ -72,7 +72,7 @@ export function StatCard({
                   >
                     {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
                   </span>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 ml-1">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300 ml-1">
                     {trend.label}
                   </span>
                 </div>

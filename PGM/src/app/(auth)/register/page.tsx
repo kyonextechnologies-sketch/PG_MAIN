@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, Crown, CheckCircle } from 'lucide-react';
+import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
+import { StayTrackLogo } from '@/components/common/StayTrackLogo';
 import { apiClient } from '@/lib/apiClient';
 import Link from 'next/link';
 
@@ -93,7 +94,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50">
       <BackgroundElements variant="register" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -107,22 +108,12 @@ export default function RegisterPage() {
           >
             <div className="space-y-6">
               <motion.div 
-                className="flex items-center justify-center lg:justify-start space-x-3"
+                className="flex items-center justify-center lg:justify-start"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <div className="relative">
-                  <Crown className="w-12 h-12 text-purple-600" />
-                  <motion.div
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                  Smart PG Manager
-                </h1>
+                <StayTrackLogo size={48} color="#0b3b5a" showText={true} />
               </motion.div>
               
               <motion.h2 
@@ -166,7 +157,7 @@ export default function RegisterPage() {
                   transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-[#0b3b5a] rounded-lg flex items-center justify-center flex-shrink-0">
                     <benefit.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -179,13 +170,13 @@ export default function RegisterPage() {
 
             {/* Note about tenant accounts */}
             <motion.div 
-              className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200"
+              className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 1 }}
             >
               <div className="flex items-center space-x-2 mb-2">
-                <Users className="w-5 h-5 text-blue-600" />
+                <Users className="w-5 h-5 text-[#0b3b5a]" />
                 <span className="font-medium text-blue-900">Tenant Accounts</span>
               </div>
               <p className="text-sm text-blue-700">
@@ -207,9 +198,9 @@ export default function RegisterPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-[#0b3b5a] rounded-2xl flex items-center justify-center mx-auto mb-4"
                 >
-                  <Crown className="w-8 h-8 text-white" />
+                  <Lock className="w-8 h-8 text-white" />
                 </motion.div>
                 <CardTitle className="text-2xl font-bold text-gray-900">Create Owner Account</CardTitle>
                 <CardDescription className="text-gray-600">
@@ -243,7 +234,7 @@ export default function RegisterPage() {
                         id="name"
                         placeholder="Enter your full name"
                         {...register('name')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 ${errors.name ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.name ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.name && (
@@ -265,7 +256,7 @@ export default function RegisterPage() {
                         type="email"
                         placeholder="Enter your email"
                         {...register('email')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 ${errors.email ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.email ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.email && (
@@ -287,7 +278,7 @@ export default function RegisterPage() {
                         type="password"
                         placeholder="Create a strong password"
                         {...register('password')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 ${errors.password ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.password ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.password && (
@@ -309,7 +300,7 @@ export default function RegisterPage() {
                         type="password"
                         placeholder="Confirm your password"
                         {...register('confirmPassword')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.confirmPassword ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.confirmPassword && (
@@ -330,7 +321,7 @@ export default function RegisterPage() {
                         id="company"
                         placeholder="Your company or business name"
                         {...register('company')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 ${errors.company ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.company ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.company && (
@@ -345,7 +336,7 @@ export default function RegisterPage() {
                   >
                     <Button 
                       type="submit" 
-                      className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50" 
+                      className="w-full h-12 bg-[#0b3b5a] hover:bg-[#0a2f43] text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50" 
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -371,7 +362,7 @@ export default function RegisterPage() {
                 >
                   <p className="text-sm text-gray-600">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-purple-600 hover:text-purple-500 font-medium transition-colors">
+                    <Link href="/login" className="text-[#0b3b5a] hover:text-[#5c9fc9] font-medium transition-colors">
                       Sign in
                     </Link>
                   </p>
@@ -379,16 +370,16 @@ export default function RegisterPage() {
 
                 {/* Owner Benefits Summary */}
                 <motion.div 
-                  className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200"
+                  className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 1.3 }}
                 >
                   <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="w-4 h-4 text-purple-600" />
-                    <p className="text-sm font-medium text-purple-900">What you get as an owner:</p>
+                    <CheckCircle className="w-4 h-4 text-[#0b3b5a]" />
+                    <p className="text-sm font-medium text-gray-900">What you get as an owner:</p>
                   </div>
-                  <div className="space-y-1 text-xs text-purple-700">
+                  <div className="space-y-1 text-xs text-gray-700">
                     <p>• Unlimited property management</p>
                     <p>• Automated tenant onboarding</p>
                     <p>• Real-time payment tracking</p>

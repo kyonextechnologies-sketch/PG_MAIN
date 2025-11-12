@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --brand-primary: #0b3b5a;
+  --brand-primary-light: #5c9fc9;
+  --brand-primary-rgb: 11, 59, 90;
 }
 
 .dark {
@@ -13,24 +16,42 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-light: var(--brand-primary-light);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #0a0a0a;
+  color: #ededed;
   font-family: Arial, Helvetica, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Ensure dark mode applies to html element */
+/* Always dark mode */
+html {
+  color-scheme: dark;
+  background-color: #0a0a0a !important;
+}
+
+html,
+html body,
+html #__next,
+html #__next > div {
+  background-color: #0a0a0a !important;
+  color: #ededed !important;
+}
+
 html.dark {
   color-scheme: dark;
+  background-color: #0a0a0a !important;
 }
 
-html.light {
-  color-scheme: light;
+html.dark body,
+html.dark #__next,
+html.dark #__next > div {
+  background-color: #0a0a0a !important;
+  color: #ededed !important;
 }
 
 /* Custom animations */
@@ -220,7 +241,7 @@ html {
 
 /* Enhanced focus states for accessibility */
 .focus-ring:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
@@ -242,7 +263,7 @@ html {
   position: absolute;
   top: -40px;
   left: 0;
-  background: #3b82f6;
+  background: var(--brand-primary);
   color: white;
   padding: 8px 16px;
   text-decoration: none;
@@ -256,7 +277,7 @@ html {
 
 /* Better focus visible for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -266,30 +287,30 @@ html {
   outline: none;
 }
 
-/* Custom scrollbar for webkit browsers */
+/* Custom scrollbar for webkit browsers - Dark mode */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #1f2937;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #4b5563;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #6b7280;
 }
 
-/* ✅ Fix disabled input visibility */
+/* ✅ Fix disabled input visibility - Dark mode */
 input:disabled,
 textarea:disabled,
 select:disabled {
-  background-color: #e5e7eb !important;
-  color: #1f2937 !important;
+  background-color: #374151 !important;
+  color: #9ca3af !important;
   opacity: 1 !important;
   cursor: not-allowed;
 }
@@ -298,16 +319,16 @@ input:disabled::placeholder {
   color: #6b7280;
 }
 
-/* ✅ Fix enabled input visibility */
+/* ✅ Fix enabled input visibility - Dark mode */
 input:not(:disabled),
 textarea:not(:disabled),
 select:not(:disabled) {
-  background-color: #ffffff !important;
-  color: #1f2937 !important;
+  background-color: #1f2937 !important;
+  color: #ededed !important;
 }
 
 input:not(:disabled)::placeholder {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* ✅ Fix button visibility */
@@ -315,17 +336,17 @@ button {
   color: inherit;
 }
 
-/* ✅ Fix switch/toggle visibility */
+/* ✅ Fix switch/toggle visibility - Dark mode */
 [role="switch"] {
-  background-color: #e5e7eb !important;
+  background-color: #374151 !important;
 }
 
 [role="switch"][data-state="checked"] {
-  background-color: #3b82f6 !important;
+  background-color: var(--brand-primary) !important;
 }
 
 [role="switch"][data-state="unchecked"] {
-  background-color: #d1d5db !important;
+  background-color: #4b5563 !important;
 }
 
 [role="switch"]:disabled {
@@ -336,48 +357,48 @@ button {
   background-color: #ffffff !important;
 }
 
-/* ✅ Fix card styling for better visibility */
+/* ✅ Fix card styling for better visibility - Dark mode */
 [class*="bg-card"] {
-  background-color: #ffffff !important;
+  background-color: #1f2937 !important;
 }
 
-/* Ensure card text is dark */
+/* Ensure card text is white in dark mode */
 .text-card-foreground {
-  color: #1f2937 !important;
+  color: #ffffff !important;
 }
 
 /* Better visibility for card descriptions */
 .text-muted-foreground {
-  color: #6b7280 !important;
+  color: #d1d5db !important;
 }
 
-/* ✅ Fix all select dropdown text colors globally */
+/* ✅ Fix all select dropdown text colors globally - Dark mode */
 [role="combobox"] {
-  color: #1f2937 !important;
+  color: #ededed !important;
 }
 
 /* Fix SelectValue text color */
 [role="combobox"] span {
-  color: #1f2937 !important;
+  color: #ededed !important;
 }
 
 /* Fix select placeholder text */
 [role="combobox"]::placeholder {
-  color: #9ca3af !important;
+  color: #6b7280 !important;
 }
 
 /* Fix all text inside select trigger */
 button[role="combobox"],
 [data-state="open"] {
-  color: #1f2937 !important;
+  color: #ededed !important;
 }
 
 /* Ensure all select options text is visible */
 [role="option"] {
-  color: #1f2937 !important;
+  color: #ededed !important;
 }
 
 /* Fix SelectValue component specifically */
 div[class*="SelectValue"] {
-  color: #1f2937 !important;
+  color: #ededed !important;
 }

@@ -220,8 +220,8 @@ export default function SettingsPage() {
           )}
           {/* Header */}
           <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-700 font-bold">Manage your account and application settings</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:!text-white">Settings</h1>
+        <p className="text-gray-700 font-bold dark:!text-white">Manage your account and application settings</p>
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
@@ -256,25 +256,25 @@ export default function SettingsPage() {
             <TabsContent value="profile">
               <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-gray-900">
-                    <div className="p-2 bg-blue-500 rounded-lg mr-3">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:!text-black">
+                    <div className="p-2 bg-blue-500 rounded-lg mr-3 dark:!text-black">
                       <User className="h-5 w-5 text-white" />
                     </div>
                     Profile Information
                   </CardTitle>
-                  <CardDescription className="text-sm text-gray-600 font-semibold">
+                  <CardDescription className="text-sm font-semibold dark:!text-black">
                     Update your personal information and contact details
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name" className="text-gray-700 font-semibold">Full Name</Label>
+                      <Label htmlFor="name" className="!text-black font-semibold">Full Name</Label>
                       <Input
                         id="name"
                         value={profileData.name}
                         onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                        className="text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                        className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
                     <div>
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                         type="email"
                         value={profileData.email}
                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                        className=" text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                        className=" !text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
                     <div>
@@ -293,7 +293,7 @@ export default function SettingsPage() {
                         id="phone"
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                        className="text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                        className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
                     <div>
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                         id="company"
                         value={profileData.company}
                         onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
-                        className="text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
+                        className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -322,13 +322,13 @@ export default function SettingsPage() {
             <TabsContent value="payments">
               <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:!text-black">
                     <div className="p-2 bg-green-500 rounded-lg mr-3">
                       <CreditCard className="h-5 w-5 text-white" />
                     </div>
                     Payment Settings
                   </CardTitle>
-                  <CardDescription className="text-sm text-gray-600 font-semibold">
+                  <CardDescription className="text-sm text-gray-600 font-semibold  dark:!text-black">
                     Configure payment gateway and billing settings
                   </CardDescription>
                 </CardHeader>
@@ -343,7 +343,7 @@ export default function SettingsPage() {
                           value={paymentSettings.upiId}
                           onChange={(e) => setPaymentSettings({ ...paymentSettings, upiId: e.target.value })}
                           placeholder="9259782478@pnb"
-                          className=" text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                          className=" !text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                       <div>
@@ -353,36 +353,10 @@ export default function SettingsPage() {
                           value={paymentSettings.upiName}
                           onChange={(e) => setPaymentSettings({ ...paymentSettings, upiName: e.target.value })}
                           placeholder="Smart PG Manager"
-                          className="text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                          className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                     </div>
-                    {/* Commented out Razorpay configuration
-                    <div className="space-y-4">
-                      <h4 className="font-bold text-gray-900 text-lg">Razorpay Configuration</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="razorpayKeyId" className="text-gray-700 font-semibold">Razorpay Key ID</Label>
-                          <Input
-                            id="razorpayKeyId"
-                            value={paymentSettings.razorpayKeyId}
-                            onChange={(e) => setPaymentSettings({ ...paymentSettings, razorpayKeyId: e.target.value })}
-                            className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="razorpayKeySecret" className="text-gray-700 font-semibold">Razorpay Key Secret</Label>
-                          <Input
-                            id="razorpayKeySecret"
-                            type="password"
-                            value={paymentSettings.razorpayKeySecret}
-                            onChange={(e) => setPaymentSettings({ ...paymentSettings, razorpayKeySecret: e.target.value })}
-                            className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    */}
                   </div>
 
                   <div className="space-y-4">
@@ -391,7 +365,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label htmlFor="autoGenerate" className="text-gray-700 font-semibold">Auto-generate Invoices</Label>
-                          <p className="text-sm text-gray-600 font-medium">Automatically generate monthly invoices</p>
+                          <p className="!text-sm text-gray-600 font-medium">Automatically generate monthly invoices</p>
                         </div>
                         <Switch
                           id="autoGenerate"
@@ -408,7 +382,7 @@ export default function SettingsPage() {
                             type="number"
                             value={paymentSettings.invoiceReminderDays}
                             onChange={(e) => setPaymentSettings({ ...paymentSettings, invoiceReminderDays: Number(e.target.value) })}
-                            className="text black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                            className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                           />
                         </div>
                         <div>
@@ -418,7 +392,7 @@ export default function SettingsPage() {
                             type="number"
                             value={paymentSettings.lateFeePercentage}
                             onChange={(e) => setPaymentSettings({ ...paymentSettings, lateFeePercentage: Number(e.target.value) })}
-                            className="text black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
+                            className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                           />
                         </div>
                       </div>
@@ -441,13 +415,13 @@ export default function SettingsPage() {
             <TabsContent value="notifications">
               <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:!text-black">
                     <div className="p-2 bg-yellow-500 rounded-lg mr-3">
                       <Bell className="h-5 w-5 text-white" />
                     </div>
                     Notification Preferences
                   </CardTitle>
-                  <CardDescription className="text-sm text-gray-600 font-semibold">
+                  <CardDescription className="text-sm text-gray-600 font-semibold dark:!text-black">
                     Choose how you want to receive notifications
                   </CardDescription>
                 </CardHeader>
@@ -535,13 +509,13 @@ export default function SettingsPage() {
             <TabsContent value="security">
               <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
-                  <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:!text-black">
                     <div className="p-2 bg-red-500 rounded-lg mr-3">
                       <Shield className="h-5 w-5 text-white" />
                     </div>
                     Security Settings
                   </CardTitle>
-                  <CardDescription className="text-sm text-gray-600 font-semibold">
+                  <CardDescription className="text-sm text-gray-600 font-semibold dark:!text-black">
                     Manage your account security and privacy
                   </CardDescription>
                 </CardHeader>
@@ -554,7 +528,7 @@ export default function SettingsPage() {
                         <Input 
                           id="currentPassword" 
                           type="password" 
-                          className="bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                       <div>
@@ -562,7 +536,7 @@ export default function SettingsPage() {
                         <Input 
                           id="newPassword" 
                           type="password" 
-                          className="bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                       <div>
@@ -570,7 +544,7 @@ export default function SettingsPage() {
                         <Input 
                           id="confirmPassword" 
                           type="password" 
-                          className="bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                     </div>

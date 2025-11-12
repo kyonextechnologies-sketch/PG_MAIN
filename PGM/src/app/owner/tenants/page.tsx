@@ -448,17 +448,28 @@ export default function TenantsPage() {
       key: 'propertyId', 
       label: 'Property & Room', 
       sortable: true,
-      render: (value: string) => {
-        const tenant = tenants.find(t => t.propertyId === value);
-        if (!tenant) return 'N/A';
+      render: (value: string, row: any) => {
+        // Find the property for this tenant
+        const property = properties.find(p => p.id === row.propertyId);
+        // Find the room for this tenant
+        const room = rooms.find(r => r.id === row.roomId);
         
-        // const property = mockProperties.find(p => p.id === tenant.propertyId); // ❌ MOCK DATA DISABLED - Showing raw/empty state
-        // const room = property?.rooms?.find(r => r.id === tenant.roomId); // ❌ MOCK DATA DISABLED - Showing raw/empty state
+        if (!property && !room) {
+          return (
+            <div className="text-sm text-gray-500">
+              <div>N/A</div>
+            </div>
+          );
+        }
         
         return (
           <div className="text-sm">
-            <div className="font-semibold text-gray-900">{/* tenant.propertyId */}</div>
-            <div className="text-gray-600">Room {/* tenant.roomId */}</div>
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {property?.name || 'N/A'}
+            </div>
+            <div className="text-gray-600 dark:text-gray-400">
+              {room ? `Room ${room.roomNumber}` : 'Room N/A'}
+            </div>
           </div>
         );
       }
@@ -496,8 +507,8 @@ export default function TenantsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Tenants</h1>
-              <p className="text-gray-700 font-semibold">Manage tenant information and allocations</p>
+              <h1 className="text-3xl font-bold text-white">Tenants</h1>
+              <p className="text-white-200 font-semibold">Manage tenant information and allocations</p>
             </div>
             <Button 
               onClick={() => {
@@ -515,55 +526,88 @@ export default function TenantsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-green-800">Total Tenants</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-green-800 dark:text-green-800">Total Tenants</CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
                   <Users className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900">{tenants.length}</div>
-                <p className="text-sm text-green-700 font-semibold">Registered tenants</p>
+                <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-800">{tenants.length}</div>
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400 font-semibold">Registered tenants</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-blue-800">Active Tenants</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-blue-800 dark:text-blue-800">Active Tenants</CardTitle>
                 <div className="p-2 bg-blue-500 rounded-lg">
                   <User className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-800">
                   {tenants.filter(t => t.status === 'ACTIVE').length}
                 </div>
-                <p className="text-sm text-blue-700 font-semibold">Currently active</p>
+                <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-semibold">Currently active</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-purple-800">Occupancy Rate</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-purple-800 dark:text-purple-800">Occupancy Rate</CardTitle>
                 <div className="p-2 bg-purple-500 rounded-lg">
                   <Home className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-900">85%</div>
-                <p className="text-sm text-purple-700 font-semibold">Properties occupied</p>
+                <div className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-800">
+                  {(() => {
+                    // Calculate total beds from properties
+                    const totalBeds = properties.reduce((sum, prop) => sum + (prop.totalBeds || 0), 0);
+                    // Count active tenants
+                    const activeTenants = tenants.filter(t => t.status === 'ACTIVE').length;
+                    // Calculate occupancy rate
+                    const occupancyRate = totalBeds > 0 ? Math.round((activeTenants / totalBeds) * 100) : 0;
+                    return `${occupancyRate}%`;
+                  })()}
+                </div>
+                <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-400 font-semibold">Properties occupied</p>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-bold text-orange-800">New This Month</CardTitle>
+                <CardTitle className="text-sm sm:text-base font-bold text-orange-800 dark:text-orange-800">New This Month</CardTitle>
                 <div className="p-2 bg-orange-500 rounded-lg">
                   <Plus className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-900">3</div>
-                <p className="text-sm text-orange-700 font-semibold">New registrations</p>
+                <div className="text-2xl sm:text-3xl font-bold text-orange-900 dark:text-orange-800">
+                  {(() => {
+                    // Get current month and year
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+                    
+                    // Count tenants created this month
+                    // Use createdAt if available, otherwise use leaseStart as fallback
+                    const newThisMonth = tenants.filter(tenant => {
+                      const dateField = tenant.createdAt || tenant.leaseStart;
+                      if (!dateField) return false;
+                      try {
+                        const createdDate = new Date(dateField);
+                        return createdDate.getMonth() === currentMonth && 
+                               createdDate.getFullYear() === currentYear;
+                      } catch {
+                        return false;
+                      }
+                    }).length;
+                    
+                    return newThisMonth;
+                  })()}
+                </div>
+                <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 font-semibold">New registrations</p>
               </CardContent>
             </Card>
           </div>

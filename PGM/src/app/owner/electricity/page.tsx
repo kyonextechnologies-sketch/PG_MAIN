@@ -105,10 +105,10 @@ export default function OwnerElectricityPage() {
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
               <span className="text-sm font-semibold text-gray-700">Electricity Bill Management</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white-900">
               Electricity Settings
             </h1>
-            <p className="text-xl text-gray-800 max-w-2xl mx-auto font-semibold">
+            <p className="text-xl text-white-800 max-w-2xl mx-auto font-semibold">
               Manage electricity rates and review tenant bill submissions
             </p>
           </motion.div>
@@ -191,8 +191,8 @@ export default function OwnerElectricityPage() {
                       <Settings className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl font-bold text-gray-900">Electricity Settings</CardTitle>
-                      <CardDescription className="text-black">Configure electricity billing parameters</CardDescription>
+                      <CardTitle className="text-xl font-bold !text-black-900 dark:!text-black">Electricity Settings</CardTitle>
+                      <CardDescription className="text-black dark:!text-black-200">Configure electricity billing parameters</CardDescription>
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -315,11 +315,11 @@ export default function OwnerElectricityPage() {
           >
             <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-0 shadow-xl">
               <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                <CardTitle className="text-xl font-bold dark:!text-black flex items-center">
                   <Users className="h-6 w-6 text-green-600 mr-2" />
                   Tenant Bill Submissions
                 </CardTitle>
-                <CardDescription className="text-black">Review and approve electricity bills submitted by tenants</CardDescription>
+                <CardDescription className="dark:!text-black">Review and approve electricity bills submitted by tenants</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
