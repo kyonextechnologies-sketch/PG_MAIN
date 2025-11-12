@@ -43,10 +43,10 @@ export function createMemoizedComponent<P extends object>(
 export function createLazyComponent<P extends object>(
   importFn: () => Promise<{ default: ComponentType<P> }>,
   options?: {
-    loading?: ComponentType;
+    loading?: () => React.ReactNode;
     ssr?: boolean;
   }
-): LazyExoticComponent<ComponentType<P>> {
+) {
   return dynamic(importFn, {
     loading: options?.loading,
     ssr: options?.ssr !== false,

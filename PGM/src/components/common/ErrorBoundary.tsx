@@ -15,7 +15,7 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error: Error | string | null;
   errorInfo: ErrorInfo | null;
 }
 
@@ -29,10 +29,10 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error | string): Partial<State> {
     return {
       hasError: true,
-      error,
+      error: error instanceof Error ? error : new Error(String(error)),
       errorInfo: null,
     };
   }
@@ -71,9 +71,14 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       if (this.state.error) {
+        // Convert error to Error type if it's a string
+        const errorObj = this.state.error instanceof Error 
+          ? this.state.error 
+          : new Error(String(this.state.error));
+        
         return (
           <ErrorFallback
-            error={this.state.error}
+            error={errorObj}
             resetErrorBoundary={this.handleReset}
           />
         );
@@ -104,7 +109,14 @@ export class ErrorBoundary extends Component<Props, State> {
                     Error Details (Development Only):
                   </p>
                   <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-words">
-                    {this.state.error?.toString() || 'Unknown error'}
+                    {(() => {
+                      const error = this.state.error;
+                      if (!error) return 'Unknown error';
+                      if (typeof error === 'string') return error;
+                      // TypeScript type guard: after string check, error must be Error
+                      const errorObj = error as Error;
+                      return errorObj instanceof Error ? errorObj.toString() : String(errorObj);
+                    })()}
                     {this.state.errorInfo?.componentStack ? (
                       <div className="mt-2 text-gray-600 dark:text-gray-400">
                         {this.state.errorInfo.componentStack}
