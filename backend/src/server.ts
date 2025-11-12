@@ -19,8 +19,10 @@ const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';
 
 // ✅ Trust proxy for Render and other reverse proxies
+// Set to 1 to trust only the first proxy (Render's proxy)
 // This is required for rate limiting and IP detection behind proxies
-app.set('trust proxy', true);
+// Setting to 1 instead of true prevents the rate limiter security warning
+app.set('trust proxy', 1);
 
 // ✅ CORS Configuration
 // Parse allowed origins from environment variable (comma-separated) or use defaults

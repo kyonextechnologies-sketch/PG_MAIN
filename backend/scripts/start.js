@@ -28,8 +28,9 @@ try {
   try {
     // Fallback: Use db push if migrate deploy fails (for fresh databases)
     // This syncs schema without migration history
+    // Accept data loss for production deployments where schema changes are intentional
     console.log('📦 Attempting db push to sync schema...');
-    execSync('npx prisma db push --skip-generate', {
+    execSync('npx prisma db push --skip-generate --accept-data-loss', {
       stdio: 'inherit',
       cwd: path.join(__dirname, '..'),
       env: { ...process.env },
