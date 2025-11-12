@@ -2,67 +2,100 @@ import nodemailer from 'nodemailer';
 import { EmailData } from '../types';
 
 // Email transporter configuration with better timeout handling
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-  connectionTimeout: 30000, // 30 seconds timeout for production
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-  // Add retry logic
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 3,
-  // Better error handling for production
-  tls: {
-    rejectUnauthorized: false, // Allow self-signed certificates in production
-  },
-  debug: process.env.NODE_ENV === 'development',
-});
+// Create transporter only if credentials are provided
+const createTransporter = () => {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+    connectionTimeout: 60000, // 60 seconds timeout for production
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
+    // Connection pooling for better performance
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 5,
+    // Better error handling for production
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates in production
+      ciphers: 'SSLv3',
+    },
+    // For Gmail, use requireTLS
+    requireTLS: true,
+    debug: process.env.NODE_ENV === 'development',
+  });
+};
+
+const transporter = createTransporter();
 
 // ✅ Verify transporter configuration asynchronously (non-blocking)
 // Only verify if SMTP credentials are provided
 let emailServiceReady = false;
 let emailVerificationAttempted = false;
 
-if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+if (transporter && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+  // Log configuration (without sensitive data)
+  console.log('📧 Email service configuration:');
+  console.log(`   SMTP_HOST: ${process.env.SMTP_HOST || 'smtp.gmail.com'}`);
+  console.log(`   SMTP_PORT: ${process.env.SMTP_PORT || '587'}`);
+  console.log(`   SMTP_USER: ${process.env.SMTP_USER}`);
+  console.log(`   SMTP_SECURE: ${process.env.SMTP_SECURE || 'false'}`);
+  
   // Use setTimeout to make verification non-blocking
+  // Don't block server startup - verify in background
   setTimeout(() => {
-    if (emailVerificationAttempted) return;
+    if (emailVerificationAttempted || !transporter) return;
     emailVerificationAttempted = true;
     
+    // Set a timeout for verification itself
+    const verifyTimeout = setTimeout(() => {
+      console.warn('⚠️ Email verification timed out - will attempt connection on first email send');
+      emailServiceReady = false;
+    }, 10000); // 10 second timeout for verification
+    
     transporter.verify((error: Error | null, _success: boolean) => {
+      clearTimeout(verifyTimeout);
+      
       if (error) {
         // Only log timeout/connection errors once, not repeatedly
         // Check if error has a code property (Node.js errors have this)
         const errorWithCode = error as Error & { code?: string };
         if (errorWithCode.code === 'ETIMEDOUT' || errorWithCode.code === 'ECONNREFUSED' || errorWithCode.code === 'ENOTFOUND') {
-          // Suppress repeated timeout errors - they're expected if SMTP is not accessible
-          // Only log once on startup
-          console.warn('⚠️ Email service unavailable (SMTP connection timeout)');
-          console.warn('   Emails will be skipped if SMTP is not accessible.');
-          console.warn('   Please check your SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD environment variables.');
+          // Don't fail completely - try on first email send
+          console.warn('⚠️ Email service verification failed (connection timeout)');
+          console.warn('   Will attempt connection when sending first email.');
+          console.warn('   Please verify SMTP credentials are correct in Render environment variables.');
+          emailServiceReady = false;
+        } else if (errorWithCode.code === 'EAUTH') {
+          console.error('❌ Email authentication failed - check SMTP_USER and SMTP_PASSWORD');
+          console.error('   For Gmail, make sure you are using an App Password, not your regular password.');
           emailServiceReady = false;
         } else {
           console.warn('⚠️ Email transporter verification failed:', error.message);
+          console.warn('   Will attempt connection when sending first email.');
           emailServiceReady = false;
         }
       } else {
-        console.log('✅ Email service is ready');
+        console.log('✅ Email service is ready and verified');
         emailServiceReady = true;
       }
     });
-  }, 2000); // Delay verification by 2 seconds to not block server startup
+  }, 3000); // Delay verification by 3 seconds to not block server startup
 } else {
   console.warn('⚠️ SMTP credentials not configured - email functionality will be disabled');
-  console.warn('   Please set SMTP_USER and SMTP_PASSWORD environment variables.');
+  console.warn('   Please set SMTP_USER and SMTP_PASSWORD environment variables in Render dashboard.');
+  console.warn('   For Gmail: Use App Password (16 characters) from Google Account settings.');
 }
 
-// Send email with retry logic
+// Send email with retry logic and better error handling
 export const sendEmail = async (emailData: EmailData): Promise<void> => {
   // Check if SMTP is configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
@@ -70,14 +103,21 @@ export const sendEmail = async (emailData: EmailData): Promise<void> => {
     return; // Silently fail if email is not configured
   }
 
-  const maxRetries = 2;
+  // Recreate transporter if it doesn't exist (lazy initialization)
+  const emailTransporter = transporter || createTransporter();
+  if (!emailTransporter) {
+    console.warn(`⚠️ Email not sent to ${emailData.to}: Could not create email transporter`);
+    return;
+  }
+
+  const maxRetries = 3;
   let retryCount = 0;
 
   while (retryCount <= maxRetries) {
     try {
       const htmlContent = getEmailTemplate(emailData.template, emailData.data);
 
-      await transporter.sendMail({
+      await emailTransporter.sendMail({
         from: process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@pgmanagement.com',
         to: emailData.to,
         subject: emailData.subject,
@@ -91,20 +131,43 @@ export const sendEmail = async (emailData: EmailData): Promise<void> => {
       retryCount++;
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorCode = (error as Error & { code?: string })?.code;
+      const errorResponse = (error as any)?.response;
+
+      // Log detailed error for debugging
+      if (retryCount === 1) {
+        console.warn(`⚠️ Email send attempt ${retryCount} failed:`, errorMessage);
+        if (errorCode) console.warn(`   Error code: ${errorCode}`);
+        if (errorResponse) {
+          console.warn(`   SMTP Response: ${errorResponse}`);
+        }
+      }
 
       // If it's a connection error and we haven't exhausted retries, try again
       if (
         retryCount <= maxRetries &&
-        (errorCode === 'ETIMEDOUT' || errorCode === 'ECONNREFUSED' || errorCode === 'ENOTFOUND')
+        (errorCode === 'ETIMEDOUT' || errorCode === 'ECONNREFUSED' || errorCode === 'ENOTFOUND' || errorCode === 'ESOCKET')
       ) {
-        console.warn(`⚠️ Email send attempt ${retryCount} failed, retrying... (${errorMessage})`);
-        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount)); // Exponential backoff
+        const delay = 3000 * retryCount; // 3s, 6s, 9s
+        console.warn(`⚠️ Retrying email send in ${delay/1000}s... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        await new Promise(resolve => setTimeout(resolve, delay)); // Exponential backoff
         continue;
       }
 
+      // Authentication errors - don't retry
+      if (errorCode === 'EAUTH') {
+        console.error(`❌ Email authentication failed for ${emailData.to}`);
+        console.error('   Please check SMTP_USER and SMTP_PASSWORD in Render environment variables.');
+        console.error('   For Gmail: Make sure you are using an App Password (16 characters).');
+        emailServiceReady = false;
+        return;
+      }
+
       // Log error but don't throw - email failures shouldn't break the application
-      console.error(`❌ Error sending email to ${emailData.to}:`, errorMessage);
-      emailServiceReady = false;
+      if (retryCount > maxRetries) {
+        console.error(`❌ Failed to send email to ${emailData.to} after ${maxRetries + 1} attempts`);
+        console.error(`   Last error: ${errorMessage}`);
+        emailServiceReady = false;
+      }
       return; // Exit after max retries or non-retryable error
     }
   }
