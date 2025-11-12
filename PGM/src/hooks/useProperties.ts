@@ -57,6 +57,23 @@ export const useProperties = (): UsePropertiesReturn => {
       return;
     }
 
+    // ✅ Check session before making request
+    try {
+      const { getSession } = await import('next-auth/react');
+      const session = await getSession();
+      if (!session?.user?.id) {
+        console.warn('⚠️ [useProperties] No valid session - skipping fetch');
+        setError('Please login to view properties');
+        setLoading(false);
+        return;
+      }
+    } catch (sessionError) {
+      console.warn('⚠️ [useProperties] Error checking session:', sessionError);
+      setError('Session error - please login again');
+      setLoading(false);
+      return;
+    }
+
     isFetching.current = true;
     setLoading(true);
     setError(null);

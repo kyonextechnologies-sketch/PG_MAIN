@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TenantForm } from '@/components/ui/forms';
 import { DataTable, Column, StatusBadge } from '@/components/ui/data-table';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { 
   Users, 
   Plus, 
@@ -232,23 +233,8 @@ export default function TenantsPage() {
     }
   }, [status, session, router]);
 
-  // Show loading screen while checking auth
-  if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect if not authenticated
-  if (status === 'unauthenticated') {
-    return null; // Will redirect in useEffect
-  }
-
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  // Handler functions - must be defined before early returns
   const handleTenantSubmit = async (data: any) => {
     try {
       console.log('📝 [TenantsPage] Submitting tenant form with data:', data);
@@ -304,12 +290,14 @@ export default function TenantsPage() {
     }
   };
 
-  const handleEditTenant = (tenant: any) => {
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
+  // Define all handlers with useCallback before early returns
+  const handleEditTenant = useCallback((tenant: any) => {
     setEditingTenant(tenant);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleDeleteTenant = async (tenantId: string) => {
+  const handleDeleteTenant = useCallback(async (tenantId: string) => {
     const tenant = tenants.find(t => t.id === tenantId);
     if (tenant) {
       try {
@@ -338,23 +326,23 @@ export default function TenantsPage() {
         });
       }
     }
-  };
+  }, [tenants, deleteTenant, addNotification]);
 
-  const handleViewTenant = (tenant: any) => {
+  const handleViewTenant = useCallback((tenant: any) => {
     addNotification({
       type: 'info',
       title: 'View Tenant',
       message: `Viewing details for ${tenant.name}...`,
       read: false,
     });
-  };
+  }, [addNotification]);
 
-  const handleViewCredentials = (tenant: any) => {
+  const handleViewCredentials = useCallback((tenant: any) => {
     setSelectedTenant(tenant);
     setShowCredentials(true);
-  };
+  }, []);
 
-  const handleCallTenant = (tenant: any) => {
+  const handleCallTenant = useCallback((tenant: any) => {
     addNotification({
       type: 'info',
       title: 'Call Tenant',
@@ -363,9 +351,95 @@ export default function TenantsPage() {
     });
     // In a real app, this would trigger a phone call or open a dialer
     window.open(`tel:${tenant.phone}`, '_self');
-  };
+  }, [addNotification]);
 
-  // Table columns
+  // Memoized action handlers with proper dependencies
+  const handleEditTenantMemo = useCallback((tenant: any) => {
+    handleEditTenant(tenant);
+  }, [handleEditTenant]);
+
+  const handleViewTenantMemo = useCallback((tenant: any) => {
+    handleViewTenant(tenant);
+  }, [handleViewTenant]);
+
+  const handleViewCredentialsMemo = useCallback((tenant: any) => {
+    handleViewCredentials(tenant);
+  }, [handleViewCredentials]);
+
+  const handleCallTenantMemo = useCallback((tenant: any) => {
+    handleCallTenant(tenant);
+  }, [handleCallTenant]);
+
+  const handleDeleteTenantMemo = useCallback((tenantId: string) => {
+    handleDeleteTenant(tenantId);
+  }, [handleDeleteTenant]);
+
+  // Memoized actions function - create handlers inside to avoid serialization
+  const actionsRenderer = useCallback((row: any) => {
+    // Create bound handlers as regular functions (not hooks) inside the callback
+    const handleEditClick = (e: Event) => {
+      e.preventDefault();
+      handleEditTenantMemo(row);
+    };
+    const handleViewClick = (e: Event) => {
+      e.preventDefault();
+      handleViewTenantMemo(row);
+    };
+    const handleCredentialsClick = (e: Event) => {
+      e.preventDefault();
+      handleViewCredentialsMemo(row);
+    };
+    const handleCallClick = (e: Event) => {
+      e.preventDefault();
+      handleCallTenantMemo(row);
+    };
+    const handleDeleteClick = (e: Event) => {
+      e.preventDefault();
+      handleDeleteTenantMemo(row.id);
+    };
+
+    return (
+      <>
+        <DropdownMenuItem 
+          className="cursor-pointer text-gray-900 dark:text-gray-100"
+          onSelect={handleEditClick as any}
+        >
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="cursor-pointer text-gray-900 dark:text-gray-100"
+          onSelect={handleViewClick as any}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          View Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="cursor-pointer text-gray-900 dark:text-gray-100"
+          onSelect={handleCredentialsClick as any}
+        >
+          <User className="h-4 w-4 mr-2" />
+          View Credentials
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="cursor-pointer text-gray-900 dark:text-gray-100"
+          onSelect={handleCallClick as any}
+        >
+          <Phone className="h-4 w-4 mr-2" />
+          Call
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="cursor-pointer text-red-600 dark:text-red-400"
+          onSelect={handleDeleteClick as any}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete
+        </DropdownMenuItem>
+      </>
+    );
+  }, [handleEditTenantMemo, handleViewTenantMemo, handleViewCredentialsMemo, handleCallTenantMemo, handleDeleteTenantMemo]);
+
+  // Table columns - must be defined before early returns
   const columns: Column<typeof tenants[0]>[] = [
     { key: 'name', label: 'Name', sortable: true },
     { key: 'email', label: 'Email', sortable: true },
@@ -396,6 +470,24 @@ export default function TenantsPage() {
       render: (value: string) => <StatusBadge status={value} />
     },
   ];
+
+  // ✅ NOW WE CAN HAVE CONDITIONAL RETURNS - ALL HOOKS ARE CALLED ABOVE
+  // Show loading screen while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    return null; // Will redirect in useEffect
+  }
 
   return (
     <RequireRole role="OWNER">
@@ -587,45 +679,7 @@ export default function TenantsPage() {
             data={tenants}
             columns={columns}
             onRowClick={handleViewTenant}
-            actions={(row) => (
-              <>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                  onClick={() => handleEditTenant(row)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                  onClick={() => handleViewTenant(row)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Profile
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                  onClick={() => handleViewCredentials(row)}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  View Credentials
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                  onClick={() => handleCallTenant(row)}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center"
-                  onClick={() => handleDeleteTenant(row.id)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </button>
-              </>
-            )}
+            actions={actionsRenderer}
           />
         </div>
       </MainLayout>

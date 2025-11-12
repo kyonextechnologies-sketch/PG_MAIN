@@ -191,7 +191,7 @@ export function DataTable<T extends Record<string, any>>({
                   </td>
                 ))}
                 {actions && (
-                  <td className="px-6 py-4 text-right bg-blue-500">
+                  <td className="px-6 py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">

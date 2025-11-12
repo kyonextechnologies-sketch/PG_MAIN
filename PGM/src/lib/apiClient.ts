@@ -74,15 +74,26 @@ class ApiClient {
       try {
         const session = await getSession();
 
-        if (session?.user) {
+        if (session?.user?.id) {
           config.headers = {
             ...config.headers,
-            'X-User-ID': session.user.id || '',
+            'X-User-ID': session.user.id,
             'X-User-Role': session.user.role || 'USER',
           };
+          // Log in development for debugging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔐 [ApiClient] Session headers added:', {
+              userId: session.user.id,
+              role: session.user.role,
+            });
+          }
+        } else {
+          console.warn('⚠️ [ApiClient] No valid session found - user ID missing');
+          // Don't make the request if there's no valid session
+          // This prevents unnecessary API calls
         }
-      } catch {
-        console.warn('⚠️ [ApiClient] No session found');
+      } catch (error) {
+        console.warn('⚠️ [ApiClient] Error getting session:', error);
       }
       return config;
     });
@@ -161,6 +172,22 @@ class ApiClient {
             if (text) errorMessage = text;
           }
           
+          // Handle specific authentication errors
+          if (res.status === 401) {
+            // User not found or inactive - clear session and redirect
+            if (errorMessage.includes('User not found') || errorMessage.includes('inactive')) {
+              console.warn('🔐 [ApiClient] User not found or inactive - clearing session');
+              if (typeof window !== 'undefined') {
+                // Clear any stored session data
+                localStorage.removeItem('theme'); // Keep theme, but you can clear other data
+                // Redirect to login
+                setTimeout(() => {
+                  window.location.href = '/login?error=session_expired';
+                }, 100);
+              }
+            }
+          }
+          
           throw new Error(errorMessage);
         }
 
@@ -177,8 +204,20 @@ class ApiClient {
         } else {
           lastError = new Error(String(err));
         }
-        console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
+        // Don't log authentication errors as errors if they're expected
+        const isAuthError = lastError.message.includes('401') || 
+                           lastError.message.includes('403') ||
+                           lastError.message.includes('Unauthorized') ||
+                           lastError.message.includes('User not found') ||
+                           lastError.message.includes('inactive');
+        
+        if (isAuthError) {
+          console.warn(`⚠️ [ApiClient] Authentication error (not retrying):`, lastError.message);
+        } else {
+          console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
+        }
 
+        // Don't retry authentication errors
         if (attempt < retries && this.shouldRetry(err)) {
           await this.delay(retryDelay * (attempt + 1));
           continue;
@@ -242,10 +281,22 @@ class ApiClient {
 
   private shouldRetry(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
+    
+    // Don't retry authentication errors (401, 403)
+    if (error.message.includes('401') || 
+        error.message.includes('403') ||
+        error.message.includes('Unauthorized') ||
+        error.message.includes('User not found') ||
+        error.message.includes('inactive')) {
+      return false;
+    }
+    
+    // Retry on network errors and server errors (5xx)
     return (
       error.name === 'AbortError' ||
       error.message.includes('Failed to fetch') ||
-      error.message.includes('HTTP 5')
+      error.message.includes('HTTP 5') ||
+      error.message.includes('NetworkError')
     );
   }
 
@@ -295,8 +346,11 @@ export const apiClient = new ApiClient();
 // Default response interceptor for auth errors
 apiClient.addResponseInterceptor((res) => {
   if (res.status === 401 && typeof window !== 'undefined') {
-    console.warn('🔐 [ApiClient] Unauthorized — redirecting to /login');
-    window.location.href = '/login';
+    console.warn('🔐 [ApiClient] Unauthorized (401) — redirecting to /login');
+    // Use setTimeout to avoid blocking the response
+    setTimeout(() => {
+      window.location.href = '/login?error=unauthorized';
+    }, 100);
   }
   return res;
 });

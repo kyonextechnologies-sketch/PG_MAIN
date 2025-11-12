@@ -41,6 +41,14 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
+          // Check if response is JSON before parsing
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response from API:', text.substring(0, 200));
+            return null;
+          }
+
           const result = await response.json();
 
           if (!response.ok || !result.success) {
@@ -96,4 +104,8 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
   debug: process.env.NODE_ENV === 'development',
+  // Ensure proper URL configuration
+  url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  // Base path for API routes
+  basePath: '/api/auth',
 };

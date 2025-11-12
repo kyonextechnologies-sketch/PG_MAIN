@@ -70,7 +70,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          'w-64 bg-gradient-to-b from-white via-blue-50/95 to-purple-50/95 backdrop-blur-md shadow-2xl',
+          'w-64 bg-gradient-to-b from-white via-blue-50/95 to-purple-50/95 dark:from-gray-900 dark:via-gray-800/95 dark:to-gray-800/95 backdrop-blur-md shadow-2xl',
           'fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto lg:block',
           'transform transition-transform duration-300 ease-in-out',
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -99,8 +99,8 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-300 group',
                     isActive
-                      ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-l-4 border-blue-600 shadow-lg'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:shadow-md'
+                      ? 'bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-800 dark:text-blue-200 border-l-4 border-blue-600 dark:border-blue-400 shadow-lg'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 hover:shadow-md'
                   )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -117,7 +117,7 @@ export function Sidebar() {
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-sm font-bold text-white">
@@ -125,10 +125,10 @@ export function Sidebar() {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate">
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
                   {session?.user?.name}
                 </p>
-                <p className="text-xs text-gray-600 truncate capitalize font-medium">
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate capitalize font-medium">
                   {session?.user?.role?.toLowerCase()}
                 </p>
               </div>
