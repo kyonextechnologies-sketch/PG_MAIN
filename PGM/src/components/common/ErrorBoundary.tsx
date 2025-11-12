@@ -103,13 +103,13 @@ export class ErrorBoundary extends Component<Props, State> {
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     Error Details (Development Only):
                   </p>
-                  <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 font-mono">
+                  <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-words">
                     {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack && (
+                    {this.state.errorInfo?.componentStack ? (
                       <div className="mt-2 text-gray-600 dark:text-gray-400">
                         {this.state.errorInfo.componentStack}
                       </div>
-                    )}
+                    ) : null}
                   </pre>
                 </div>
               )}
