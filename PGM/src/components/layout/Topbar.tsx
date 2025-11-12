@@ -27,7 +27,7 @@ export function Topbar() {
 
         <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Theme Toggle */}
-         {/* <ThemeToggle /> */}
+         <ThemeToggle />
 
           {/* Notifications */}
           <Button 
