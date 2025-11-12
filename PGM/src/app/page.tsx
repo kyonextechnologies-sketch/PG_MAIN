@@ -18,8 +18,9 @@ export default function Home() {
   const { addNotification } = useUIStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['getting-started'])); // Default: first category open
 
   useEffect(() => {
     // Set hero section as visible immediately
@@ -649,14 +650,34 @@ export default function Home() {
         </div>
 
         {/* FAQ Categories */}
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-4">
           {/* Getting Started */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-1 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <Zap className="h-6 w-6 text-[#0b3b5a]" />
-              Getting Started
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('getting-started')) {
+                    newSet.delete('getting-started');
+                  } else {
+                    newSet.add('getting-started');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Zap className="h-6 w-6 text-[#0b3b5a]" />
+                  Getting Started
+                </h3>
+                {openCategories.has('getting-started') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('getting-started') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "How do I create an account?",
@@ -674,39 +695,64 @@ export default function Home() {
                 searchQuery === '' || 
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map((faq, index) => (
-                <Card 
-                  key={index}
-                  className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
-                >
-                  <button
-                    onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
-                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              ).map((faq, index) => {
+                const faqId = 'getting-started-' + index;
+                return (
+                  <Card 
+                    key={index}
+                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
-                    <span className="text-white font-semibold pr-4">{faq.q}</span>
-                    {openFAQ === index ? (
-                      <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <button
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                    >
+                      <span className="text-white font-semibold pr-4">{faq.q}</span>
+                      {openFAQ === faqId ? (
+                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      )}
+                    </button>
+                    {openFAQ === faqId && (
+                      <div className="px-4 pb-4 animate-slide-in-up">
+                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                      </div>
                     )}
-                  </button>
-                  {openFAQ === index && (
-                    <div className="px-4 pb-4 animate-slide-in-up">
-                      <p className="text-gray-300 leading-relaxed">{faq.a}</p>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                );
+              })}
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Property Management */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-2 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <Building2 className="h-6 w-6 text-[#0b3b5a]" />
-              Property Management
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('property-management')) {
+                    newSet.delete('property-management');
+                  } else {
+                    newSet.add('property-management');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Building2 className="h-6 w-6 text-[#0b3b5a]" />
+                  Property Management
+                </h3>
+                {openCategories.has('property-management') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('property-management') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "How do I add rooms and beds to a property?",
@@ -725,24 +771,24 @@ export default function Home() {
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((faq, index) => {
-                const faqIndex = 3 + index;
+                const faqId = 'property-management-' + index;
                 return (
                   <Card 
-                    key={faqIndex}
+                    key={index}
                     className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
                     <button
-                      onClick={() => setOpenFAQ(openFAQ === faqIndex ? null : faqIndex)}
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
-                      {openFAQ === faqIndex ? (
+                      {openFAQ === faqId ? (
                         <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
                       ) : (
                         <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       )}
                     </button>
-                    {openFAQ === faqIndex && (
+                    {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
                         <p className="text-gray-300 leading-relaxed">{faq.a}</p>
                       </div>
@@ -750,16 +796,38 @@ export default function Home() {
                   </Card>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Billing & Payments */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-3 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <CreditCard className="h-6 w-6 text-[#0b3b5a]" />
-              Billing & Payments
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('billing-payments')) {
+                    newSet.delete('billing-payments');
+                  } else {
+                    newSet.add('billing-payments');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <CreditCard className="h-6 w-6 text-[#0b3b5a]" />
+                  Billing & Payments
+                </h3>
+                {openCategories.has('billing-payments') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('billing-payments') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "How are invoices generated?",
@@ -782,24 +850,24 @@ export default function Home() {
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((faq, index) => {
-                const faqIndex = 6 + index;
+                const faqId = 'billing-payments-' + index;
                 return (
                   <Card 
-                    key={faqIndex}
+                    key={index}
                     className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
                     <button
-                      onClick={() => setOpenFAQ(openFAQ === faqIndex ? null : faqIndex)}
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
-                      {openFAQ === faqIndex ? (
+                      {openFAQ === faqId ? (
                         <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
                       ) : (
                         <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       )}
                     </button>
-                    {openFAQ === faqIndex && (
+                    {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
                         <p className="text-gray-300 leading-relaxed">{faq.a}</p>
                       </div>
@@ -807,16 +875,38 @@ export default function Home() {
                   </Card>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Tenant Management */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-4 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <Users className="h-6 w-6 text-[#0b3b5a]" />
-              Tenant Management
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('tenant-management')) {
+                    newSet.delete('tenant-management');
+                  } else {
+                    newSet.add('tenant-management');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Users className="h-6 w-6 text-[#0b3b5a]" />
+                  Tenant Management
+                </h3>
+                {openCategories.has('tenant-management') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('tenant-management') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "How do I add a new tenant?",
@@ -835,24 +925,24 @@ export default function Home() {
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((faq, index) => {
-                const faqIndex = 10 + index;
+                const faqId = 'tenant-management-' + index;
                 return (
                   <Card 
-                    key={faqIndex}
+                    key={index}
                     className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
                     <button
-                      onClick={() => setOpenFAQ(openFAQ === faqIndex ? null : faqIndex)}
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
-                      {openFAQ === faqIndex ? (
+                      {openFAQ === faqId ? (
                         <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
                       ) : (
                         <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       )}
                     </button>
-                    {openFAQ === faqIndex && (
+                    {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
                         <p className="text-gray-300 leading-relaxed">{faq.a}</p>
                       </div>
@@ -860,16 +950,38 @@ export default function Home() {
                   </Card>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Maintenance */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-5 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <Wrench className="h-6 w-6 text-[#0b3b5a]" />
-              Maintenance Requests
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('maintenance')) {
+                    newSet.delete('maintenance');
+                  } else {
+                    newSet.add('maintenance');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Wrench className="h-6 w-6 text-[#0b3b5a]" />
+                  Maintenance Requests
+                </h3>
+                {openCategories.has('maintenance') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('maintenance') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "How do I raise a maintenance request?",
@@ -884,24 +996,24 @@ export default function Home() {
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((faq, index) => {
-                const faqIndex = 13 + index;
+                const faqId = 'maintenance-' + index;
                 return (
                   <Card 
-                    key={faqIndex}
+                    key={index}
                     className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
                     <button
-                      onClick={() => setOpenFAQ(openFAQ === faqIndex ? null : faqIndex)}
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
-                      {openFAQ === faqIndex ? (
+                      {openFAQ === faqId ? (
                         <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
                       ) : (
                         <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       )}
                     </button>
-                    {openFAQ === faqIndex && (
+                    {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
                         <p className="text-gray-300 leading-relaxed">{faq.a}</p>
                       </div>
@@ -909,16 +1021,38 @@ export default function Home() {
                   </Card>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* General */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-6 opacity-100' : 'opacity-100'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              <HelpCircle className="h-6 w-6 text-[#0b3b5a]" />
-              General Questions
-            </h3>
-            <div className="space-y-3">
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+              <button
+                onClick={() => {
+                  const newSet = new Set(openCategories);
+                  if (newSet.has('general')) {
+                    newSet.delete('general');
+                  } else {
+                    newSet.add('general');
+                  }
+                  setOpenCategories(newSet);
+                }}
+                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+              >
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <HelpCircle className="h-6 w-6 text-[#0b3b5a]" />
+                  General Questions
+                </h3>
+                {openCategories.has('general') ? (
+                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                )}
+              </button>
+              {openCategories.has('general') && (
+                <div className="px-4 pb-4 space-y-3 animate-slide-in-up">
               {[
                 {
                   q: "Is my data secure?",
@@ -941,24 +1075,24 @@ export default function Home() {
                 faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 faq.a.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((faq, index) => {
-                const faqIndex = 15 + index;
+                const faqId = 'general-' + index;
                 return (
                   <Card 
-                    key={faqIndex}
+                    key={index}
                     className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
                   >
                     <button
-                      onClick={() => setOpenFAQ(openFAQ === faqIndex ? null : faqIndex)}
+                      onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
-                      {openFAQ === faqIndex ? (
+                      {openFAQ === faqId ? (
                         <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
                       ) : (
                         <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       )}
                     </button>
-                    {openFAQ === faqIndex && (
+                    {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
                         <p className="text-gray-300 leading-relaxed">{faq.a}</p>
                       </div>
@@ -966,7 +1100,9 @@ export default function Home() {
                   </Card>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </Card>
           </div>
         </div>
 
