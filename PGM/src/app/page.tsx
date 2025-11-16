@@ -18,6 +18,7 @@ export default function Home() {
   const { addNotification } = useUIStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
+  const [activeSection, setActiveSection] = useState<string>('hero');
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['getting-started'])); // Default: first category open
@@ -25,16 +26,35 @@ export default function Home() {
   useEffect(() => {
     // Set hero section as visible immediately
     setVisibleSections((prev) => new Set(prev).add('hero'));
+    
+    // Check which section is currently in view on mount
+    const checkInitialSection = () => {
+      const sections = document.querySelectorAll('section[id]');
+      const navHeight = 80; // Height of navbar
+      
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= navHeight + 100 && rect.bottom >= navHeight) {
+          setActiveSection(section.id);
+        }
+      });
+    };
+    
+    // Small delay to ensure DOM is ready
+    setTimeout(checkInitialSection, 100);
 
     const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -100px 0px'
+      threshold: 0.3,
+      rootMargin: '-80px 0px -50% 0px'
     };
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setVisibleSections((prev) => new Set(prev).add(entry.target.id));
+          // Update active section when it comes into view
+          setActiveSection(entry.target.id);
+          console.log('Active section changed to:', entry.target.id);
         }
       });
     }, observerOptions);
@@ -46,6 +66,11 @@ export default function Home() {
       sections.forEach((section) => observer.unobserve(section));
     };
   }, []);
+
+  // Debug: Log when active section changes
+  useEffect(() => {
+    console.log('Active section state updated to:', activeSection);
+  }, [activeSection]);
 
   useEffect(() => {
     if (session) {
@@ -72,72 +97,112 @@ export default function Home() {
   }, [session, router, setUser, addNotification]);
 
   const scrollToSection = (id: string) => {
+    console.log('Scrolling to section:', id);
     const element = document.getElementById(id);
     if (element) {
+      setActiveSection(id); // Set active section immediately on click
+      console.log('Active section set to:', id);
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setMobileMenuOpen(false);
+    } else {
+      console.warn('Section not found:', id);
     }
   };
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#0b3b5a]"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#0d0d0d]">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-[#f5c518]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-[#0d0d0d]">
       {/* Navigation Header */}
-      <header className="bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-800/20 sticky top-0 z-50">
+      <header className="bg-[#0d0d0d]/95 backdrop-blur-md shadow-lg border-b border-[#333333]/20 sticky top-0 z-50">
         <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16">
           <div className="flex justify-between items-center py-4">
-            <StayTrackLogo size={32} color="#0b3b5a" showText={true} className="sm:w-auto" />
+            <StayTrackLogo size={32} color="#f5c518" showText={true} className="sm:w-auto" />
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => scrollToSection('about')}
-                className="text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                className={`relative pb-1 font-semibold transition-colors duration-300 ${
+                  activeSection === 'about' 
+                    ? 'text-[#f5c518]' 
+                    : 'text-[#a1a1a1] hover:text-[#f5c518]'
+                }`}
               >
                 About
+                {activeSection === 'about' && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#f5c518] shadow-[0_0_8px_rgba(245,197,24,0.6)] animate-fade-in" />
+                )}
               </button>
               <button
                 onClick={() => scrollToSection('services')}
-                className="text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                className={`relative pb-1 font-semibold transition-colors duration-300 ${
+                  activeSection === 'services' 
+                    ? 'text-[#f5c518]' 
+                    : 'text-[#a1a1a1] hover:text-[#f5c518]'
+                }`}
               >
                 Services
+                {activeSection === 'services' && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#f5c518] shadow-[0_0_8px_rgba(245,197,24,0.6)] animate-fade-in" />
+                )}
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
-                className="text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                className={`relative pb-1 font-semibold transition-colors duration-300 ${
+                  activeSection === 'pricing' 
+                    ? 'text-[#f5c518]' 
+                    : 'text-[#a1a1a1] hover:text-[#f5c518]'
+                }`}
               >
                 Pricing
+                {activeSection === 'pricing' && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#f5c518] shadow-[0_0_8px_rgba(245,197,24,0.6)] animate-fade-in" />
+                )}
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                className={`relative pb-1 font-semibold transition-colors duration-300 ${
+                  activeSection === 'contact' 
+                    ? 'text-[#f5c518]' 
+                    : 'text-[#a1a1a1] hover:text-[#f5c518]'
+                }`}
               >
                 Contact
+                {activeSection === 'contact' && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#f5c518] shadow-[0_0_8px_rgba(245,197,24,0.6)] animate-fade-in" />
+                )}
               </button>
               <button
                 onClick={() => scrollToSection('help')}
-                className="text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                className={`relative pb-1 font-semibold transition-colors duration-300 ${
+                  activeSection === 'help' 
+                    ? 'text-[#f5c518]' 
+                    : 'text-[#a1a1a1] hover:text-[#f5c518]'
+                }`}
               >
                 Help
+                {activeSection === 'help' && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#f5c518] shadow-[0_0_8px_rgba(245,197,24,0.6)] animate-fade-in" />
+                )}
               </button>
             </nav>
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center space-x-3">
               <Link href="/login">
-                <Button variant="outline" className="border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white transition-all duration-300">
+                <Button variant="outline" magnetic>
                   Sign In
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-[#0b3b5a] hover:bg-[#0a2f43] text-white transition-all duration-300">
+                <Button magnetic>
                   Get Started
                 </Button>
               </Link>
@@ -145,7 +210,7 @@ export default function Home() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden text-gray-300 hover:text-white"
+              className="md:hidden text-[#a1a1a1] hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -154,46 +219,81 @@ export default function Home() {
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-800">
+            <div className="md:hidden py-4 border-t border-[#333333]">
               <nav className="flex flex-col space-y-4">
                 <button
                   onClick={() => scrollToSection('about')}
-                  className="text-left text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                  className={`text-left font-semibold transition-colors duration-300 flex items-center justify-between pb-2 border-b ${
+                    activeSection === 'about' 
+                      ? 'text-[#f5c518] border-[#f5c518]' 
+                      : 'text-[#a1a1a1] hover:text-[#f5c518] border-transparent'
+                  }`}
                 >
                   About
+                  {activeSection === 'about' && (
+                    <span className="w-2 h-2 bg-[#f5c518] rounded-full shadow-[0_0_8px_rgba(245,197,24,0.8)] animate-pulse-slow" />
+                  )}
                 </button>
                 <button
                   onClick={() => scrollToSection('services')}
-                  className="text-left text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                  className={`text-left font-semibold transition-colors duration-300 flex items-center justify-between pb-2 border-b ${
+                    activeSection === 'services' 
+                      ? 'text-[#f5c518] border-[#f5c518]' 
+                      : 'text-[#a1a1a1] hover:text-[#f5c518] border-transparent'
+                  }`}
                 >
                   Services
+                  {activeSection === 'services' && (
+                    <span className="w-2 h-2 bg-[#f5c518] rounded-full shadow-[0_0_8px_rgba(245,197,24,0.8)] animate-pulse-slow" />
+                  )}
                 </button>
                 <button
                   onClick={() => scrollToSection('pricing')}
-                  className="text-left text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                  className={`text-left font-semibold transition-colors duration-300 flex items-center justify-between pb-2 border-b ${
+                    activeSection === 'pricing' 
+                      ? 'text-[#f5c518] border-[#f5c518]' 
+                      : 'text-[#a1a1a1] hover:text-[#f5c518] border-transparent'
+                  }`}
                 >
                   Pricing
+                  {activeSection === 'pricing' && (
+                    <span className="w-2 h-2 bg-[#f5c518] rounded-full shadow-[0_0_8px_rgba(245,197,24,0.8)] animate-pulse-slow" />
+                  )}
                 </button>
                 <button
                   onClick={() => scrollToSection('contact')}
-                  className="text-left text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                  className={`text-left font-semibold transition-colors duration-300 flex items-center justify-between pb-2 border-b ${
+                    activeSection === 'contact' 
+                      ? 'text-[#f5c518] border-[#f5c518]' 
+                      : 'text-[#a1a1a1] hover:text-[#f5c518] border-transparent'
+                  }`}
                 >
                   Contact
+                  {activeSection === 'contact' && (
+                    <span className="w-2 h-2 bg-[#f5c518] rounded-full shadow-[0_0_8px_rgba(245,197,24,0.8)] animate-pulse-slow" />
+                  )}
                 </button>
                 <button
                   onClick={() => scrollToSection('help')}
-                  className="text-left text-gray-300 hover:text-[#0b3b5a] transition-colors duration-300 font-medium"
+                  className={`text-left font-semibold transition-colors duration-300 flex items-center justify-between pb-2 border-b ${
+                    activeSection === 'help' 
+                      ? 'text-[#f5c518] border-[#f5c518]' 
+                      : 'text-[#a1a1a1] hover:text-[#f5c518] border-transparent'
+                  }`}
                 >
                   Help
+                  {activeSection === 'help' && (
+                    <span className="w-2 h-2 bg-[#f5c518] rounded-full shadow-[0_0_8px_rgba(245,197,24,0.8)] animate-pulse-slow" />
+                  )}
                 </button>
-                <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
+                <div className="flex flex-col space-y-2 pt-4 border-t border-[#333333]">
                   <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white">
+                    <Button variant="outline" className="w-full">
                       Sign In
                     </Button>
                   </Link>
                   <Link href="/register" className="w-full">
-                    <Button className="w-full bg-[#0b3b5a] hover:bg-[#0a2f43] text-white">
+                    <Button className="w-full">
                       Get Started
                     </Button>
                   </Link>
@@ -205,38 +305,47 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section id="hero" className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-12 sm:py-16 lg:py-20">
-        <div className="text-center">
-          <div className="animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+      <section id="hero" className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 py-10 sm:py-16 lg:py-20 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-[#f5c518]/10 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-[#f5c518]/5 rounded-full blur-2xl animate-float-slow"></div>
+          <div className="absolute bottom-20 left-1/4 w-28 h-28 bg-[#f5c518]/10 rounded-full blur-3xl animate-float"></div>
+        </div>
+        
+        <div className="text-center relative z-10 max-w-7xl mx-auto">
+          <div className="animate-fade-in-up">
+            <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight break-words px-2">
               Modern PG Management
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0b3b5a] via-[#5c9fc9] to-[#0b3b5a] animate-gradient block sm:inline">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#f5c518] via-[#ffd000] to-[#f5c518] animate-gradient block mt-2 sm:mt-0 sm:inline">
                 {' '}with StayTrack
               </span>
             </h1>
           </div>
           
-          <p className="mt-6 max-w-3xl mx-auto text-lg sm:text-xl md:text-2xl text-gray-300 font-medium animate-fade-in-delay">
+          <p className="mt-4 sm:mt-6 max-w-3xl mx-auto text-base sm:text-lg md:text-xl lg:text-2xl text-[#e5e5e5] font-medium animate-fade-in-up stagger-1 px-2 leading-relaxed">
             Streamline your Paying Guest accommodation management with our comprehensive, 
             cloud-based solution designed for modern property owners and tenants.
           </p>
           
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-delay-2">
-            <Link href="/register" className="w-full sm:w-auto">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center animate-fade-in-up stagger-2 px-2">
+            <Link href="/register" className="w-full sm:w-auto max-w-xs sm:max-w-none">
               <Button 
                 size="lg" 
-                className="w-full sm:w-auto bg-[#0b3b5a] hover:bg-[#0a2f43] text-white px-8 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover-glow"
+                magnetic
+                className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl group"
               >
                 Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
             
-            <Link href="/login" className="w-full sm:w-auto">
+            <Link href="/login" className="w-full sm:w-auto max-w-xs sm:max-w-none">
               <Button 
                 variant="outline" 
                 size="lg"
-                className="w-full sm:w-auto border-2 border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white px-8 py-6 text-lg font-semibold transition-all duration-300 hover:scale-105 hover-glow"
+                magnetic
+                className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-semibold"
               >
                 Sign In
               </Button>
@@ -246,27 +355,27 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-16 sm:py-20 lg:py-24">
-        <div className={`text-center mb-12 transition-all duration-1000 ${visibleSections.has('about') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+      <section id="about" className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 py-12 sm:py-16 lg:py-20 xl:py-24">
+        <div className={`text-center mb-8 sm:mb-12 px-2 transition-all duration-1000 ${visibleSections.has('about') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
             What is StayTrack?
           </h2>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
             StayTrack is a comprehensive Property Management System (PGMS) specifically designed 
             for managing Paying Guest accommodations efficiently and professionally.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12 mt-12">
-          <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift hover-glow transition-all duration-500 ${visibleSections.has('about') ? 'animate-slide-in-up stagger-1 opacity-100' : 'opacity-100'}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 xl:gap-12 mt-8 sm:mt-12">
+          <Card glow className={`${visibleSections.has('about') ? 'animate-slide-in-up stagger-1 opacity-100' : 'opacity-100'}`}>
             <CardHeader>
               <CardTitle className="text-2xl text-white flex items-center gap-3">
-                <Building2 className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <Building2 className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 What is This?
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-[#e5e5e5] leading-relaxed">
                 StayTrack is a cloud-based property management platform that automates and simplifies 
                 the entire lifecycle of PG accommodation management. From property registration to tenant 
                 onboarding, billing, payments, and maintenance tracking - everything is managed through 
@@ -275,78 +384,78 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift hover-glow transition-all duration-500 ${visibleSections.has('about') ? 'animate-slide-in-up stagger-2 opacity-100' : 'opacity-100'}`}>
+          <Card glow className={`${visibleSections.has('about') ? 'animate-slide-in-up stagger-2 opacity-100' : 'opacity-100'}`}>
             <CardHeader>
               <CardTitle className="text-2xl text-white flex items-center gap-3">
-                <Users className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <Users className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 Who Can Use It?
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-300 leading-relaxed mb-4">
-                <strong className="text-white">Property Owners:</strong> Manage multiple properties, 
+              <p className="text-[#e5e5e5] leading-relaxed mb-4">
+                <strong className="text-[#f5c518]">Property Owners:</strong> Manage multiple properties, 
                 track occupancy, handle billing, and maintain tenant records effortlessly.
               </p>
-              <p className="text-gray-300 leading-relaxed">
-                <strong className="text-white">Tenants:</strong> View invoices, submit meter readings, 
+              <p className="text-[#e5e5e5] leading-relaxed">
+                <strong className="text-[#f5c518]">Tenants:</strong> View invoices, submit meter readings, 
                 make payments, and raise maintenance requests through a user-friendly interface.
               </p>
             </CardContent>
           </Card>
 
-          <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift hover-glow transition-all duration-500 ${visibleSections.has('about') ? 'animate-slide-in-up stagger-3 opacity-100' : 'opacity-100'}`}>
+          <Card glow className={`${visibleSections.has('about') ? 'animate-slide-in-up stagger-3 opacity-100' : 'opacity-100'}`}>
             <CardHeader>
               <CardTitle className="text-2xl text-white flex items-center gap-3">
-                <Zap className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <Zap className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 Why Use StayTrack?
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-gray-300">
+              <ul className="space-y-3 text-[#e5e5e5]">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
                   <span>Eliminate manual paperwork and reduce administrative overhead by up to 80%</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
                   <span>Automated billing and payment tracking ensures zero revenue leakage</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
                   <span>Real-time analytics help make data-driven decisions for your business</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
                   <span>Mobile-responsive design works seamlessly on all devices</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift hover-glow transition-all duration-500 ${visibleSections.has('about') ? 'animate-slide-in-up stagger-4 opacity-100' : 'opacity-100'}`}>
+          <Card glow className={`${visibleSections.has('about') ? 'animate-slide-in-up stagger-4 opacity-100' : 'opacity-100'}`}>
             <CardHeader>
               <CardTitle className="text-2xl text-white flex items-center gap-3">
-                <Star className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <Star className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 Key Benefits
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-gray-300">
+              <ul className="space-y-3 text-[#e5e5e5]">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong className="text-white">Time Savings:</strong> Reduce time spent on administrative tasks by 70%</span>
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-[#f5c518]">Time Savings:</strong> Reduce time spent on administrative tasks by 70%</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong className="text-white">Accuracy:</strong> Automated calculations eliminate human errors</span>
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-[#f5c518]">Accuracy:</strong> Automated calculations eliminate human errors</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong className="text-white">Transparency:</strong> Real-time updates for both owners and tenants</span>
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-[#f5c518]">Transparency:</strong> Real-time updates for both owners and tenants</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong className="text-white">Scalability:</strong> Manage from 1 to 100+ properties effortlessly</span>
+                  <CheckCircle className="h-5 w-5 text-[#10b981] mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-[#f5c518]">Scalability:</strong> Manage from 1 to 100+ properties effortlessly</span>
                 </li>
               </ul>
             </CardContent>
@@ -355,19 +464,22 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="bg-gray-800/30 py-16 sm:py-20 lg:py-24">
-        <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16">
-          <div className={`text-center mb-12 transition-all duration-1000 ${visibleSections.has('services') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Our Services
+      <section id="services" className="bg-[#1a1a1a]/30 py-12 sm:py-16 lg:py-20 xl:py-24 overflow-hidden">
+        <div className="w-full">
+          <div className={`text-center mb-8 sm:mb-12 px-3 sm:px-6 lg:px-12 xl:px-16 transition-all duration-1000 ${visibleSections.has('services') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+              Our Premium Services
             </h2>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Comprehensive features designed to handle every aspect of PG management
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {[
+          {/* Infinite Carousel */}
+          <div className="services-carousel">
+            <div className="carousel-track">
+              {/* Duplicate the array twice for seamless infinite scroll */}
+              {[...Array(2)].flatMap(() => [
               {
                 icon: Building2,
                 title: "Property Management",
@@ -422,141 +534,152 @@ export default function Home() {
                 description: "Role-based access control with secure authentication. Separate dashboards for owners and tenants with appropriate permissions.",
                 features: ["Role-based access", "Secure authentication", "Data encryption", "Privacy protection"]
               }
-            ].map((service, index) => (
-              <Card 
-                key={index} 
-                className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 hover:border-[#0b3b5a] hover-lift hover-glow transition-all duration-500 ${visibleSections.has('services') ? `animate-scale-in stagger-${(index % 9) + 1} opacity-100` : 'opacity-100'}`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardHeader>
-                  <div className="w-12 h-12 bg-[#0b3b5a]/20 rounded-lg flex items-center justify-center mb-4 hover-scale transition-transform duration-300">
-                    <service.icon className="h-6 w-6 text-[#0b3b5a] animate-pulse-slow" />
+              ]).map((service, index) => (
+                <div 
+                  key={index}
+                  className="carousel-card"
+                >
+                  <div className="carousel-card-icon">
+                    <service.icon />
                   </div>
-                  <CardTitle className="text-xl text-white mb-2">
+                  <h3 className="carousel-card-title">
                     {service.title}
-                  </CardTitle>
-                  <CardDescription className="text-gray-300 leading-relaxed">
+                  </h3>
+                  <p className="carousel-card-description">
                     {service.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
+                  </p>
+                  <div className="carousel-card-features">
                     {service.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm text-gray-400">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        {feature}
-                      </li>
+                      <div key={idx} className="carousel-card-feature">
+                        <CheckCircle />
+                        <span>{feature}</span>
+                      </div>
                     ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-16 sm:py-20 lg:py-24">
-          <div className={`text-center mb-12 transition-all duration-1000 ${visibleSections.has('pricing') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+      <section id="pricing" className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 py-12 sm:py-16 lg:py-20 xl:py-24">
+          <div className={`text-center mb-8 sm:mb-12 px-2 transition-all duration-1000 ${visibleSections.has('pricing') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Choose the plan that fits your needs. All plans include core features with no hidden charges.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 xl:gap-10">
           {[
             {
               name: "Starter",
-              price: "Free",
-              period: "Forever",
-              description: "Perfect for small PG owners getting started",
+              subtitle: "Essential PG",
+              price: "₹999",
+              period: "per month",
+              yearlyPrice: "₹9,999/year (2 months free)",
+              description: "1–20 rooms, single-property owners jo basic digitization chahte hain",
               features: [
-                "Up to 1 property",
-                "Up to 10 tenants",
-                "Basic billing & invoicing",
-                "Payment tracking",
-                "Email support",
-                "Mobile app access"
+                "Tenant & owner profiles",
+                "Rent ledger (per tenant) + automated payment reminders",
+                "Single-click receipt generation (PDF)",
+                "Basic reports: monthly collection, due list",
+                "Mobile-friendly UI (owner & manager access)",
+                "Email + chat support (business hours)",
+                "1 hour demo + 1 free data import (CSV)",
+                "7 din free trial"
               ],
               popular: false
             },
             {
-              name: "Professional",
-              price: "₹999",
+              name: "Growth",
+              subtitle: "Pro PG",
+              price: "₹2,499",
               period: "per month",
-              description: "Ideal for growing property management businesses",
+              yearlyPrice: "₹24,990/year",
+              description: "21–100 rooms, multi-wing properties, managed by small staff",
               features: [
-                "Up to 5 properties",
-                "Unlimited tenants",
-                "Advanced analytics",
-                "Maintenance system",
-                "Priority support",
-                "Custom reports",
-                "API access"
+                "All Starter features included",
+                "Multi-property & multi-wing support",
+                "Advanced payments: UPI/bank integration, partial payments",
+                "Auto rent-splitting, late-fee rules, security deposit ledger",
+                "Smart vacancy tracker + tenant onboarding checklist",
+                "Advanced reports & export (Excel/PDF)",
+                "Monthly statement email to owner",
+                "1 hour onboarding + 2 training sessions",
+                "Email, chat, phone support (priority)",
+                "30-day free pilot available"
               ],
               popular: true
             },
             {
               name: "Enterprise",
-              price: "Custom",
-              period: "pricing",
-              description: "For large-scale property management operations",
+              subtitle: "Scale PG / Campus",
+              price: "₹7,999+",
+              period: "per month",
+              yearlyPrice: "Custom pricing (annual contract recommended)",
+              description: "100+ beds, multiple properties, co-living operators / hostels / campuses",
               features: [
-                "Unlimited properties",
-                "Unlimited tenants",
-                "White-label solution",
-                "Dedicated support",
-                "Custom integrations",
-                "Advanced security",
-                "SLA guarantee"
+                "All Growth features included",
+                "Role-based access (manager, accountant, receptionist)",
+                "API access, custom reports, payroll integration",
+                "GST-ready billing",
+                "Lease & contract lifecycle (renewal alerts, e-sign ready)",
+                "Collection agents module, bulk invoicing, refund workflows",
+                "Dedicated account manager + 24/7 phone support + SLA",
+                "On-site setup (optional) + staff training",
+                "1–2 week professional onboarding & data migration",
+                "White-label, analytics dashboard available"
               ],
               popular: false
             }
           ].map((plan, index) => (
             <Card 
-              key={index} 
-              className={`bg-gray-800/80 backdrop-blur-sm border-2 hover-lift hover-glow transition-all duration-500 ${visibleSections.has('pricing') ? `animate-slide-in-up stagger-${index + 1} opacity-100` : 'opacity-100'} ${
+              key={index}
+              glow={plan.popular}
+              className={`flex flex-col ${visibleSections.has('pricing') ? `animate-slide-in-up stagger-${index + 1} opacity-100` : 'opacity-100'} ${
                 plan.popular 
-                  ? 'border-[#0b3b5a] shadow-xl shadow-[#0b3b5a]/20 animate-glow' 
-                  : 'border-gray-700'
+                  ? 'border-2 border-[#f5c518] shadow-xl shadow-[#f5c518]/20 relative' 
+                  : ''
               }`}
               style={{ animationDelay: `${index * 0.15}s` }}
             >
               {plan.popular && (
-                <div className="bg-[#0b3b5a] text-white text-center py-2 text-sm font-semibold">
-                  Most Popular
+                <div className="bg-gradient-to-r from-[#f5c518] to-[#ffd000] text-[#0d0d0d] text-center py-2 text-sm font-bold">
+                  Recommended ⭐
                 </div>
               )}
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white mb-2">{plan.name}</CardTitle>
-                <div className="mt-4">
+                <CardTitle className="text-2xl text-white mb-1">{plan.name}</CardTitle>
+                <p className="text-sm text-[#f5c518] font-semibold mb-3">{plan.subtitle}</p>
+                <div className="mt-2">
                   <span className="text-4xl font-bold text-white">{plan.price}</span>
                   {plan.period && (
-                    <span className="text-gray-400 ml-2">/{plan.period}</span>
+                    <span className="text-[#a1a1a1] ml-2">/{plan.period}</span>
                   )}
                 </div>
-                <CardDescription className="text-gray-300 mt-4">
+                <p className="text-xs text-[#10b981] mt-2 font-medium">{plan.yearlyPrice}</p>
+                <CardDescription className="text-[#e5e5e5] mt-4 text-sm leading-relaxed">
                   {plan.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 mb-6">
+              <CardContent className="flex-grow flex flex-col pt-4 pb-6 px-4">
+                <ul className="space-y-2.5 mb-6 flex-grow">
                   {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <li key={idx} className="flex items-start gap-2 text-[#e5e5e5] text-sm leading-relaxed">
+                      <CheckCircle className="h-4 w-4 text-[#10b981] mt-0.5 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Button 
-                  className={`w-full ${
-                    plan.popular 
-                      ? 'bg-[#0b3b5a] hover:bg-[#0a2f43] text-white' 
-                      : 'bg-gray-700 hover:bg-gray-600 text-white'
-                  }`}
+                  variant={plan.popular ? 'default' : 'secondary'}
+                  className="w-90 mt-auto"
+                  magnetic
                 >
                   Get Started
                 </Button>
@@ -567,54 +690,54 @@ export default function Home() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="bg-gray-800/30 py-16 sm:py-20 lg:py-24">
-        <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16">
-          <div className={`text-center mb-12 transition-all duration-1000 ${visibleSections.has('contact') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+      <section id="contact" className="bg-[#1a1a1a]/30 py-12 sm:py-16 lg:py-20 xl:py-24">
+        <div className="w-full px-3 sm:px-6 lg:px-12 xl:px-16">
+          <div className={`text-center mb-8 sm:mb-12 px-2 transition-all duration-1000 ${visibleSections.has('contact') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
               Get In Touch
             </h2>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-[#e5e5e5] max-w-3xl mx-auto leading-relaxed">
               Have questions? We&apos;re here to help. Reach out to us through any of the channels below.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
-            <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 text-center hover-lift hover-glow transition-all duration-500 ${visibleSections.has('contact') ? 'animate-slide-in-left stagger-1 opacity-100' : 'opacity-100'}`}>
+            <Card glow className={`text-center ${visibleSections.has('contact') ? 'animate-slide-in-left stagger-1 opacity-100' : 'opacity-100'}`}>
               <CardHeader>
-                <div className="w-16 h-16 bg-[#0b3b5a]/20 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300">
-                  <Mail className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <div className="w-16 h-16 bg-[#f5c518]/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300 border border-[#f5c518]/20">
+                  <Mail className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 </div>
                 <CardTitle className="text-xl text-white">Email Us</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300">support@staytrack.com</p>
-                <p className="text-gray-300 mt-2">info@staytrack.com</p>
+                <p className="text-[#e5e5e5]">support@staytrack.com</p>
+                <p className="text-[#e5e5e5] mt-2">info@staytrack.com</p>
               </CardContent>
             </Card>
 
-            <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 text-center hover-lift hover-glow transition-all duration-500 ${visibleSections.has('contact') ? 'animate-scale-in stagger-2 opacity-100' : 'opacity-100'}`}>
+            <Card glow className={`text-center ${visibleSections.has('contact') ? 'animate-scale-in stagger-2 opacity-100' : 'opacity-100'}`}>
               <CardHeader>
-                <div className="w-16 h-16 bg-[#0b3b5a]/20 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300">
-                  <Phone className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <div className="w-16 h-16 bg-[#f5c518]/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300 border border-[#f5c518]/20">
+                  <Phone className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 </div>
                 <CardTitle className="text-xl text-white">Call Us</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300">+91 1800-XXX-XXXX</p>
-                <p className="text-gray-300 mt-2">Mon - Fri, 9 AM - 6 PM IST</p>
+                <p className="text-[#e5e5e5]">+91 1800-XXX-XXXX</p>
+                <p className="text-[#e5e5e5] mt-2">Mon - Fri, 9 AM - 6 PM IST</p>
               </CardContent>
             </Card>
 
-            <Card className={`bg-gray-800/80 backdrop-blur-sm border-gray-700 text-center hover-lift hover-glow transition-all duration-500 ${visibleSections.has('contact') ? 'animate-slide-in-right stagger-3 opacity-100' : 'opacity-100'}`}>
+            <Card glow className={`text-center ${visibleSections.has('contact') ? 'animate-slide-in-right stagger-3 opacity-100' : 'opacity-100'}`}>
               <CardHeader>
-                <div className="w-16 h-16 bg-[#0b3b5a]/20 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300">
-                  <MapPin className="h-8 w-8 text-[#0b3b5a] animate-pulse-slow" />
+                <div className="w-16 h-16 bg-[#f5c518]/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale transition-transform duration-300 border border-[#f5c518]/20">
+                  <MapPin className="h-8 w-8 text-[#f5c518] animate-pulse-slow" />
                 </div>
                 <CardTitle className="text-xl text-white">Visit Us</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300">123 Business Street</p>
-                <p className="text-gray-300 mt-2">Mumbai, Maharashtra 400001</p>
+                <p className="text-[#e5e5e5]">123 Business Street</p>
+                <p className="text-[#e5e5e5] mt-2">Mumbai, Maharashtra 400001</p>
               </CardContent>
             </Card>
           </div>
@@ -622,38 +745,38 @@ export default function Home() {
       </section>
 
       {/* Help/FAQ Section */}
-      <section id="help" className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-16 sm:py-20 lg:py-24">
-          <div className={`text-center mb-12 transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <HelpCircle className="h-10 w-10 text-[#0b3b5a] animate-pulse-slow" />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+      <section id="help" className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 py-12 sm:py-16 lg:py-20 xl:py-24">
+          <div className={`text-center mb-8 sm:mb-12 px-2 transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <HelpCircle className="h-8 w-8 sm:h-10 sm:w-10 text-[#f5c518] animate-pulse-slow" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
               Help Center
             </h2>
           </div>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Find answers to common questions and get help when you need it
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className={`max-w-2xl mx-auto mb-12 transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
+        <div className={`max-w-2xl mx-auto mb-8 sm:mb-12 px-2 transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-[#737373]" />
             <input
               type="text"
               placeholder="Search for questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-gray-800/80 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b3b5a] focus:border-transparent transition-all duration-300"
+              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 bg-[#1a1a1a] border border-[#333333] rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#f5c518] focus:border-transparent transition-all duration-300"
             />
           </div>
         </div>
 
         {/* FAQ Categories */}
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4 px-2">
           {/* Getting Started */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-1 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -664,16 +787,16 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Zap className="h-6 w-6 text-[#0b3b5a]" />
+                  <Zap className="h-6 w-6 text-[#f5c518]" />
                   Getting Started
                 </h3>
                 {openCategories.has('getting-started') ? (
-                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                  <ChevronUp className="h-6 w-6 text-[#f5c518] flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-6 w-6 text-[#a1a1a1] flex-shrink-0" />
                 )}
               </button>
               {openCategories.has('getting-started') && (
@@ -700,22 +823,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -728,7 +851,7 @@ export default function Home() {
 
           {/* Property Management */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-2 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -739,10 +862,10 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Building2 className="h-6 w-6 text-[#0b3b5a]" />
+                  <Building2 className="h-6 w-6 text-[#f5c518]" />
                   Property Management
                 </h3>
                 {openCategories.has('property-management') ? (
@@ -775,22 +898,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -803,7 +926,7 @@ export default function Home() {
 
           {/* Billing & Payments */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-3 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -814,16 +937,16 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <CreditCard className="h-6 w-6 text-[#0b3b5a]" />
+                  <CreditCard className="h-6 w-6 text-[#f5c518]" />
                   Billing & Payments
                 </h3>
                 {openCategories.has('billing-payments') ? (
-                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                  <ChevronUp className="h-6 w-6 text-[#f5c518] flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-6 w-6 text-[#a1a1a1] flex-shrink-0" />
                 )}
               </button>
               {openCategories.has('billing-payments') && (
@@ -854,22 +977,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -882,7 +1005,7 @@ export default function Home() {
 
           {/* Tenant Management */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-4 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -893,16 +1016,16 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Users className="h-6 w-6 text-[#0b3b5a]" />
+                  <Users className="h-6 w-6 text-[#f5c518]" />
                   Tenant Management
                 </h3>
                 {openCategories.has('tenant-management') ? (
-                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                  <ChevronUp className="h-6 w-6 text-[#f5c518] flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-6 w-6 text-[#a1a1a1] flex-shrink-0" />
                 )}
               </button>
               {openCategories.has('tenant-management') && (
@@ -929,22 +1052,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -957,7 +1080,7 @@ export default function Home() {
 
           {/* Maintenance */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-5 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -968,16 +1091,16 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Wrench className="h-6 w-6 text-[#0b3b5a]" />
+                  <Wrench className="h-6 w-6 text-[#f5c518]" />
                   Maintenance Requests
                 </h3>
                 {openCategories.has('maintenance') ? (
-                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                  <ChevronUp className="h-6 w-6 text-[#f5c518] flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-6 w-6 text-[#a1a1a1] flex-shrink-0" />
                 )}
               </button>
               {openCategories.has('maintenance') && (
@@ -1000,22 +1123,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -1028,7 +1151,7 @@ export default function Home() {
 
           {/* General */}
           <div className={`transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up stagger-6 opacity-100' : 'opacity-100'}`}>
-            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700">
+            <Card>
               <button
                 onClick={() => {
                   const newSet = new Set(openCategories);
@@ -1039,16 +1162,16 @@ export default function Home() {
                   }
                   setOpenCategories(newSet);
                 }}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                className="w-full p-4 flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
               >
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <HelpCircle className="h-6 w-6 text-[#0b3b5a]" />
+                  <HelpCircle className="h-6 w-6 text-[#f5c518]" />
                   General Questions
                 </h3>
                 {openCategories.has('general') ? (
-                  <ChevronUp className="h-6 w-6 text-[#0b3b5a] flex-shrink-0" />
+                  <ChevronUp className="h-6 w-6 text-[#f5c518] flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-6 w-6 text-[#a1a1a1] flex-shrink-0" />
                 )}
               </button>
               {openCategories.has('general') && (
@@ -1079,22 +1202,22 @@ export default function Home() {
                 return (
                   <Card 
                     key={index}
-                    className="bg-gray-800/80 backdrop-blur-sm border-gray-700 hover-lift transition-all duration-300"
+                    hover
                   >
                     <button
                       onClick={() => setOpenFAQ(openFAQ === faqId ? null : faqId)}
-                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg"
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-[#222222] transition-colors rounded-lg"
                     >
                       <span className="text-white font-semibold pr-4">{faq.q}</span>
                       {openFAQ === faqId ? (
-                        <ChevronUp className="h-5 w-5 text-[#0b3b5a] flex-shrink-0" />
+                        <ChevronUp className="h-5 w-5 text-[#f5c518] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="h-5 w-5 text-[#a1a1a1] flex-shrink-0" />
                       )}
                     </button>
                     {openFAQ === faqId && (
                       <div className="px-4 pb-4 animate-slide-in-up">
-                        <p className="text-gray-300 leading-relaxed">{faq.a}</p>
+                        <p className="text-[#e5e5e5] leading-relaxed">{faq.a}</p>
                       </div>
                     )}
                   </Card>
@@ -1108,16 +1231,16 @@ export default function Home() {
 
         {/* Still Need Help */}
         <div className={`max-w-2xl mx-auto mt-16 text-center transition-all duration-1000 ${visibleSections.has('help') ? 'animate-slide-in-up opacity-100' : 'opacity-100'}`}>
-          <Card className="bg-gradient-to-r from-[#0b3b5a]/20 to-[#5c9fc9]/20 border-[#0b3b5a]">
+          <Card glow className="border-[#f5c518]/30">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">Still Need Help?</h3>
-              <p className="text-gray-300 mb-6">
+              <p className="text-[#e5e5e5] mb-6">
                 Can&apos;t find what you&apos;re looking for? Our support team is here to help you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   onClick={() => scrollToSection('contact')}
-                  className="bg-[#0b3b5a] hover:bg-[#0a2f43] text-white hover-glow"
+                  magnetic
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   Contact Support
@@ -1125,7 +1248,7 @@ export default function Home() {
                 <Link href="/register">
                   <Button 
                     variant="outline"
-                    className="border-[#0b3b5a] text-[#0b3b5a] hover:bg-[#0b3b5a] hover:text-white"
+                    magnetic
                   >
                     Get Started
                   </Button>
@@ -1137,51 +1260,51 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800">
-        <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+      <footer className="bg-[#0d0d0d] border-t border-[#222222]">
+        <div className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 py-8 sm:py-10 lg:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <div className="sm:col-span-2">
               <div className="mb-6">
-                <StayTrackLogo size={32} color="#ffffff" textColor="#ffffff" showText={true} />
+                <StayTrackLogo size={32} color="#f5c518" textColor="#ffffff" showText={true} />
               </div>
-              <p className="text-gray-300 mb-6 max-w-md">
+              <p className="text-[#e5e5e5] mb-6 max-w-md">
                 StayTrack is a modern PG management system designed to streamline property operations, 
                 tenant management, and financial tracking for accommodation providers.
               </p>
               <div className="flex space-x-4">
-                <div className="w-10 h-10 bg-[#0b3b5a] rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
-                  <Globe className="h-5 w-5" />
+                <div className="w-10 h-10 bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:bg-[#f5c518]/20 transition-all duration-300">
+                  <Globe className="h-5 w-5 text-[#f5c518]" />
                 </div>
-                <div className="w-10 h-10 bg-[#5c9fc9] rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
-                  <Zap className="h-5 w-5" />
+                <div className="w-10 h-10 bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 hover:bg-[#f5c518]/20 transition-all duration-300">
+                  <Zap className="h-5 w-5 text-[#f5c518]" />
                 </div>
               </div>
             </div>
             
             <div>
               <h4 className="text-lg font-semibold text-white mb-4">Features</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li>Property Management</li>
-                <li>Tenant Management</li>
-                <li>Billing & Payments</li>
-                <li>Maintenance Requests</li>
-                <li>Analytics & Reports</li>
+              <ul className="space-y-2 text-[#a1a1a1] hover:*:text-[#f5c518] transition-colors">
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Property Management</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Tenant Management</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Billing & Payments</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Maintenance Requests</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Analytics & Reports</li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-lg font-semibold text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li>Help Center</li>
-                <li>Documentation</li>
-                <li>Contact Us</li>
-                <li>Privacy Policy</li>
-                <li>Terms of Service</li>
+              <ul className="space-y-2 text-[#a1a1a1] hover:*:text-[#f5c518] transition-colors">
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Help Center</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Documentation</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Contact Us</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Privacy Policy</li>
+                <li className="hover:translate-x-1 transition-transform cursor-pointer">Terms of Service</li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+          <div className="border-t border-[#222222] mt-12 pt-8 text-center text-[#737373]">
             <p>&copy; 2024 StayTrack. All rights reserved.</p>
           </div>
         </div>

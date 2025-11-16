@@ -13,22 +13,27 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className="flex h-screen bg-[#0d0d0d]">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0 bg-gray-900">
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0 bg-[#0d0d0d]">
         <Topbar />
         <main 
           id="main-content"
-          className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-4 sm:p-6"
+          className="flex-1 overflow-x-hidden overflow-y-auto bg-[#0d0d0d] p-4 sm:p-6 relative"
           tabIndex={-1}
         >
-          <Suspense fallback={<Loading text="Loading..." />}>
-            {children}
-          </Suspense>
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+          
+          <div className="relative z-10">
+            <Suspense fallback={<Loading text="Loading..." />}>
+              {children}
+            </Suspense>
+          </div>
         </main>
       </div>
       
-      {/* Toast Container */}
+      {/* Toast Container with premium styling */}
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -41,6 +46,8 @@ export function MainLayout({ children }: MainLayoutProps) {
         pauseOnHover
         theme="dark"
         className="toast-container"
+        toastClassName="bg-[#1a1a1a] border border-[#333333] text-white shadow-xl"
+        progressClassName="bg-[#f5c518]"
       />
     </div>
   );
