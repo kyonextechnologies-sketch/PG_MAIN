@@ -14,6 +14,7 @@ import {
   deleteAllUserRefreshTokens,
 } from '../utils/auth';
 import { sendEmail } from '../utils/email';
+import { validateVerificationToken } from '../services/otp.service';
 
 /**
  * @swagger
@@ -47,9 +48,35 @@ import { sendEmail } from '../utils/email';
  *         description: User registered successfully
  */
 export const register = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { email, password, name, role } = req.body;
+  const { email, password, name, role, phone, phoneVerificationToken } = req.body;
 
   const normalizedEmail = email.toLowerCase().trim();
+
+  // For OWNER role, validate phone verification if phone is provided
+  let phoneValidated = false;
+  if (role === 'OWNER' && phone) {
+    if (!phoneVerificationToken) {
+      throw new AppError('Phone verification is required. Please verify your phone number with OTP first.', 400);
+    }
+
+    // Validate the phoneVerificationToken against database
+    try {
+      const validation = await validateVerificationToken(phone, phoneVerificationToken);
+      phoneValidated = validation.valid;
+      console.log('✅ Phone verification token validated for:', phone);
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      throw error; // Re-throw the validation error
+    }
+  }
+
+  // Log registration attempt
+  console.log('📝 Registration request:', { 
+    email: normalizedEmail, 
+    role, 
+    phone: phone ? phone.substring(0, 6) + '****' : 'not provided',
+    phoneVerified: phoneValidated
+  });
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
@@ -60,10 +87,21 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
     throw new AppError('User with this email already exists', 400);
   }
 
+  // If phone provided, check if it's already registered
+  if (phone) {
+    const existingPhone = await prisma.user.findFirst({
+      where: { phone },
+    });
+
+    if (existingPhone) {
+      throw new AppError('This phone number is already registered', 400);
+    }
+  }
+
   // Hash password
   const hashedPassword = await hashPassword(password);
 
-  console.log('Registering user:', { email: normalizedEmail, role });
+  console.log('Registering user:', { email: normalizedEmail, role, phone: phone ? '***' : null });
 
   // Create user
   const user = await prisma.user.create({
@@ -72,16 +110,31 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
       password: hashedPassword,
       name,
       role,
+      phone: phone || null,
+      phoneVerified: phoneValidated, // Use validated status from token check
+      phoneVerifiedAt: phoneValidated ? new Date() : null,
     },
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
+      phone: true,
+      phoneVerified: true,
       isActive: true,
       createdAt: true,
     },
   });
+
+  // If owner, create verification record
+  if (role === 'OWNER') {
+    await prisma.ownerVerification.create({
+      data: {
+        ownerId: user.id,
+        verificationStatus: 'PENDING',
+      },
+    });
+  }
 
   res.status(201).json({
     success: true,

@@ -6,7 +6,7 @@ import { AppError } from '../middleware/errorHandler';
 
 // Ensure upload directories exist
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
-const directories = ['kyc', 'meter-images', 'maintenance'];
+const directories = ['kyc', 'meter-images', 'maintenance', 'legal-documents'];
 
 directories.forEach((dir) => {
   const fullPath = path.join(uploadDir, dir);
@@ -86,8 +86,9 @@ export const deleteFile = (filePath: string): void => {
 
 // Get file URL
 export const getFileUrl = (filePath: string): string => {
-  const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-  return `${baseUrl}/${filePath}`;
+  const baseUrl = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const normalizedPath = filePath.replace(/\\/g, '/').replace(/^\.?\/*/, '');
+  return `${baseUrl}/${normalizedPath}`;
 };
 
 // Validate file size

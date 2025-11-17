@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import routes from './routes';
@@ -10,11 +12,25 @@ import { rateLimiter } from './middleware/rateLimiter';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import path from 'path';
+import { setSocketIO } from './services/notification.service';
+import { verifyAccessToken } from './utils/auth';
 
 // Load environment variables
 dotenv.config();
 
 const app: Application = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO with CORS
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+});
+
 const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';
 
@@ -234,8 +250,61 @@ app.use((_req: Request, res: Response) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// ===== Socket.IO Connection Handling =====
+
+// Set Socket.IO instance for notification service
+setSocketIO(io);
+
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    console.log('❌ Socket connection rejected: No token provided');
+    return next(new Error('Authentication required'));
+  }
+
+  try {
+    const decoded = verifyAccessToken(token);
+    (socket as any).user = decoded;
+    console.log(`✅ Socket authenticated: ${decoded.email} (${decoded.id})`);
+    next();
+  } catch (error) {
+    console.log('❌ Socket connection rejected: Invalid token');
+    return next(new Error('Invalid token'));
+  }
+});
+
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  const user = (socket as any).user;
+  console.log(`🔌 New socket connection: ${user.email} (${socket.id})`);
+
+  // Join user-specific room
+  socket.join(`user:${user.id}`);
+  console.log(`👤 User ${user.email} joined room: user:${user.id}`);
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log(`🔌 Socket disconnected: ${user.email} (${socket.id})`);
+  });
+
+  // Handle notification read acknowledgment
+  socket.on('notification:read', async (notificationId: string) => {
+    console.log(`✅ Notification ${notificationId} marked as read by ${user.email}`);
+    // You could emit back to confirm
+    socket.emit('notification:read:ack', { notificationId });
+  });
+
+  // Send connection success
+  socket.emit('connected', {
+    message: 'Connected to notification server',
+    userId: user.id,
+  });
+});
+
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -244,6 +313,7 @@ app.listen(PORT, () => {
   console.log(`   - CORS_ORIGIN env: ${process.env.CORS_ORIGIN || 'NOT SET'}`);
   console.log(`   - Credentials: enabled`);
   console.log(`   - Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS`);
+  console.log(`🔌 WebSocket server initialized`);
 });
 
 export default app;

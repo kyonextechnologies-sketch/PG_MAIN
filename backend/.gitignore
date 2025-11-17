@@ -41,3 +41,6 @@ coverage/
 # Prisma
 prisma/migrations/
 
+# Firebase
+firebase-service-account.json
+

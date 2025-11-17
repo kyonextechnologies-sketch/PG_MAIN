@@ -50,10 +50,20 @@ export default function LoginPage() {
 
       // Get session to determine redirect
       const session = await getSession();
-      if (session?.user?.role === 'OWNER') {
+      console.log('✅ Login successful - User role:', session?.user?.role);
+      
+      if (session?.user?.role === 'ADMIN') {
+        console.log('🔐 Admin login - Redirecting to admin portal');
+        router.push('/admin');
+      } else if (session?.user?.role === 'OWNER') {
+        console.log('👤 Owner login - Redirecting to owner dashboard');
         router.push('/owner/dashboard');
       } else if (session?.user?.role === 'TENANT') {
+        console.log('🏠 Tenant login - Redirecting to tenant dashboard');
         router.push('/tenant/dashboard');
+      } else {
+        console.error('❌ Unknown role:', session?.user?.role);
+        setError('Invalid user role. Please contact support.');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -63,7 +73,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50" suppressHydrationWarning>
+    <div className="min-h-screen relative overflow-hidden bg-[#0d0d0d]" suppressHydrationWarning>
       <BackgroundElements variant="login" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -83,11 +93,11 @@ export default function LoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <StayTrackLogo size={48} color="rgb(11, 59, 90)" showText={true} />
+                <StayTrackLogo size={48} color="#f5c518" showText={true} />
               </motion.div>
               
               <motion.h2 
-                className="text-3xl lg:text-4xl font-bold text-gray-900"
+                className="text-3xl lg:text-4xl font-bold text-white"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
@@ -96,7 +106,7 @@ export default function LoginPage() {
               </motion.h2>
               
               <motion.p 
-                className="text-lg text-gray-600 max-w-md mx-auto lg:mx-0"
+                className="text-lg text-gray-400 max-w-md mx-auto lg:mx-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
@@ -120,14 +130,14 @@ export default function LoginPage() {
               ].map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center space-x-3 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20"
+                  className="flex items-center space-x-3 p-3 bg-[#1a1a1a]/80 backdrop-blur-sm rounded-xl border border-[#333333] hover:border-[#f5c518]/50 transition-all duration-300"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
                   whileHover={{ scale: 1.05, x: 5 }}
                 >
-                  <feature.icon className="w-5 h-5 text-[#0b3b5a]" />
-                  <span className="text-sm font-medium text-gray-700">{feature.text}</span>
+                  <feature.icon className="w-5 h-5 text-[#f5c518]" />
+                  <span className="text-sm font-medium text-white">{feature.text}</span>
                 </motion.div>
               ))}
             </motion.div>
@@ -141,18 +151,18 @@ export default function LoginPage() {
             className="flex justify-center"
             suppressHydrationWarning
           >
-            <Card className="w-full max-w-md bg-white/80 backdrop-blur-md border-0 shadow-2xl">
+            <Card className="w-full max-w-md glass-morphism border border-[#333333] shadow-2xl shadow-[#f5c518]/10">
               <CardHeader className="text-center pb-8">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="w-16 h-16 bg-[#0b3b5a] rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-gradient-to-br from-[#f5c518] to-[#ffd000] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#f5c518]/30"
                 >
-                  <Lock className="w-8 h-8 text-white" />
+                  <Lock className="w-8 h-8 text-[#0d0d0d]" />
                 </motion.div>
-                <CardTitle className="text-2xl font-bold text-gray-900">Sign In</CardTitle>
-                <CardDescription className="text-black dark:text-black">
+                <CardTitle className="text-2xl font-bold text-white">Sign In</CardTitle>
+                <CardDescription className="text-gray-400">
                   Enter your credentials to access your account
                 </CardDescription>
               </CardHeader>
@@ -176,15 +186,15 @@ export default function LoginPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.6 }}
                   >
-                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-300">Email Address</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                       <Input
                         id="email"
                         type="email"
                         placeholder="Enter your email"
                         {...register('email')}
-                        className={`pl-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.email ? 'border-red-500' : ''}`}
+                        className={`pl-10 h-12 bg-[#1a1a1a] border-[#333333] text-white placeholder:text-gray-500 focus:border-[#f5c518] focus:ring-[#f5c518] ${errors.email ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.email && (
@@ -198,15 +208,15 @@ export default function LoginPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.7 }}
                   >
-                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                    <Label htmlFor="password" className="text-sm font-medium text-gray-300">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                       <Input
                         id="password"
                         type="password"
                         placeholder="Enter your password"
                         {...register('password')}
-                        className={`pl-10 pr-10 h-12 border-gray-200 focus:border-[#0b3b5a] focus:ring-[#0b3b5a] ${errors.password ? 'border-red-500' : ''}`}
+                        className={`pl-10 pr-10 h-12 bg-[#1a1a1a] border-[#333333] text-white placeholder:text-gray-500 focus:border-[#f5c518] focus:ring-[#f5c518] ${errors.password ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {errors.password && (
@@ -221,14 +231,14 @@ export default function LoginPage() {
                     transition={{ duration: 0.4, delay: 0.75 }}
                   >
                     <label className="flex items-center space-x-2">
-                      <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
-                      <span className="text-sm text-gray-600">Remember me</span>
+                      <input type="checkbox" className="w-4 h-4 rounded border-[#333333] bg-[#1a1a1a] checked:bg-[#f5c518] checked:border-[#f5c518]" />
+                      <span className="text-sm text-gray-400">Remember me</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsForgotPasswordOpen(true)}
                       suppressHydrationWarning={true}
-                      className="text-sm text-[#0b3b5a] hover:text-[#5c9fc9] font-medium transition-colors"
+                      className="text-sm text-[#f5c518] hover:text-[#ffd000] font-medium transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -241,9 +251,11 @@ export default function LoginPage() {
                   >
                     <Button 
                       type="submit" 
-                      className="w-full h-12 bg-[#0b3b5a] hover:bg-[#0a2f43] text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50" 
+                      className="w-full h-12 bg-gradient-to-r from-[#f5c518] to-[#ffd000] hover:from-[#ffd000] hover:to-[#f5c518] text-[#0d0d0d] font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#f5c518]/50 disabled:opacity-50" 
                       disabled={isLoading}
                       suppressHydrationWarning={true}
+                      magnetic
+                      showRipple
                     >
                       {isLoading ? (
                         <div className="flex items-center space-x-2">
@@ -266,9 +278,9 @@ export default function LoginPage() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.4, delay: 0.9 }}
                 >
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-400">
                     Don&apos;t have an account?{' '}
-                    <Link href="/register" className="text-[#0b3b5a] hover:text-[#5c9fc9] font-medium transition-colors">
+                    <Link href="/register" className="text-[#f5c518] hover:text-[#ffd000] font-medium transition-colors">
                       Create Owner Account
                     </Link>
                   </p>

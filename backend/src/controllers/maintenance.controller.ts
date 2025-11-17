@@ -4,6 +4,16 @@ import prisma from '../config/database';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { generatePaginatedResponse } from '../utils/helpers';
 import { sendEmail } from '../utils/email';
+import {
+  notifyOwnerOfMaintenanceRequest,
+  notifyTenantOwnerAcknowledged,
+  notifyTenantOfMaintenanceUpdate,
+} from '../services/notification.service';
+import {
+  scheduleMaintenanceReminders,
+  cancelMaintenanceReminders,
+} from '../services/queue.service';
+import { logMaintenanceEvent } from '../middleware/auditLog';
 
 export const createTicket = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) {
@@ -47,6 +57,18 @@ export const createTicket = asyncHandler(async (req: AuthRequest, res: Response)
     throw new AppError('Property not found', 404);
   }
 
+  const ticketPriority = priority || 'MEDIUM';
+
+  // Create initial timeline entry
+  const initialTimeline = [
+    {
+      actor: tenant.name,
+      action: 'CREATED',
+      text: 'Maintenance request created',
+      timestamp: new Date().toISOString(),
+    },
+  ];
+
   const ticket = await prisma.maintenanceTicket.create({
     data: {
       ownerId: tenant.ownerId,
@@ -54,15 +76,41 @@ export const createTicket = asyncHandler(async (req: AuthRequest, res: Response)
       propertyId: ticketPropertyId,
       title,
       description,
-      priority: priority || 'MEDIUM',
+      priority: ticketPriority,
       category,
       images: images || [],
       status: 'OPEN',
+      timeline: initialTimeline,
     },
     include: {
       tenant: { select: { id: true, name: true, email: true } },
       property: { select: { id: true, name: true } },
+      owner: { select: { id: true, name: true } },
     },
+  });
+
+  // Send notification to owner
+  await notifyOwnerOfMaintenanceRequest(
+    ticket.id,
+    tenant.ownerId,
+    tenant.name,
+    title,
+    ticketPriority
+  );
+
+  // Schedule reminders
+  await scheduleMaintenanceReminders(
+    ticket.id,
+    tenant.ownerId,
+    tenant.id,
+    title,
+    ticketPriority as any
+  );
+
+  // Log the event
+  await logMaintenanceEvent(req.user.id, 'TICKET_CREATED', ticket.id, req, {
+    priority: ticketPriority,
+    category,
   });
 
   res.status(201).json({
@@ -228,13 +276,48 @@ export const updateTicket = asyncHandler(async (req: AuthRequest, res: Response)
     return;
   }
 
+  // Build update message for timeline
+  const changes: string[] = [];
+  if (status) changes.push(`Status: ${status}`);
+  if (priority) changes.push(`Priority: ${priority}`);
+  if (category) changes.push(`Category: ${category}`);
+  if (assignedTo) changes.push(`Assigned to: ${assignedTo}`);
+
+  // Get existing timeline and add new entry
+  const currentTimeline = (ticket.timeline as any[]) || [];
+  const newTimelineEntry = {
+    actor: 'Owner',
+    action: 'UPDATED',
+    text: `Updated: ${changes.join(', ')}`,
+    timestamp: new Date().toISOString(),
+  };
+  updateData.timeline = [...currentTimeline, newTimelineEntry];
+
+  // Cancel reminders if resolved or closed
+  if (updateData.status === 'RESOLVED' || updateData.status === 'CLOSED') {
+    await cancelMaintenanceReminders(id);
+  }
+
   const updatedTicket = await prisma.maintenanceTicket.update({
     where: { id },
     data: updateData,
     include: {
-      tenant: { select: { id: true, name: true, email: true } },
+      tenant: { select: { id: true, name: true, email: true, userId: true } },
       property: { select: { id: true, name: true } },
     },
+  });
+
+  // Send notification to tenant
+  await notifyTenantOfMaintenanceUpdate(
+    id,
+    updatedTicket.tenant.userId,
+    ticket.title,
+    changes.join(', ')
+  );
+
+  // Log the event
+  await logMaintenanceEvent(req.user.id, 'TICKET_UPDATED', id, req, {
+    changes: changes.join(', '),
   });
 
   // Send email notification
@@ -329,6 +412,85 @@ export const getTicketStats = asyncHandler(async (req: AuthRequest, res: Respons
       byPriority: priorityStats,
       byCategory: categoryStats,
     },
+  });
+});
+
+/**
+ * Owner acknowledges ("Got It") a maintenance request
+ */
+export const acknowledgeTicket = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'OWNER') {
+    throw new AppError('Only owners can acknowledge tickets', 403);
+  }
+
+  const { id } = req.params;
+
+  const ticket = await prisma.maintenanceTicket.findFirst({
+    where: { id, ownerId: req.user.id },
+    include: {
+      tenant: {
+        select: { id: true, name: true, email: true, userId: true },
+      },
+    },
+  });
+
+  if (!ticket) {
+    throw new AppError('Ticket not found', 404);
+  }
+
+  if (ticket.gotItByOwner) {
+    res.json({
+      success: true,
+      message: 'Ticket already acknowledged',
+      data: ticket,
+    });
+    return;
+  }
+
+  // Update timeline
+  const currentTimeline = (ticket.timeline as any[]) || [];
+  const newTimelineEntry = {
+    actor: 'Owner',
+    action: 'ACKNOWLEDGED',
+    text: 'Owner has seen this request',
+    timestamp: new Date().toISOString(),
+  };
+
+  // Update ticket with Got It status
+  const updatedTicket = await prisma.maintenanceTicket.update({
+    where: { id },
+    data: {
+      gotItByOwner: true,
+      gotItAt: new Date(),
+      timeline: [...currentTimeline, newTimelineEntry],
+    },
+    include: {
+      tenant: {
+        select: { id: true, name: true, email: true, userId: true },
+      },
+      property: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  // Notify tenant that owner has seen the request
+  await notifyTenantOwnerAcknowledged(
+    id,
+    updatedTicket.tenant.userId,
+    ticket.title
+  );
+
+  // Cancel periodic reminders (they'll be replaced with daily reminders)
+  await cancelMaintenanceReminders(id);
+
+  // Log the event
+  await logMaintenanceEvent(req.user.id, 'TICKET_GOT_IT', id, req);
+
+  res.json({
+    success: true,
+    message: 'Ticket acknowledged successfully',
+    data: updatedTicket,
   });
 });
 

@@ -285,17 +285,18 @@ export default function OwnerDashboard() {
           >
             <Link href="/owner/properties">
               <Card 
-                className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-800/40 dark:hover:to-blue-700/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl border-0"
+                glow
+                className="cursor-pointer"
                 onClick={() => handleQuickAction('Properties Management')}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-blue-500 rounded-xl shadow-md">
-                      <Building className="h-8 w-8 text-white" />
+                    <div className="p-3 bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-xl shadow-md">
+                      <Building className="h-8 w-8 text-[#f5c518]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-blue-900 dark:text-blue-100 text-lg">Properties</h3>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Manage properties</p>
+                      <h3 className="font-bold text-white text-lg">Properties</h3>
+                      <p className="text-sm text-[#a1a1a1] font-medium">Manage properties</p>
                     </div>
                   </div>
                 </CardContent>
@@ -304,17 +305,18 @@ export default function OwnerDashboard() {
 
             <Link href="/owner/tenants">
               <Card 
-                className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl border-0"
+                glow
+                className="cursor-pointer"
                 onClick={() => handleQuickAction('Tenants Management')}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-green-500 rounded-xl shadow-md">
-                      <Users className="h-8 w-8 text-white" />
+                    <div className="p-3 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl shadow-md">
+                      <Users className="h-8 w-8 text-[#10b981]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-green-900 dark:text-green-100 text-lg">Tenants</h3>
-                      <p className="text-sm text-green-700 dark:text-green-300 font-medium">Manage tenants</p>
+                      <h3 className="font-bold text-white text-lg">Tenants</h3>
+                      <p className="text-sm text-[#a1a1a1] font-medium">Manage tenants</p>
                     </div>
                   </div>
                 </CardContent>
@@ -323,17 +325,18 @@ export default function OwnerDashboard() {
 
             <Link href="/owner/billing">
               <Card 
-                className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-800/40 dark:hover:to-purple-700/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl border-0"
+                glow
+                className="cursor-pointer"
                 onClick={() => handleQuickAction('Billing Management')}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-purple-500 rounded-xl shadow-md">
-                      <CreditCard className="h-8 w-8 text-white" />
+                    <div className="p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded-xl shadow-md">
+                      <CreditCard className="h-8 w-8 text-[#f59e0b]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-purple-900 dark:text-purple-100 text-lg">Billing</h3>
-                      <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Manage invoices</p>
+                      <h3 className="font-bold text-white text-lg">Billing</h3>
+                      <p className="text-sm text-[#a1a1a1] font-medium">Manage invoices</p>
                     </div>
                   </div>
                 </CardContent>
@@ -342,17 +345,18 @@ export default function OwnerDashboard() {
 
             <Link href="/owner/reports">
               <Card 
-                className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-800/40 dark:hover:to-orange-700/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl border-0"
+                glow
+                className="cursor-pointer"
                 onClick={() => handleQuickAction('Reports & Analytics')}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-orange-500 rounded-xl shadow-md">
-                      <TrendingUp className="h-8 w-8 text-white" />
+                    <div className="p-3 bg-[#3b82f6]/10 border border-[#3b82f6]/20 rounded-xl shadow-md">
+                      <TrendingUp className="h-8 w-8 text-[#3b82f6]" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-orange-900 dark:text-orange-100 text-lg">Reports</h3>
-                      <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">View analytics</p>
+                      <h3 className="font-bold text-white text-lg">Reports</h3>
+                      <p className="text-sm text-[#a1a1a1] font-medium">View analytics</p>
                     </div>
                   </div>
                 </CardContent>
@@ -368,10 +372,10 @@ export default function OwnerDashboard() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Recent Activity */}
-            <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-t-lg">
-                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Recent Activity</CardTitle>
-                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-medium">Latest updates from your properties</CardDescription>
+            <Card glow>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg font-bold text-white">Recent Activity</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-[#a1a1a1] font-medium">Latest updates from your properties</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -432,10 +436,10 @@ export default function OwnerDashboard() {
             </Card>
 
             {/* Upcoming Dues */}
-            <Card className="bg-white dark:bg-gray-800 shadow-xl border-0 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 rounded-t-lg">
-                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Upcoming Dues</CardTitle>
-                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-medium">Tenants with pending payments</CardDescription>
+            <Card glow>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg font-bold text-white">Upcoming Dues</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-[#a1a1a1] font-medium">Tenants with pending payments</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">

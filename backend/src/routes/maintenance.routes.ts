@@ -6,6 +6,7 @@ import {
   updateTicket,
   deleteTicket,
   getTicketStats,
+  acknowledgeTicket,
 } from '../controllers/maintenance.controller';
 import { authenticate } from '../middleware/auth';
 import { isOwner } from '../middleware/rbac';
@@ -21,6 +22,7 @@ router.get('/', validatePagination, getAllTickets);
 router.get('/stats', isOwner, getTicketStats);
 router.get('/:id', getTicketById);
 router.put('/:id', updateMaintenanceTicketValidator, updateTicket);
+router.post('/:id/got-it', isOwner, acknowledgeTicket);
 router.delete('/:id', deleteTicket);
 
 export default router;

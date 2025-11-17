@@ -3,7 +3,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from './providers';
 import { ThemeScript } from './theme-script';
-import { SkipToMain } from '@/components/common/SkipToMain';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -83,7 +82,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b3b5a",
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0d0d0d",
 };
 
 export default function RootLayout({
@@ -108,7 +109,6 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SkipToMain />
         <Providers>
           {children}
         </Providers>
