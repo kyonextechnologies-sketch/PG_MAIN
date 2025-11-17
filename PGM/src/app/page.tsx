@@ -92,6 +92,8 @@ export default function Home() {
         router.push('/owner/dashboard');
       } else if (session.user?.role === 'TENANT') {
         router.push('/tenant/dashboard');
+      } else if (session.user?.role === 'ADMIN') {
+        router.push('/admin');
       }
     }
   }, [session, router, setUser, addNotification]);

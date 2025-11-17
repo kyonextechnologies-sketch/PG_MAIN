@@ -38,9 +38,12 @@ export default function MaintenancePage() {
         params.status = filter;
       }
 
-      const response = await apiClient.get('/maintenance', { params });
+      const response = await apiClient.get<{ tickets: MaintenanceTicket[] }>('/maintenance', { params });
       if (response.success) {
-        setTickets(response.data || []);
+        const data = Array.isArray(response.data)
+          ? (response.data as MaintenanceTicket[])
+          : (response.data as { tickets?: MaintenanceTicket[] })?.tickets || [];
+        setTickets(data);
       }
     } catch (error) {
       console.error('Failed to load tickets:', error);

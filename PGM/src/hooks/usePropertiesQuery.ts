@@ -63,7 +63,8 @@ export function usePropertiesQuery() {
   // Mutation for creating property
   const createMutation = useMutation({
     mutationFn: async (data: PropertyData) => {
-      const response = await apiClient.post<Property>('/properties', data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.post<Property>('/properties', payload);
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to create property');
       }
@@ -77,7 +78,8 @@ export function usePropertiesQuery() {
   // Mutation for updating property
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PropertyData }) => {
-      const response = await apiClient.put<Property>(`/properties/${id}`, data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.put<Property>(`/properties/${id}`, payload);
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to update property');
       }

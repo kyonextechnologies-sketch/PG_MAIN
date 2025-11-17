@@ -37,11 +37,14 @@ export default function PropertiesPage() {
 
   const loadProperties = async () => {
     try {
-      const response = await apiClient.get('/properties', {
+      const response = await apiClient.get<{ properties: Property[] }>('/properties', {
         params: { page: 1, limit: 100 },
       });
       if (response.success) {
-        setProperties(response.data || []);
+        const data = Array.isArray(response.data)
+          ? (response.data as Property[])
+          : (response.data as { properties?: Property[] })?.properties || [];
+        setProperties(data);
       }
     } catch (error) {
       console.error('Failed to load properties:', error);

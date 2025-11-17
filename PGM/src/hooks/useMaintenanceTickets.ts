@@ -64,7 +64,8 @@ export const useMaintenanceTickets = (): UseMaintenanceTicketsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post<MaintenanceTicket>('/maintenance', data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.post<MaintenanceTicket>('/maintenance', payload);
       if (response.success && response.data) {
         const newTicket = response.data;
         setTickets(prev => [...prev, newTicket]);
@@ -85,7 +86,8 @@ export const useMaintenanceTickets = (): UseMaintenanceTicketsReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.put<MaintenanceTicket>(`/maintenance/${id}`, data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.put<MaintenanceTicket>(`/maintenance/${id}`, payload);
       if (response.success && response.data) {
         const updatedTicket = response.data;
         setTickets(prev => prev.map(t => t.id === id ? updatedTicket : t));

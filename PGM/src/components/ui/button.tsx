@@ -44,6 +44,7 @@ export interface ButtonProps
   size?: "default" | "sm" | "lg" | "icon"
   magnetic?: boolean
   showRipple?: boolean
+  children?: React.ReactNode
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -95,7 +96,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     if (asChild) {
-      return <Slot className={cn(buttonVariants({ variant, size, className }))} {...props}>{children}</Slot>
+      const slotProps = props as React.ComponentPropsWithoutRef<'button'>;
+      return (
+        <Slot className={cn(buttonVariants({ variant, size, className }))} {...slotProps}>
+          {children}
+        </Slot>
+      );
     }
 
     return (

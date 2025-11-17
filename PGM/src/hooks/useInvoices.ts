@@ -75,7 +75,8 @@ export const useInvoices = (): UseInvoicesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post<Invoice>('/invoices', data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.post<Invoice>('/invoices', payload);
       if (response.success && response.data) {
         const newInvoice = {
           ...response.data,
@@ -99,7 +100,8 @@ export const useInvoices = (): UseInvoicesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.put<Invoice>(`/invoices/${id}`, data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.put<Invoice>(`/invoices/${id}`, payload);
       if (response.success && response.data) {
         const updatedInvoice = {
           ...response.data,

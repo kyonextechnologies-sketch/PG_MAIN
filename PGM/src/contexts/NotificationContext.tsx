@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { socketService } from '@/services/socket.service';
-import { toast } from 'react-toastify';
+import { toast, type ToastIcon } from 'react-toastify';
 
 interface Notification {
   id: string;
@@ -75,20 +75,30 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications(prev => [notification, ...prev]);
 
     // Show toast notification
-    const notificationTypeConfig = {
-      MAINTENANCE_REQUEST: { icon: '🔧', color: 'error' },
-      MAINTENANCE_REMINDER: { icon: '⏰', color: 'warning' },
-      MAINTENANCE_UPDATE: { icon: '📝', color: 'info' },
-      OWNER_ACKNOWLEDGED: { icon: '✅', color: 'success' },
-      PAYMENT_DUE: { icon: '💰', color: 'warning' },
-      PAYMENT_RECEIVED: { icon: '✅', color: 'success' },
-      SYSTEM_ALERT: { icon: '🔔', color: 'info' },
+    const createIcon = (symbol: string, label: string): ToastIcon => (
+      <span role="img" aria-label={label} className="text-lg">
+        {symbol}
+      </span>
+    );
+
+    const notificationTypeConfig: Record<
+      Notification['type'],
+      { icon: ToastIcon; color: 'error' | 'warning' | 'info' | 'success' }
+    > = {
+      MAINTENANCE_REQUEST: { icon: createIcon('🔧', 'Maintenance request'), color: 'error' },
+      MAINTENANCE_REMINDER: { icon: createIcon('⏰', 'Maintenance reminder'), color: 'warning' },
+      MAINTENANCE_UPDATE: { icon: createIcon('📝', 'Maintenance update'), color: 'info' },
+      OWNER_ACKNOWLEDGED: { icon: createIcon('✅', 'Owner acknowledged'), color: 'success' },
+      PAYMENT_DUE: { icon: createIcon('💰', 'Payment due'), color: 'warning' },
+      PAYMENT_RECEIVED: { icon: createIcon('✅', 'Payment received'), color: 'success' },
+      SYSTEM_ALERT: { icon: createIcon('🔔', 'System alert'), color: 'info' },
     };
 
-    const config = notificationTypeConfig[notification.type as keyof typeof notificationTypeConfig] || {
-      icon: '🔔',
-      color: 'info',
-    };
+    const config =
+      notificationTypeConfig[notification.type as keyof typeof notificationTypeConfig] || {
+        icon: createIcon('🔔', 'Notification'),
+        color: 'info',
+      };
 
     // Show toast based on type
     const toastMessage = (

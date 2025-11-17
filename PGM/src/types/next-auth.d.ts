@@ -7,7 +7,7 @@ declare module 'next-auth' {
       name?: string | null
       email?: string | null
       image?: string | null
-      role: 'OWNER' | 'TENANT'
+      role: 'OWNER' | 'TENANT' | 'ADMIN'
     }
   }
 
@@ -16,12 +16,12 @@ declare module 'next-auth' {
     name?: string | null
     email?: string | null
     image?: string | null
-    role: 'OWNER' | 'TENANT'
+    role: 'OWNER' | 'TENANT' | 'ADMIN'
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    role: 'OWNER' | 'TENANT'
+    role: 'OWNER' | 'TENANT' | 'ADMIN'
   }
 }

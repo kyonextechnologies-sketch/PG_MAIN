@@ -24,6 +24,10 @@ interface AuditLog {
   };
 }
 
+interface AuditLogResponse {
+  logs: AuditLog[];
+}
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,11 +39,11 @@ export default function AuditLogsPage() {
 
   const loadLogs = async () => {
     try {
-      const response = await apiClient.get('/admin/audit-logs', {
+      const response = await apiClient.get<AuditLogResponse>('/admin/audit-logs', {
         params: { page: 1, limit: 100 },
       });
       if (response.success) {
-        setLogs(response.data.logs || []);
+        setLogs(response.data?.logs || []);
       }
     } catch (error) {
       console.error('Failed to load logs:', error);

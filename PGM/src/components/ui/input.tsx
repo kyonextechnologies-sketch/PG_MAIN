@@ -1,11 +1,10 @@
 'use client';
 
 import * as React from "react"
-import { motion } from 'framer-motion'
+import { motion, HTMLMotionProps } from 'framer-motion'
 import { cn } from "@/lib/utils"
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<HTMLMotionProps<'input'>, 'ref'> {
   error?: boolean
   icon?: React.ReactNode
 }

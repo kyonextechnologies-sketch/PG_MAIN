@@ -22,6 +22,15 @@ export interface ApiRequestConfig {
   retryDelay?: number;
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  params?: Record<
+    string,
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | Array<string | number | boolean>
+  >;
 }
 
 export interface ApiClientConfig {
@@ -131,7 +140,25 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     // Ensure endpoint starts with /
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${this.config.baseURL}${normalizedEndpoint}`;
+    let url = `${this.config.baseURL}${normalizedEndpoint}`;
+
+    if (config?.params) {
+      const query = new URLSearchParams();
+      Object.entries(config.params).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+
+        if (Array.isArray(value)) {
+          value.forEach((v) => query.append(key, String(v)));
+        } else {
+          query.append(key, String(value));
+        }
+      });
+
+      const queryString = query.toString();
+      if (queryString) {
+        url += url.includes('?') ? `&${queryString}` : `?${queryString}`;
+      }
+    }
     const retries = config?.retries ?? this.config.retries;
     const retryDelay = config?.retryDelay ?? this.config.retryDelay;
 

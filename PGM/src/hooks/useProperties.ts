@@ -100,7 +100,8 @@ export const useProperties = (): UsePropertiesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post<Property>('/properties', data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.post<Property>('/properties', payload);
       if (response.success && response.data) {
         const newProperty = response.data;
         setProperties(prev => [...prev, newProperty]);
@@ -121,7 +122,8 @@ export const useProperties = (): UsePropertiesReturn => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.put<Property>(`/properties/${id}`, data);
+      const payload: Record<string, unknown> = { ...data };
+      const response = await apiClient.put<Property>(`/properties/${id}`, payload);
       if (response.success && response.data) {
         const updatedProperty = response.data;
         setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));
