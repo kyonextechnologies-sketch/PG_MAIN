@@ -259,7 +259,7 @@ export default function RoomOccupancyPage() {
       <MainLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                 <Home className="w-8 h-8 text-blue-600" />
@@ -269,8 +269,9 @@ export default function RoomOccupancyPage() {
                 Complete overview of all rooms across your properties
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
               <Button
+                fullWidth
                 onClick={() => {
                   setEditingRoom(null);
                   setShowRoomForm(true);
@@ -281,6 +282,7 @@ export default function RoomOccupancyPage() {
                 Add Room
               </Button>
               <Button
+                fullWidth
                 onClick={() => router.push('/owner/properties')}
                 variant="outline"
                 className="flex items-center gap-2"
