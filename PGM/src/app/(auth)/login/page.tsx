@@ -50,10 +50,20 @@ export default function LoginPage() {
 
       // Get session to determine redirect
       const session = await getSession();
-      if (session?.user?.role === 'OWNER') {
+      console.log('✅ Login successful - User role:', session?.user?.role);
+      
+      if (session?.user?.role === 'ADMIN') {
+        console.log('🔐 Admin login - Redirecting to admin portal');
+        router.push('/admin');
+      } else if (session?.user?.role === 'OWNER') {
+        console.log('👤 Owner login - Redirecting to owner dashboard');
         router.push('/owner/dashboard');
       } else if (session?.user?.role === 'TENANT') {
+        console.log('🏠 Tenant login - Redirecting to tenant dashboard');
         router.push('/tenant/dashboard');
+      } else {
+        console.error('❌ Unknown role:', session?.user?.role);
+        setError('Invalid user role. Please contact support.');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');

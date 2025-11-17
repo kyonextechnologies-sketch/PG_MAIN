@@ -2,14 +2,27 @@
 
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Topbar() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' });
+  };
+
+  const handleNotificationClick = () => {
+    const role = session?.user?.role?.toLowerCase();
+    if (role === 'owner') {
+      router.push('/owner/notifications');
+    } else if (role === 'tenant') {
+      router.push('/tenant/notifications');
+    } else if (role === 'admin') {
+      router.push('/admin/notifications');
+    }
   };
 
   return (
@@ -29,7 +42,8 @@ export function Topbar() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative hover:bg-[#2b2b2b] text-white"
+            onClick={handleNotificationClick}
+            className="relative hover:bg-[#2b2b2b] text-white transition-all hover:scale-110"
           >
             <Bell className="h-5 w-5" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#f5c518] rounded-full border-2 border-[#1a1a1a] animate-pulse-slow" />

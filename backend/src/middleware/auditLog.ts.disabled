@@ -1,0 +1,4 @@
+// Audit logging temporarily disabled - database migration required
+// This file has been renamed to .disabled to prevent compilation errors
+// Uncomment and rename back to auditLog.ts after database migration
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,16 +11,22 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, CheckCircle } from 'lucide-react';
+import { Building, Loader2, ArrowRight, Shield, Users, CreditCard, BarChart3, Lock, Mail, User, CheckCircle, Phone, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundElements } from '@/components/common/BackgroundElements';
 import { StayTrackLogo } from '@/components/common/StayTrackLogo';
 import { apiClient } from '@/lib/apiClient';
+import { OTPInput } from '@/components/auth/OTPInput';
 import Link from 'next/link';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [isOTPVerified, setIsOTPVerified] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [verificationToken, setVerificationToken] = useState(''); // Store token from OTP verification
   const router = useRouter();
 
   const {
@@ -34,18 +40,122 @@ export default function RegisterPage() {
     }
   });
 
+  // Clear any errors on mount to ensure fresh state
+  useEffect(() => {
+    setError('');
+    console.log('✅ Registration page loaded - Phone verification is OPTIONAL');
+  }, []);
+
+  // Handle sending OTP
+  const handleSendOTP = async () => {
+    if (!phoneNumber || phoneNumber.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    setIsSendingOTP(true);
+    setError('');
+
+    try {
+      const response = await apiClient.post('/auth/send-otp', {
+        phoneNumber: `+91${phoneNumber}`, // Add country code
+      });
+
+      if (response.success) {
+        setShowOTPInput(true);
+        setError('');
+      } else {
+        setError(response.message || 'Failed to send OTP');
+      }
+    } catch (err: unknown) {
+      console.error('OTP send error:', err);
+      setError('Failed to send OTP. Please try again.');
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  // Handle OTP verification
+  const handleVerifyOTP = async (otp: string) => {
+    try {
+      const response = await apiClient.post<{ 
+        verified: boolean; 
+        token: string;
+      }>('/auth/verify-otp', {
+        phoneNumber: `+91${phoneNumber}`,
+        otp,
+      });
+
+      if (response.success && response.data) {
+        setIsOTPVerified(true);
+        setShowOTPInput(false);
+        setVerificationToken(response.data.token); // Store the verification token
+        setError(''); // Clear any previous errors
+        console.log('✅ Phone verified! Token stored.');
+        return { success: true };
+      } else {
+        setError(response.message || 'Invalid OTP');
+        return { success: false, error: response.message || 'Invalid OTP' };
+      }
+    } catch (err: unknown) {
+      console.error('OTP verify error:', err);
+      const errorMessage = 'Failed to verify OTP. Please try again.';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Handle OTP resend
+  const handleResendOTP = async () => {
+    setError('');
+    try {
+      const response = await apiClient.post('/auth/resend-otp', {
+        phoneNumber: `+91${phoneNumber}`,
+      });
+
+      if (response.success) {
+        return { success: true };
+      } else {
+        const errorMsg = response.message || 'Failed to resend OTP';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+    } catch (err: unknown) {
+      console.error('OTP resend error:', err);
+      const errorMsg = 'Failed to resend OTP. Please try again.';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError('');
 
     try {
       // Prepare registration payload
-      const payload = {
+      const payload: {
+        email: string;
+        password: string;
+        name: string;
+        role: string;
+        phone?: string;
+        phoneVerificationToken?: string;
+      } = {
         email: data.email.trim().toLowerCase(),
         password: data.password,
         name: data.name.trim(),
         role: data.role || 'OWNER', // Default to OWNER for registration page
       };
+
+      // Add phone and verification token if verified
+      if (isOTPVerified && phoneNumber && verificationToken) {
+        payload.phone = `+91${phoneNumber}`;
+        payload.phoneVerificationToken = verificationToken;
+        console.log('📱 Including verified phone in registration');
+      } else {
+        console.log('⚠️ Phone verification skipped - registering without phone');
+      }
 
       console.log('Registering user:', { ...payload, password: '***' });
 
@@ -263,6 +373,86 @@ export default function RegisterPage() {
                       <p className="text-sm text-red-500">{errors.email.message}</p>
                     )}
                   </motion.div>
+
+                  {/* Phone Number Field with OTP Verification */}
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.75 }}
+                  >
+                    <Label htmlFor="phone" className="text-sm font-medium text-gray-300">
+                      Phone Number <span className="text-gray-500">(Optional - for OTP verification)</span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <div className="absolute left-10 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">+91</div>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="Enter 10-digit number"
+                          value={phoneNumber}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setPhoneNumber(value);
+                            setIsOTPVerified(false);
+                            setShowOTPInput(false);
+                            setVerificationToken(''); // Reset token when phone changes
+                          }}
+                          disabled={isOTPVerified}
+                          className={`pl-16 h-12 bg-[#1a1a1a] border-[#333333] text-white placeholder:text-gray-500 focus:border-[#f5c518] focus:ring-[#f5c518] ${isOTPVerified ? 'bg-[#1a1a1a]/50' : ''}`}
+                          maxLength={10}
+                        />
+                        {isOTPVerified && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {!isOTPVerified && !showOTPInput && (
+                        <Button
+                          type="button"
+                          onClick={handleSendOTP}
+                          disabled={phoneNumber.length !== 10 || isSendingOTP}
+                          className="h-12 px-6 bg-[#1a1a1a] border border-[#f5c518] text-[#f5c518] hover:bg-[#f5c518] hover:text-[#0d0d0d] transition-all"
+                        >
+                          {isSendingOTP ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Send OTP'
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {phoneNumber && phoneNumber.length !== 10 && !isOTPVerified && (
+                      <p className="text-sm text-yellow-500">Please enter a valid 10-digit phone number</p>
+                    )}
+                    {isOTPVerified && (
+                      <p className="text-sm text-green-500 flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        Phone number verified successfully!
+                      </p>
+                    )}
+                  </motion.div>
+
+                  {/* OTP Input Section */}
+                  {showOTPInput && !isOTPVerified && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <OTPInput
+                        length={6}
+                        onComplete={handleVerifyOTP}
+                        onResend={handleResendOTP}
+                      />
+                    </motion.div>
+                  )}
 
                   <motion.div 
                     className="space-y-2"

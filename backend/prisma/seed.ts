@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // Clean database
+  // Clean database (order matters due to foreign key constraints)
   await prisma.maintenanceTicket.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.invoice.deleteMany();
@@ -16,11 +16,30 @@ async function main() {
   await prisma.room.deleteMany();
   await prisma.tenantProfile.deleteMany();
   await prisma.property.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.ownerVerification.deleteMany();
+  await prisma.oTP.deleteMany();
+  await prisma.passwordReset.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();
 
-  // Hash password
+  // Hash passwords
   const hashedPassword = await bcrypt.hash('password123', 10);
+  const adminHashedPassword = await bcrypt.hash('Anshaj@2307', 10);
+
+  // Create Admin User (from requirements)
+  const admin = await prisma.user.create({
+    data: {
+      email: 'anshaj.admin@pgms.com',
+      password: adminHashedPassword,
+      name: 'Anshaj Admin',
+      role: 'ADMIN',
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Admin created');
 
   // Create Owner
   const owner = await prisma.user.create({
@@ -29,11 +48,27 @@ async function main() {
       password: hashedPassword,
       name: 'John Owner',
       role: 'OWNER',
+      phone: '+919876543210',
+      phoneVerified: true,
+      phoneVerifiedAt: new Date(),
       isActive: true,
     },
   });
 
   console.log('✅ Owner created');
+
+  // Create Owner Verification record
+  await prisma.ownerVerification.create({
+    data: {
+      userId: owner.id,
+      verificationStatus: 'VERIFIED',
+      verifiedAt: new Date(),
+      reviewedBy: admin.id,
+      notes: 'Seed data - Pre-verified owner',
+    },
+  });
+
+  console.log('✅ Owner verification created');
 
   // Create Electricity Settings
   await prisma.electricitySettings.create({
@@ -413,6 +448,7 @@ async function main() {
 
   console.log('🎉 Database seeding completed successfully!');
   console.log('\n📝 Login Credentials:');
+  console.log('Admin: anshaj.admin@pgms.com / Anshaj@2307');
   console.log('Owner: owner@pgmanagement.com / password123');
   console.log('Tenant 1: tenant1@example.com / password123');
   console.log('Tenant 2: tenant2@example.com / password123');

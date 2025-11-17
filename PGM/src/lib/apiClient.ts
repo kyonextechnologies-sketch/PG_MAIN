@@ -105,16 +105,16 @@ class ApiClient {
     return this.request<T>('GET', endpoint, undefined, config);
   }
 
-  async post<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
-    return this.request<T>('POST', endpoint, data as Record<string, unknown>, config);
+  async post<T>(endpoint: string, data?: Record<string, unknown> | FormData, config?: ApiRequestConfig) {
+    return this.request<T>('POST', endpoint, data, config);
   }
 
-  async put<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
-    return this.request<T>('PUT', endpoint, data as Record<string, unknown>, config);
+  async put<T>(endpoint: string, data?: Record<string, unknown> | FormData, config?: ApiRequestConfig) {
+    return this.request<T>('PUT', endpoint, data, config);
   }
 
-  async patch<T>(endpoint: string, data?: Record<string, unknown> | object, config?: ApiRequestConfig) {
-    return this.request<T>('PATCH', endpoint, data as Record<string, unknown>, config);
+  async patch<T>(endpoint: string, data?: Record<string, unknown> | FormData, config?: ApiRequestConfig) {
+    return this.request<T>('PATCH', endpoint, data, config);
   }
 
   async delete<T>(endpoint: string, config?: ApiRequestConfig) {
@@ -126,7 +126,7 @@ class ApiClient {
   private async request<T>(
     method: string,
     endpoint: string,
-    data?: Record<string, unknown>,
+    data?: Record<string, unknown> | FormData,
     config?: ApiRequestConfig
   ): Promise<ApiResponse<T>> {
     // Ensure endpoint starts with /
@@ -234,9 +234,10 @@ class ApiClient {
 
   private async buildRequestConfig(
     method: string,
-    data?: Record<string, unknown>,
+    data?: Record<string, unknown> | FormData,
     config?: ApiRequestConfig
   ): Promise<RequestInit> {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     let requestConfig: RequestInit = {
       method,
       headers: {
@@ -246,7 +247,18 @@ class ApiClient {
       credentials: 'include',
     };
 
-    if (data) requestConfig.body = JSON.stringify(data);
+    if (isFormData && requestConfig.headers) {
+      const headers = requestConfig.headers as Record<string, string>;
+      Object.keys(headers).forEach((key) => {
+        if (key.toLowerCase() === 'content-type') {
+          delete headers[key];
+        }
+      });
+    }
+
+    if (data !== undefined) {
+      requestConfig.body = isFormData ? data : JSON.stringify(data);
+    }
     if (config?.signal) requestConfig.signal = config.signal;
 
     // Apply request interceptors

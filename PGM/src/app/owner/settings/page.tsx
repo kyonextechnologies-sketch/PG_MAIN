@@ -20,9 +20,55 @@ import {
   Mail,
   Phone,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Upload,
+  File,
+  X,
+  Clock,
+  Eye,
+  Download
 } from 'lucide-react';
-import { crudToasts } from '@/lib/toast';
+import { crudToasts, showToast } from '@/lib/toast';
+import { apiClient } from '@/lib/apiClient';
+
+type OwnerDocument = {
+  id?: string;
+  filename: string;
+  originalname?: string;
+  url?: string;
+  fileSize?: number;
+  mimetype?: string;
+  uploadedAt?: string;
+  propertyName?: string;
+};
+
+type VerificationApiResponse = {
+  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  legalDocuments: OwnerDocument[];
+  rejectionReason?: string | null;
+  submittedAt?: string | null;
+  verifiedAt?: string | null;
+};
+
+const ALLOWED_VERIFICATION_FILE_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+];
+
+const MAX_VERIFICATION_FILES = 5;
+const MAX_VERIFICATION_FILE_SIZE_MB = 50;
+
+const formatFileSize = (bytes?: number) => {
+  if (!bytes || Number.isNaN(bytes)) return '—';
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
 
 export default function SettingsPage() {
   const [profileData, setProfileData] = useState({
@@ -50,6 +96,23 @@ export default function SettingsPage() {
     monthlyReports: true,
   });
 
+  const [verificationInfo, setVerificationInfo] = useState<{
+    status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    documents: OwnerDocument[];
+    rejectionReason: string;
+    submittedAt?: string | null;
+    verifiedAt?: string | null;
+  }>({
+    status: 'PENDING',
+    documents: [],
+    rejectionReason: '',
+    submittedAt: null,
+    verifiedAt: null,
+  });
+  const [selectedDocuments, setSelectedDocuments] = useState<File[]>([]);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
 
@@ -69,6 +132,31 @@ export default function SettingsPage() {
       setNotificationSettings(JSON.parse(savedNotificationSettings));
     }
   }, []);
+
+  const fetchVerificationInfo = React.useCallback(async () => {
+    setVerificationLoading(true);
+    try {
+      const response = await apiClient.get<VerificationApiResponse>('/owners/verification');
+      const payload = response.data;
+      if (response.success && payload) {
+        setVerificationInfo({
+          status: payload.verificationStatus || 'PENDING',
+          documents: Array.isArray(payload.legalDocuments) ? payload.legalDocuments : [],
+          rejectionReason: payload.rejectionReason || '',
+          submittedAt: payload.submittedAt || null,
+          verifiedAt: payload.verifiedAt || null,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load verification info:', error);
+    } finally {
+      setVerificationLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchVerificationInfo();
+  }, [fetchVerificationInfo]);
 
   const handleSaveProfile = async () => {
     setIsLoading(true);
@@ -197,6 +285,79 @@ export default function SettingsPage() {
     }
   };
 
+  const handleVerificationFileSelect = (files: FileList | null) => {
+    if (!files) return;
+
+    setSelectedDocuments((prev) => {
+      let remainingSlots = MAX_VERIFICATION_FILES - prev.length;
+
+      if (remainingSlots <= 0) {
+        showToast.warning(`Maximum ${MAX_VERIFICATION_FILES} files allowed per submission.`);
+        return prev;
+      }
+
+      const nextFiles: File[] = [];
+
+      for (const file of Array.from(files)) {
+        if (!ALLOWED_VERIFICATION_FILE_TYPES.includes(file.type)) {
+          showToast.error(`${file.name} has an unsupported file type.`);
+          continue;
+        }
+
+        if (file.size > MAX_VERIFICATION_FILE_SIZE_MB * 1024 * 1024) {
+          showToast.error(`${file.name} exceeds ${MAX_VERIFICATION_FILE_SIZE_MB}MB.`);
+          continue;
+        }
+
+        if (remainingSlots <= 0) break;
+        nextFiles.push(file);
+        remainingSlots -= 1;
+      }
+
+      if (nextFiles.length === 0) {
+        return prev;
+      }
+
+      return [...prev, ...nextFiles];
+    });
+  };
+
+  const handleRemoveSelectedDocument = (index: number) => {
+    setSelectedDocuments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitVerificationDocuments = async () => {
+    if (selectedDocuments.length === 0) return;
+
+    setUploadingDocuments(true);
+    try {
+      const formData = new FormData();
+      selectedDocuments.forEach((file) => formData.append('documents', file));
+
+      const response = await apiClient.post<VerificationApiResponse>('/owners/verification/documents', formData);
+      const payload = response.data;
+
+      if (!response.success || !payload) {
+        throw new Error(response.error || response.message || 'Failed to upload documents');
+      }
+
+      setVerificationInfo({
+        status: payload.verificationStatus || 'PENDING',
+        documents: Array.isArray(payload.legalDocuments) ? payload.legalDocuments : [],
+        rejectionReason: payload.rejectionReason || '',
+        submittedAt: payload.submittedAt || null,
+        verifiedAt: payload.verifiedAt || null,
+      });
+      setSelectedDocuments([]);
+      crudToasts.create.success('Verification documents');
+    } catch (error) {
+      console.error('Failed to submit verification documents:', error);
+      crudToasts.create.error('Verification documents');
+    } finally {
+      setUploadingDocuments(false);
+    }
+  };
+
   return (
     <RequireRole role="OWNER">
       <MainLayout>
@@ -225,7 +386,7 @@ export default function SettingsPage() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 text-black font-bold bg-gradient-to-r from-gray-100 to-gray-200 p-1 rounded-xl shadow-lg">
+            <TabsList className="grid w-full grid-cols-5 text-black font-bold bg-gradient-to-r from-gray-100 to-gray-200 p-1 rounded-xl shadow-lg">
               <TabsTrigger 
                 value="profile"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
@@ -249,6 +410,12 @@ export default function SettingsPage() {
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 Security
+              </TabsTrigger>
+              <TabsTrigger 
+                value="verification"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#f5c518] data-[state=active]:to-[#ffd000] data-[state=active]:text-black data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+              >
+                Verification
               </TabsTrigger>
             </TabsList>
 
@@ -583,6 +750,238 @@ export default function SettingsPage() {
                           <Button variant="outline" size="sm">End Session</Button>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Verification Documents Tab */}
+            <TabsContent value="verification">
+              <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-[#f5c518]/20 to-[#ffd000]/20 rounded-t-lg">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900 dark:!text-black">
+                    <div className="p-2 bg-gradient-to-br from-[#f5c518] to-[#ffd000] rounded-lg mr-3">
+                      <FileText className="h-5 w-5 text-black" />
+                    </div>
+                    Owner Verification Documents
+                  </CardTitle>
+                  <CardDescription className="text-gray-700 dark:!text-black">
+                    Upload legal documents for admin verification to unlock all features
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                  {/* Verification Status */}
+                  <div className="p-6 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-900">Verification Status</h3>
+                      <div className={`px-4 py-2 rounded-full font-semibold text-sm ${
+                        verificationInfo.status === 'VERIFIED' 
+                          ? 'bg-green-100 text-green-700'
+                          : verificationInfo.status === 'REJECTED'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {verificationInfo.status === 'VERIFIED' && <><CheckCircle className="w-4 h-4 inline mr-1" /> Verified</>}
+                        {verificationInfo.status === 'REJECTED' && <><AlertCircle className="w-4 h-4 inline mr-1" /> Rejected</>}
+                        {verificationInfo.status === 'PENDING' && <><Clock className="w-4 h-4 inline mr-1" /> Pending Review</>}
+                      </div>
+                    </div>
+
+                    {verificationInfo.status === 'PENDING' && (
+                      <p className="text-gray-600">
+                        Your documents are under review. Admin will verify within 24-48 hours.
+                      </p>
+                    )}
+
+                    {verificationLoading && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Refreshing verification status...
+                      </p>
+                    )}
+
+                    {verificationInfo.status === 'VERIFIED' && (
+                      <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-green-900">Verification Complete!</p>
+                          <p className="text-sm text-green-700 mt-1">
+                            Your account has been verified. You now have full access to all features.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {verificationInfo.status === 'REJECTED' && (
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                          <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-red-900">Verification Rejected</p>
+                            <p className="text-sm text-red-700 mt-1">
+                              {verificationInfo.rejectionReason || 'Please upload valid documents and try again.'}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="outline" className="w-full">
+                          Re-upload Documents
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Document Upload */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-bold text-gray-900 dark:!text-black mb-3 block">
+                        Upload Legal Documents
+                      </Label>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Upload property ownership proof, Aadhar card, PAN card, or other legal documents (PDF, JPG, PNG - Max 50MB each)
+                      </p>
+                    </div>
+
+                    {/* File Upload Area */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#f5c518] transition-colors bg-gray-50">
+                      <input
+                        type="file"
+                        id="verification-docs"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={(e) => handleVerificationFileSelect(e.target.files)}
+                      />
+                      <label
+                        htmlFor="verification-docs"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        <Upload className="w-12 h-12 text-gray-400 mb-3" />
+                        <p className="text-lg font-semibold text-gray-700 mb-1">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          PDF, JPG, PNG (Max 50MB per file)
+                        </p>
+                      </label>
+                    </div>
+
+                    {/* Uploaded Files List */}
+                    <div className="space-y-6">
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700">
+                          Uploaded Documents ({verificationInfo.documents.length})
+                        </Label>
+                        {verificationInfo.documents.length > 0 ? (
+                          <div className="space-y-2 mt-2">
+                            {verificationInfo.documents.map((doc, index) => (
+                              <div
+                                key={`${doc.filename}-${index}`}
+                                className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <File className="w-5 h-5 text-[#f5c518]" />
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">{doc.originalname || doc.filename}</p>
+                                    <p className="text-xs text-gray-500">
+                                      Uploaded {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'N/A'}
+                                      {doc.fileSize && ` • ${formatFileSize(doc.fileSize)}`}
+                                    </p>
+                                  </div>
+                                </div>
+                                {doc.url && (
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                      onClick={() => window.open(doc.url, '_blank')}
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      View
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-green-600 border-green-300 hover:bg-green-50"
+                                      onClick={() => {
+                                        if (doc.url) {
+                                          const link = document.createElement('a');
+                                          link.href = doc.url;
+                                          link.download = doc.originalname || doc.filename;
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                        }
+                                      }}
+                                    >
+                                      <Download className="w-4 h-4 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 mt-2">
+                            No documents uploaded yet. Add files below to begin verification.
+                          </p>
+                        )}
+                      </div>
+
+                      {selectedDocuments.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-gray-700">
+                            Selected Files ({selectedDocuments.length})
+                          </Label>
+                          <div className="space-y-2">
+                            {selectedDocuments.map((file, index) => (
+                              <div
+                                key={`${file.name}-${index}`}
+                                className="flex items-center justify-between p-3 bg-gray-100 rounded-lg border border-gray-200"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <File className="w-5 h-5 text-[#f5c518]" />
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleRemoveSelectedDocument(index)}
+                                  className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                >
+                                  <X className="w-4 h-4 text-red-500" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                      onClick={handleSubmitVerificationDocuments}
+                      disabled={selectedDocuments.length === 0 || uploadingDocuments}
+                      className="w-full bg-gradient-to-r from-[#f5c518] to-[#ffd000] hover:from-[#ffd000] hover:to-[#f5c518] text-black font-bold py-6 text-lg"
+                    >
+                      <Upload className="mr-2 h-5 w-5" />
+                      {uploadingDocuments ? 'Uploading documents...' : 'Submit Documents for Verification'}
+                    </Button>
+
+                    {/* Requirements */}
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 mb-2">Required Documents:</h4>
+                      <ul className="space-y-1 text-sm text-blue-700">
+                        <li>• Property ownership proof (Registry/Sale Deed)</li>
+                        <li>• Aadhar Card (Owner)</li>
+                        <li>• PAN Card (Owner)</li>
+                        <li>• Property Tax Receipt (latest)</li>
+                        <li>• NOC from local authority (if applicable)</li>
+                      </ul>
                     </div>
                   </div>
                 </CardContent>
