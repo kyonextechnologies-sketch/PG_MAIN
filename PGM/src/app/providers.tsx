@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { ThemeProvider } from '@/lib/theme';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 
 // Safe toast function that checks if toast is available
 const safeToastError = (message: string) => {
@@ -83,7 +84,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         basePath="/api/auth"
       >
         <QueryClientProvider client={queryClient}>
-          {children}
+          <NotificationProvider>
+            {children}
+          </NotificationProvider>
         </QueryClientProvider>
       </SessionProvider>
     </ThemeProvider>

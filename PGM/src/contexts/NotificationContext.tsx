@@ -3,76 +3,77 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { socketService } from '@/services/socket.service';
+import { apiClient } from '@/lib/apiClient';
 import { toast, type ToastIcon } from 'react-toastify';
 
-interface Notification {
+export interface AppNotification {
   id: string;
   type: string;
   title: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   read: boolean;
   createdAt: string;
+  category?: string;
+}
+
+interface NotificationApiResponse {
+  notifications?: AppNotification[];
+  total?: number;
+  unreadCount?: number;
 }
 
 interface NotificationContextType {
-  notifications: Notification[];
+  notifications: AppNotification[];
   unreadCount: number;
   isConnected: boolean;
+  isLoading: boolean;
+  refreshNotifications: (options?: { limit?: number; page?: number }) => Promise<void>;
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
+  deleteNotification: (notificationId: string) => void;
+  clearReadNotifications: () => void;
   clearNotifications: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+const normalizeNotification = (notification: Partial<AppNotification>): AppNotification => ({
+  id: notification.id || `temp-${Date.now()}`,
+  type: notification.type || 'SYSTEM_ALERT',
+  title: notification.title || 'Notification',
+  message: notification.message || '',
+  data: notification.data ?? {},
+  read: notification.read ?? false,
+  createdAt: notification.createdAt || (notification as any)?.timestamp || new Date().toISOString(),
+  category: notification.category,
+});
+
+const extractNotifications = (payload: NotificationApiResponse | AppNotification[] | undefined): AppNotification[] => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) {
+    return payload.map(normalizeNotification);
+  }
+  if (Array.isArray(payload.notifications)) {
+    return payload.notifications.map(normalizeNotification);
+  }
+  return [];
+};
+
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Initialize socket connection when user is authenticated
-  useEffect(() => {
-    if (session?.user) {
-      // Connect to WebSocket with access token
-      const token = (session as any).accessToken;
-      
-      if (token) {
-        console.log('🔌 Initializing WebSocket connection...');
-        socketService.connect(token);
-
-        // Listen for connection status
-        socketService.on('connect', () => {
-          console.log('✅ WebSocket connected');
-          setIsConnected(true);
-        });
-
-        socketService.on('disconnect', () => {
-          console.log('🔌 WebSocket disconnected');
-          setIsConnected(false);
-        });
-
-        // Listen for notifications
-        socketService.onNotification(handleNewNotification);
-
-        // Cleanup on unmount
-        return () => {
-          console.log('🔌 Cleaning up WebSocket connection');
-          socketService.disconnect();
-        };
-      }
-    }
-  }, [session]);
-
-  // Handle new notification
-  const handleNewNotification = useCallback((notification: Notification) => {
+  const handleNewNotification = useCallback((notification: AppNotification) => {
     console.log('📬 New notification:', notification);
 
     // Add to notifications list
-    setNotifications(prev => [notification, ...prev]);
+    setNotifications(prev => [normalizeNotification(notification), ...prev]);
 
     // Show toast notification
     const createIcon = (symbol: string, label: string): ToastIcon => (
@@ -82,7 +83,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     );
 
     const notificationTypeConfig: Record<
-      Notification['type'],
+      AppNotification['type'],
       { icon: ToastIcon; color: 'error' | 'warning' | 'info' | 'success' }
     > = {
       MAINTENANCE_REQUEST: { icon: createIcon('🔧', 'Maintenance request'), color: 'error' },
@@ -134,6 +135,62 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const refreshNotifications = useCallback(
+    async (options?: { limit?: number; page?: number }) => {
+      if (!session?.user) return;
+      setIsLoading(true);
+      try {
+        const response = await apiClient.get<NotificationApiResponse | AppNotification[]>('/notifications', {
+          params: {
+            limit: options?.limit ?? 50,
+            page: options?.page ?? 1,
+          },
+        });
+
+        if (response.success) {
+          const normalized = extractNotifications(response.data as NotificationApiResponse | AppNotification[]);
+          setNotifications(normalized);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load notifications:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [session?.user]
+  );
+
+  // Initialize socket connection when user is authenticated
+  useEffect(() => {
+    if (!session?.user) return;
+
+    refreshNotifications();
+
+    const token = (session as any)?.accessToken;
+
+    if (!token) return;
+
+    console.log('🔌 Initializing WebSocket connection...');
+    socketService.connect(token);
+
+    socketService.on('connect', () => {
+      console.log('✅ WebSocket connected');
+      setIsConnected(true);
+    });
+
+    socketService.on('disconnect', () => {
+      console.log('🔌 WebSocket disconnected');
+      setIsConnected(false);
+    });
+
+    socketService.onNotification(handleNewNotification);
+
+    return () => {
+      console.log('🔌 Cleaning up WebSocket connection');
+      socketService.disconnect();
+    };
+  }, [session, handleNewNotification, refreshNotifications]);
+
   // Mark notification as read
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications(prev =>
@@ -153,7 +210,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     // TODO: Call API to mark all as read
   }, []);
 
-  // Clear all notifications
+  const deleteNotification = useCallback((notificationId: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  }, []);
+
+  const clearReadNotifications = useCallback(() => {
+    setNotifications(prev => prev.filter(n => !n.read));
+  }, []);
+
   const clearNotifications = useCallback(() => {
     setNotifications([]);
   }, []);
@@ -162,8 +226,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     notifications,
     unreadCount,
     isConnected,
+    isLoading,
+    refreshNotifications,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
+    clearReadNotifications,
     clearNotifications,
   };
 

@@ -44,6 +44,7 @@ export interface ButtonProps
   size?: "default" | "sm" | "lg" | "icon"
   magnetic?: boolean
   showRipple?: boolean
+  fullWidth?: boolean
   children?: React.ReactNode
 }
 
@@ -56,6 +57,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     magnetic = false,
     showRipple = true,
     children,
+    fullWidth,
     onMouseMove,
     onMouseLeave,
     ...props 
@@ -95,10 +97,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       (props as any).onClick?.(e);
     };
 
+    const isIconButton = size === 'icon';
+    const enableFullWidth = fullWidth ?? false;
+    const computedClassName = cn(
+      buttonVariants({ variant, size }),
+      enableFullWidth ? "w-full sm:w-auto max-w-full" : "",
+      "flex-shrink-0",
+      className
+    );
+
     if (asChild) {
       const slotProps = props as React.ComponentPropsWithoutRef<'button'>;
       return (
-        <Slot className={cn(buttonVariants({ variant, size, className }))} {...slotProps}>
+        <Slot className={computedClassName} {...slotProps}>
           {children}
         </Slot>
       );
@@ -107,7 +118,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={computedClassName}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}

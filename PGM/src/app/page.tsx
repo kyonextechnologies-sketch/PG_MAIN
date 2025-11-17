@@ -680,7 +680,7 @@ export default function Home() {
                 </ul>
                 <Button 
                   variant={plan.popular ? 'default' : 'secondary'}
-                  className="w-90 mt-auto"
+                  className="mt-auto"
                   magnetic
                 >
                   Get Started

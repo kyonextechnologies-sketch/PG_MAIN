@@ -228,7 +228,7 @@ export const buttonHover = {
     transition: transitions.default,
   },
   hover: {
-    scale: 1.05,
+    scale: 1.02,
     transition: transitions.spring,
   },
   tap: {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,12 +12,9 @@ import {
   AlertTriangle, 
   Info, 
   XCircle,
-  Mail,
-  MessageSquare,
   Clock,
   Check,
   Trash2,
-  Filter,
   Search,
   Calendar,
   ArrowLeft,
@@ -26,72 +23,25 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/apiClient';
-
-interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  category?: 'PAYMENT' | 'MAINTENANCE' | 'TENANT' | 'SYSTEM';
-}
+import { useNotifications } from '@/contexts/NotificationContext';
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'success',
-      title: 'Payment Received',
-      message: 'John Doe paid ₹15,000 for Room 101 - February rent',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      read: false,
-      category: 'PAYMENT',
-    },
-    {
-      id: '2',
-      type: 'warning',
-      title: 'Maintenance Request',
-      message: 'New maintenance request from Room 203 - AC not working',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      read: false,
-      category: 'MAINTENANCE',
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: 'New Tenant Added',
-      message: 'Alice Smith has been assigned to Room 105',
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      read: true,
-      category: 'TENANT',
-    },
-    {
-      id: '4',
-      type: 'success',
-      title: 'Payment Received',
-      message: 'Jane Smith paid ₹12,000 for Room 102 - February rent',
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      read: true,
-      category: 'PAYMENT',
-    },
-    {
-      id: '5',
-      type: 'error',
-      title: 'Payment Overdue',
-      message: 'Bob Johnson payment overdue for Room 201 - January rent',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      read: true,
-      category: 'PAYMENT',
-    },
-  ]);
+  const {
+    notifications,
+    unreadCount,
+    isConnected,
+    isLoading,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearReadNotifications,
+  } = useNotifications();
   
   const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'READ'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'PAYMENT' | 'MAINTENANCE' | 'TENANT' | 'SYSTEM'>('ALL');
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -123,7 +73,8 @@ export default function NotificationsPage() {
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) return 'Just now';
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -137,25 +88,8 @@ export default function NotificationsPage() {
     return date.toLocaleDateString();
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
-
-  const deleteAllRead = () => {
-    setNotifications(notifications.filter(n => !n.read));
-  };
-
-  const filteredNotifications = notifications.filter(n => {
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter((n) => {
     // Read/Unread filter
     if (filter === 'READ' && !n.read) return false;
     if (filter === 'UNREAD' && n.read) return false;
@@ -171,34 +105,56 @@ export default function NotificationsPage() {
 
     return true;
   });
+  }, [notifications, filter, categoryFilter, search]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const hasNotifications = filteredNotifications.length > 0;
 
   return (
     <RequireRole role="OWNER">
       <MainLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <Bell className="w-8 h-8 text-blue-600" />
-                Notifications
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  <Bell className="w-8 h-8 text-blue-600" />
+                  Notifications
+                </h1>
                 {unreadCount > 0 && (
                   <span className="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
                     {unreadCount} New
                   </span>
                 )}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                View and manage all your notifications
+                <span
+                  className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full ${
+                    isConnected
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
+                  {isConnected ? 'Live updates' : 'Offline'}
+                </span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">
+                View and manage all your notifications in real time
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <Button
+                onClick={() => refreshNotifications()}
+                variant="secondary"
+                size="sm"
+                disabled={isLoading}
+                className="flex-1 sm:flex-none"
+              >
+                Refresh
+              </Button>
               {unreadCount > 0 && (
                 <Button
                   onClick={markAllAsRead}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                 >
                   <Check className="w-4 h-4 mr-2" />
                   Mark All as Read
@@ -207,6 +163,7 @@ export default function NotificationsPage() {
               <Button
                 onClick={() => router.push('/owner/dashboard')}
                 variant="outline"
+                className="flex-1 sm:flex-none"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -215,7 +172,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <Card className="bg-white dark:bg-gray-800 shadow-lg border-0">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -268,7 +225,7 @@ export default function NotificationsPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">Today</p>
                     <p className="text-2xl font-bold text-purple-600">
                       {notifications.filter(n => {
-                        const notifDate = new Date(n.timestamp);
+                        const notifDate = new Date(n.createdAt);
                         const today = new Date();
                         return notifDate.toDateString() === today.toDateString();
                       }).length}
@@ -282,7 +239,7 @@ export default function NotificationsPage() {
           {/* Filters */}
           <Card className="bg-white dark:bg-gray-800 shadow-lg border-0">
             <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col xl:flex-row gap-4">
                 {/* Search */}
                 <div className="flex-1">
                   <div className="relative">
@@ -298,7 +255,7 @@ export default function NotificationsPage() {
                 </div>
 
                 {/* Read/Unread Filter */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {['ALL', 'UNREAD', 'READ'].map((f) => (
                     <Button
                       key={f}
@@ -313,7 +270,7 @@ export default function NotificationsPage() {
                 </div>
 
                 {/* Category Filter */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {['ALL', 'PAYMENT', 'MAINTENANCE', 'TENANT', 'SYSTEM'].map((cat) => (
                     <Button
                       key={cat}
@@ -330,7 +287,7 @@ export default function NotificationsPage() {
                 {/* Delete All Read */}
                 {notifications.some(n => n.read) && (
                   <Button
-                    onClick={deleteAllRead}
+                    onClick={clearReadNotifications}
                     size="sm"
                     variant="outline"
                     className="text-red-600 border-red-300 hover:bg-red-50"
@@ -345,11 +302,13 @@ export default function NotificationsPage() {
 
           {/* Notifications List */}
           <div className="space-y-3">
-            {filteredNotifications.length === 0 ? (
+            {!hasNotifications ? (
               <Card className="bg-white dark:bg-gray-800 shadow-lg border-0">
                 <CardContent className="p-12 text-center">
                   <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg font-semibold">No notifications found</p>
+                  <p className="text-gray-500 text-lg font-semibold">
+                    {isLoading ? 'Loading notifications...' : 'No notifications found'}
+                  </p>
                   <p className="text-sm text-gray-400 mt-2">
                     {search || filter !== 'ALL' || categoryFilter !== 'ALL'
                       ? 'Try adjusting your filters'
@@ -395,7 +354,7 @@ export default function NotificationsPage() {
                                 <div className="flex items-center gap-3 mt-1">
                                   <div className="flex items-center gap-1 text-xs text-gray-500">
                                     <Clock className="w-3 h-3" />
-                                    {formatTimestamp(notification.timestamp)}
+                                {formatTimestamp(notification.createdAt)}
                                   </div>
                                   {notification.category && (
                                     <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
@@ -466,7 +425,7 @@ export default function NotificationsPage() {
                 </div>
                 {filteredNotifications.length > 0 && (
                   <p className="text-sm text-gray-500">
-                    Last update: {formatTimestamp(filteredNotifications[0]?.timestamp)}
+                    Last update: {formatTimestamp(filteredNotifications[0]?.createdAt)}
                   </p>
                 )}
               </div>

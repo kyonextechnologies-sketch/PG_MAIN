@@ -27,8 +27,8 @@ export function Topbar() {
 
   return (
     <header className="bg-[#1a1a1a]/80 backdrop-blur-md shadow-lg border-b border-[#333333]/50">
-      <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-        <div className="flex items-center space-x-4 pl-16 lg:pl-4">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center space-x-4 pl-12 sm:pl-0">
           <h2 className="text-lg font-bold text-white hidden sm:block">
             Welcome back, <span className="text-[#f5c518]">{session?.user?.name}</span>!
           </h2>
