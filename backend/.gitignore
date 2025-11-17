@@ -42,5 +42,5 @@ coverage/
 prisma/migrations/
 
 # Firebase
-backend/firebase-service-account.json/
+firebase-service-account.json/
 
