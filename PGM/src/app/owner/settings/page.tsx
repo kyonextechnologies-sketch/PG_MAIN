@@ -72,17 +72,17 @@ const formatFileSize = (bytes?: number) => {
 
 export default function SettingsPage() {
   const [profileData, setProfileData] = useState({
-    name: 'John Doe',
-    email: 'owner@example.com',
-    phone: '+91-9876543210',
-    company: 'Smart PG Management',
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
   });
 
   const [paymentSettings, setPaymentSettings] = useState({
-    // razorpayKeyId: 'rzp_test_xxxxx', // Commented out - using UPI instead
-    // razorpayKeySecret: '••••••••••••••••', // Commented out - using UPI instead
-    upiId: 'owner@paytm', // UPI ID for payments
-    upiName: 'Smart PG Manager', // UPI display name
+    // razorpayKeyId: '', // Commented out - using UPI instead
+    // razorpayKeySecret: '', // Commented out - using UPI instead
+    upiId: '', // UPI ID for payments
+    upiName: '', // UPI display name
     autoGenerateInvoices: true,
     invoiceReminderDays: 3,
     lateFeePercentage: 2,
@@ -116,18 +116,20 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
 
-  // Load saved data on component mount
+  // Load saved data from backend on component mount (not localStorage)
   React.useEffect(() => {
-    const savedProfile = localStorage.getItem('ownerProfile');
-    const savedPaymentSettings = localStorage.getItem('ownerPaymentSettings');
+    // Load profile data from backend API if available
+    const loadOwnerProfile = async () => {
+      try {
+        // You can add API call here to fetch owner profile from backend
+        // For now, keeping fields empty as requested
+      } catch (error) {
+        console.error('Failed to load owner profile:', error);
+      }
+    };
+    
+    // Only load notification settings from localStorage (these are UI preferences)
     const savedNotificationSettings = localStorage.getItem('ownerNotificationSettings');
-
-    if (savedProfile) {
-      setProfileData(JSON.parse(savedProfile));
-    }
-    if (savedPaymentSettings) {
-      setPaymentSettings(JSON.parse(savedPaymentSettings));
-    }
     if (savedNotificationSettings) {
       setNotificationSettings(JSON.parse(savedNotificationSettings));
     }
@@ -441,6 +443,7 @@ export default function SettingsPage() {
                         id="name"
                         value={profileData.name}
                         onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                        placeholder="Enter your full name"
                         className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
@@ -451,6 +454,7 @@ export default function SettingsPage() {
                         type="email"
                         value={profileData.email}
                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        placeholder="Enter your email address"
                         className=" !text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
@@ -460,6 +464,7 @@ export default function SettingsPage() {
                         id="phone"
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        placeholder="Enter your phone number"
                         className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
@@ -469,6 +474,7 @@ export default function SettingsPage() {
                         id="company"
                         value={profileData.company}
                         onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                        placeholder="Enter your company name"
                         className="!text-black bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-medium transition-all duration-300"
                       />
                     </div>
@@ -509,7 +515,7 @@ export default function SettingsPage() {
                           id="upiId"
                           value={paymentSettings.upiId}
                           onChange={(e) => setPaymentSettings({ ...paymentSettings, upiId: e.target.value })}
-                          placeholder="9259782478@pnb"
+                          placeholder="Enter your UPI ID (e.g., yourname@paytm)"
                           className=" !text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
@@ -519,7 +525,7 @@ export default function SettingsPage() {
                           id="upiName"
                           value={paymentSettings.upiName}
                           onChange={(e) => setPaymentSettings({ ...paymentSettings, upiName: e.target.value })}
-                          placeholder="Smart PG Manager"
+                          placeholder="Enter UPI display name"
                           className="!text-black bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
