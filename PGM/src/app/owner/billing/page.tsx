@@ -39,7 +39,7 @@ export default function BillingPage() {
   
   // ✅ Using real API hooks - automatically fetches from backend database
   // ✅ Data is automatically isolated by ownerId/tenantId from backend
-  const { invoices, loading, error, createInvoice, updateInvoice, deleteInvoice } = useInvoices();
+  const { invoices, loading, error, createInvoice, updateInvoice, deleteInvoice, fetchInvoices } = useInvoices();
   const { tenants } = useTenants();  // ✅ Fetch tenants for dropdown
   const { addNotification } = useUIStore();
 
@@ -64,31 +64,60 @@ export default function BillingPage() {
     .reduce((sum, inv) => sum + inv.amount, 0);
 
   const handleInvoiceSubmit = async (data: any) => {
-    if (editingInvoice) {
-      // Update existing invoice
-      const result = await updateInvoice(editingInvoice.id, data);
-      if (result) {
-        addNotification({
-          type: 'success',
-          title: 'Invoice Updated',
-          message: `Invoice for ${data.month} has been updated successfully.`,
-          read: false,
-        });
+    try {
+      if (editingInvoice) {
+        // Update existing invoice
+        const result = await updateInvoice(editingInvoice.id, data);
+        if (result) {
+          addNotification({
+            type: 'success',
+            title: 'Invoice Updated',
+            message: `Invoice for ${data.month} has been updated successfully.`,
+            read: false,
+          });
+          setShowForm(false);
+          setEditingInvoice(null);
+        } else {
+          addNotification({
+            type: 'error',
+            title: 'Update Failed',
+            message: 'Failed to update invoice. Please try again.',
+            read: false,
+          });
+        }
+      } else {
+        // Add new invoice
+        const result = await createInvoice(data);
+        if (result) {
+          addNotification({
+            type: 'success',
+            title: 'Invoice Created',
+            message: `Invoice for ${data.month} has been created successfully.`,
+            read: false,
+          });
+          setShowForm(false);
+          setEditingInvoice(null);
+          // Force refresh invoices list
+          setTimeout(() => {
+            fetchInvoices();
+          }, 300);
+        } else {
+          addNotification({
+            type: 'error',
+            title: 'Creation Failed',
+            message: 'Failed to create invoice. Please try again.',
+            read: false,
+          });
+        }
       }
-    } else {
-      // Add new invoice
-      const result = await createInvoice(data);
-      if (result) {
-        addNotification({
-          type: 'success',
-          title: 'Invoice Created',
-          message: `Invoice for ${data.month} has been created successfully.`,
-          read: false,
-        });
-      }
+    } catch (error: any) {
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error.message || 'An error occurred while processing the invoice.',
+        read: false,
+      });
     }
-    setShowForm(false);
-    setEditingInvoice(null);
   };
 
   const handleEditInvoice = (invoice: any) => {
