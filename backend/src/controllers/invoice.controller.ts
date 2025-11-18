@@ -13,7 +13,7 @@ import { sendEmail } from '../utils/email';
 export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError('Authentication required', 401);
 
-  const { tenantId, month, otherCharges = 0 } = req.body;
+  const { tenantId, month, amount, otherCharges = 0 } = req.body;
 
   const tenant = await prisma.tenantProfile.findFirst({
     where: { id: tenantId, ownerId: req.user.id },
@@ -38,8 +38,20 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
   });
 
   const electricityCharges = electricityBill ? Number(electricityBill.amount) : 0;
-  const baseRent = Number(tenant.monthlyRent);
-  const totalAmount = baseRent + electricityCharges + Number(otherCharges);
+  
+  // ✅ Use the amount provided by owner, or calculate from base rent if not provided
+  let baseRent: number;
+  let totalAmount: number;
+  
+  if (amount !== undefined && amount !== null && amount > 0) {
+    // Owner provided a custom amount - use it as base rent
+    baseRent = Number(amount);
+    totalAmount = baseRent + electricityCharges + Number(otherCharges);
+  } else {
+    // Fallback to tenant's monthly rent if amount not provided
+    baseRent = Number(tenant.monthlyRent);
+    totalAmount = baseRent + electricityCharges + Number(otherCharges);
+  }
 
   const invoice = await prisma.invoice.create({
     data: {
