@@ -238,8 +238,16 @@ class ApiClient {
                            lastError.message.includes('User not found') ||
                            lastError.message.includes('inactive');
         
+        // Don't log 404s as errors - they're expected for optional endpoints
+        const isNotFoundError = lastError.message.includes('404') || 
+                               lastError.message.includes('Route not found') ||
+                               lastError.message.includes('Not Found');
+        
         if (isAuthError) {
           console.warn(`⚠️ [ApiClient] Authentication error (not retrying):`, lastError.message);
+        } else if (isNotFoundError) {
+          // Silently handle 404s - don't log as errors
+          // The calling code should handle this gracefully
         } else {
           console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
         }
@@ -253,7 +261,14 @@ class ApiClient {
       }
     }
 
-    console.error('🚨 [ApiClient] Final failure:', lastError?.message);
+    // Don't log 404s as final failures - they're expected for optional endpoints
+    const isNotFoundError = lastError?.message?.includes('404') || 
+                           lastError?.message?.includes('Route not found') ||
+                           lastError?.message?.includes('Not Found');
+    
+    if (!isNotFoundError) {
+      console.error('🚨 [ApiClient] Final failure:', lastError?.message);
+    }
     return this.handleError(lastError) as ApiResponse<T>;
   }
 
@@ -330,6 +345,13 @@ class ApiClient {
       return false;
     }
     
+    // Don't retry 404s - route not found won't be fixed by retrying
+    if (error.message.includes('404') || 
+        error.message.includes('Route not found') ||
+        error.message.includes('Not Found')) {
+      return false;
+    }
+    
     // Retry on network errors and server errors (5xx)
     return (
       error.name === 'AbortError' ||
@@ -352,13 +374,20 @@ class ApiClient {
 
     const statusCode = (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response) ? (error.response.status as number) : 400;
 
-    console.error('🔴 [ApiClient] Error Details:', { message });
+    // Don't log 404s as errors - they're expected for optional endpoints
+    const isNotFoundError = message.includes('404') || 
+                           message.includes('Route not found') ||
+                           message.includes('Not Found') ||
+                           statusCode === 404;
 
-    ErrorHandler.handle({
-      code: 'HTTP_ERROR',
-      message,
-      statusCode,
-    });
+    if (!isNotFoundError) {
+      console.error('🔴 [ApiClient] Error Details:', { message });
+      ErrorHandler.handle({
+        code: 'HTTP_ERROR',
+        message,
+        statusCode,
+      });
+    }
 
     return {
       success: false,

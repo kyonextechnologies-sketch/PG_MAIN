@@ -1,19 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Home, 
   Users, 
   Bed,
   DollarSign,
-  Filter,
   Search,
   CheckCircle,
   XCircle,
@@ -21,9 +19,7 @@ import {
   ArrowLeft,
   Download,
   Eye,
-  UserPlus,
   Clock,
-  MapPin,
   Plus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -62,7 +58,7 @@ export default function RoomOccupancyPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState<string>(propertyIdParam || 'ALL');
+  const [selectedProperty, setSelectedProperty] = useState<string>(propertyIdParam || '');
   const [occupancyFilter, setOccupancyFilter] = useState<'ALL' | 'FULL' | 'VACANT' | 'PARTIAL'>('ALL');
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -70,151 +66,182 @@ export default function RoomOccupancyPage() {
   const { properties } = useProperties();
   const { createRoom, updateRoom } = useRooms();
   const { addNotification } = useUIStore();
+  
+  // Get the selected property details
+  const selectedPropertyDetails = properties.find((p) => p.id === selectedProperty);
 
-  useEffect(() => {
-    loadRooms();
-  }, [selectedProperty]);
-
-  const handleRoomSubmit = async (data: any) => {
-    try {
-      const roomData = {
-        ...data,
-        name: data.name || `Room ${data.roomNumber}`,
-        floor: parseInt(data.floor) || 0,
-        capacity: parseInt(data.capacity) || 1,
-        rentPerBed: parseFloat(data.rentPerBed) || 0
-      };
-
-      if (editingRoom) {
-        const result = await updateRoom(editingRoom.id, roomData);
-        if (result) {
-          addNotification({
-            type: 'success',
-            title: 'Room Updated',
-            message: `Room ${data.roomNumber} has been updated successfully.`,
-            read: false,
-          });
-        }
-      } else {
-        const result = await createRoom(roomData);
-        if (result) {
-          addNotification({
-            type: 'success',
-            title: 'Room Added',
-            message: `Room ${data.roomNumber} has been added successfully.`,
-            read: false,
-          });
-        }
+  const getPropertyNameById = useCallback(
+    (propertyId?: string) => {
+      if (!propertyId) {
+        return 'Unknown Property';
       }
-      setShowRoomForm(false);
-      setEditingRoom(null);
-      loadRooms(); // Refresh room list
-    } catch (err: any) {
-      addNotification({
-        type: 'error',
-        title: 'Error',
-        message: err.message || 'Failed to process room request',
-        read: false,
-      });
-    }
-  };
+      return properties.find((property) => property.id === propertyId)?.name || 'Unknown Property';
+    },
+    [properties]
+  );
 
-  const loadRooms = async () => {
-    setLoading(true);
-    try {
-      // TODO: Replace with real API call
-      // const response = await apiClient.get('/rooms', {
-      //   ownerId: currentUser.id,  // Only fetch current owner's rooms
-      //   propertyId: selectedProperty !== 'ALL' ? selectedProperty : undefined
-      // });
+  const formatRoomForDisplay = useCallback(
+    (roomData: Partial<Room> & Record<string, any>, fallback?: Room): Room => {
+      const derivedPropertyId =
+        roomData.propertyId ||
+        fallback?.propertyId ||
+        selectedProperty ||
+        '';
 
-      // Mock data for current owner only
-      const mockRooms: Room[] = [
-        {
-          id: '1',
-          roomNumber: '101',
-          floor: 1,
-          sharingType: 'SINGLE',
-          totalBeds: 1,
-          occupiedBeds: 1,
-          availableBeds: 0,
-          rentPerBed: 12000,
-          propertyId: 'prop1',
-          propertyName: 'Green Valley PG',
-          active: true,
-          tenants: [{ id: '1', name: 'John Doe', email: 'john@example.com', phone: '+91-9876543210', status: 'ACTIVE' }],
-        },
-        {
-          id: '2',
-          roomNumber: '102',
-          floor: 1,
-          sharingType: 'DOUBLE',
-          totalBeds: 2,
-          occupiedBeds: 2,
-          availableBeds: 0,
-          rentPerBed: 10000,
-          propertyId: 'prop1',
-          propertyName: 'Green Valley PG',
-          active: true,
-          tenants: [
-            { id: '2', name: 'Jane Smith', email: 'jane@example.com', phone: '+91-9876543211', status: 'ACTIVE' },
-            { id: '3', name: 'Bob Johnson', email: 'bob@example.com', phone: '+91-9876543212', status: 'ACTIVE' },
-          ],
-        },
-        {
-          id: '3',
-          roomNumber: '201',
-          floor: 2,
-          sharingType: 'TRIPLE',
-          totalBeds: 3,
-          occupiedBeds: 2,
-          availableBeds: 1,
-          rentPerBed: 8000,
-          propertyId: 'prop1',
-          propertyName: 'Green Valley PG',
-          active: true,
-          tenants: [
-            { id: '4', name: 'Alice Brown', email: 'alice@example.com', phone: '+91-9876543213', status: 'ACTIVE' },
-            { id: '5', name: 'Charlie Davis', email: 'charlie@example.com', phone: '+91-9876543214', status: 'ACTIVE' },
-          ],
-        },
-        {
-          id: '4',
-          roomNumber: '202',
-          floor: 2,
-          sharingType: 'DOUBLE',
-          totalBeds: 2,
-          occupiedBeds: 0,
-          availableBeds: 2,
-          rentPerBed: 10000,
-          propertyId: 'prop1',
-          propertyName: 'Green Valley PG',
-          active: true,
-          tenants: [],
-        },
-      ];
+      const totalBedsRaw =
+        roomData.totalBeds ??
+        roomData.capacity ??
+        roomData.beds?.length ??
+        fallback?.totalBeds ??
+        0;
 
-      setRooms(mockRooms);
-    } catch (error) {
-      console.error('Failed to load rooms:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const occupiedRaw =
+        roomData.occupiedBeds ??
+        roomData.occupied ??
+        roomData.tenants?.length ??
+        fallback?.occupiedBeds ??
+        0;
 
-  // Get current owner's property IDs
-  const ownerPropertyIds = properties.map(p => p.id);
+      const rentRaw = roomData.rentPerBed ?? roomData.rent ?? fallback?.rentPerBed ?? 0;
 
-  const filteredRooms = rooms.filter((room) => {
-    // IMPORTANT: Only show rooms from current owner's properties
-    if (!ownerPropertyIds.includes(room.propertyId)) {
-      return false;
-    }
+      const computedTotalBeds = Number(totalBedsRaw) || 0;
+      const computedOccupiedBeds = Number(occupiedRaw) || 0;
 
-    // Property filter
-    if (selectedProperty !== 'ALL' && room.propertyId !== selectedProperty) {
-      return false;
-    }
+      const sharingTypeFallback =
+        (roomData.sharingType as Room['sharingType']) ||
+        fallback?.sharingType ||
+        (computedTotalBeds >= 3 ? 'TRIPLE' : computedTotalBeds === 2 ? 'DOUBLE' : 'SINGLE');
+
+      return {
+        id: roomData.id || fallback?.id || `temp-${Date.now()}`,
+        roomNumber: roomData.roomNumber || roomData.name || fallback?.roomNumber || '',
+        floor: Number(roomData.floor ?? fallback?.floor ?? 0),
+        sharingType: sharingTypeFallback,
+        totalBeds: computedTotalBeds,
+        occupiedBeds: computedOccupiedBeds,
+        availableBeds: Math.max(computedTotalBeds - computedOccupiedBeds, 0),
+        rentPerBed: Number(rentRaw) || 0,
+        propertyId: derivedPropertyId,
+         propertyName:
+           roomData.propertyName ||
+           roomData.property?.name ||
+           getPropertyNameById(derivedPropertyId) ||
+           fallback?.propertyName ||
+           'Unknown Property',
+        active: roomData.active ?? fallback?.active ?? true,
+        tenants: roomData.tenants ?? fallback?.tenants ?? [],
+      };
+    },
+    [getPropertyNameById, selectedProperty]
+  );
+
+ const loadRooms = useCallback(async () => {
+   if (!selectedProperty) {
+     setRooms([]);
+     setLoading(false);
+     return;
+   }
+
+   setLoading(true);
+   try {
+     // Fetch rooms for the specific property
+     const response = await apiClient.get(`/rooms/property/${selectedProperty}`);
+     if (response.success) {
+       const responseData = response.data;
+       const roomsArray = Array.isArray(responseData)
+         ? responseData
+         : Array.isArray((responseData as any)?.data)
+         ? (responseData as any).data
+         : [];
+
+       const formattedRooms = roomsArray.map((room: any) => formatRoomForDisplay(room));
+       setRooms(formattedRooms);
+     } else {
+       setRooms([]);
+     }
+   } catch (error) {
+     console.error('Failed to load rooms:', error);
+     setRooms([]);
+   } finally {
+     setLoading(false);
+   }
+ }, [formatRoomForDisplay, selectedProperty]);
+
+useEffect(() => {
+  if (propertyIdParam && propertyIdParam !== selectedProperty) {
+    setSelectedProperty(propertyIdParam);
+  }
+}, [propertyIdParam, selectedProperty]);
+
+useEffect(() => {
+  if (selectedProperty) {
+    loadRooms();
+  }
+}, [loadRooms, selectedProperty]);
+
+   const handleRoomSubmit = async (data: any) => {
+     try {
+       if (!selectedProperty) {
+         throw new Error('Please select a property before adding rooms.');
+       }
+
+       const roomData = {
+         ...data,
+         name: data.name || `Room ${data.roomNumber}`,
+         floor: parseInt(data.floor) || 0,
+         capacity: parseInt(data.capacity) || 1,
+         rentPerBed: parseFloat(data.rentPerBed) || 0,
+         propertyId: data.propertyId || selectedProperty,
+       };
+
+       if (editingRoom) {
+         const result = await updateRoom(editingRoom.id, roomData);
+         if (result) {
+           addNotification({
+             type: 'success',
+             title: 'Room Updated',
+             message: `Room ${data.roomNumber} has been updated successfully.`,
+             read: false,
+           });
+           await loadRooms(); // Refresh room list
+         }
+       } else {
+         const result = await createRoom(roomData);
+         if (result) {
+           addNotification({
+             type: 'success',
+             title: 'Room Added',
+             message: `Room ${data.roomNumber} has been added successfully.`,
+             read: false,
+           });
+           await loadRooms(); // Refresh room list
+         }
+       }
+       setShowRoomForm(false);
+       setEditingRoom(null);
+     } catch (err: any) {
+       addNotification({
+         type: 'error',
+         title: 'Error',
+         message: err.message || 'Failed to process room request',
+         read: false,
+       });
+     }
+   };
+
+   // Get current owner's property IDs
+   const ownerPropertyIds = properties.map(p => p.id);
+
+   const filteredRooms = rooms.filter((room) => {
+     // IMPORTANT: Only show rooms from current owner's properties
+     if (!ownerPropertyIds.includes(room.propertyId)) {
+       return false;
+     }
+
+     // Property filter - only show rooms from selected property
+     if (room.propertyId !== selectedProperty) {
+       return false;
+     }
 
     // Search filter
     if (search && !room.roomNumber.toLowerCase().includes(search.toLowerCase())) {
@@ -236,39 +263,87 @@ export default function RoomOccupancyPage() {
   const occupancyRate = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(1) : 0;
   const monthlyRevenue = filteredRooms.reduce((sum, room) => sum + (room.occupiedBeds * room.rentPerBed), 0);
 
-  if (loading) {
-    return (
-      <RequireRole role="OWNER">
-        <MainLayout>
-          <div className="space-y-6">
-            <div className="h-12 bg-gray-200 rounded animate-pulse" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
-              ))}
-            </div>
-            <div className="h-96 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </MainLayout>
-      </RequireRole>
-    );
-  }
+   // Show error if no property selected
+   if (!selectedProperty) {
+     return (
+       <RequireRole role="OWNER">
+         <MainLayout>
+           <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+             <Home className="w-12 h-12 text-blue-500" />
+             <div>
+               <h1 className="text-2xl sm:text-3xl font-bold text-white">Select a property to view rooms</h1>
+               <p className="text-sm sm:text-base text-gray-400 mt-2">
+                 Go back to the Properties page and choose the property whose rooms you want to manage.
+               </p>
+             </div>
+             <Button onClick={() => router.push('/owner/properties')} className="bg-blue-600 text-white">
+               Go to Properties
+             </Button>
+           </div>
+         </MainLayout>
+       </RequireRole>
+     );
+   }
 
-  return (
-    <RequireRole role="OWNER">
-      <MainLayout>
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <Home className="w-8 h-8 text-blue-600" />
-                Room Occupancy Details
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Complete overview of all rooms across your properties
-              </p>
-            </div>
+   // Show error if property not found
+   if (selectedProperty && !selectedPropertyDetails) {
+     return (
+       <RequireRole role="OWNER">
+         <MainLayout>
+           <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+             <Building2 className="w-12 h-12 text-red-500" />
+             <div>
+               <h1 className="text-2xl sm:text-3xl font-bold text-white">Property not found</h1>
+               <p className="text-sm sm:text-base text-gray-400 mt-2">
+                 The property you&apos;re trying to view no longer exists. Please select another property.
+               </p>
+             </div>
+             <Button onClick={() => router.push('/owner/properties')} className="bg-blue-600 text-white">
+               Go to Properties
+             </Button>
+           </div>
+         </MainLayout>
+       </RequireRole>
+     );
+   }
+
+   if (loading) {
+     return (
+       <RequireRole role="OWNER">
+         <MainLayout>
+           <div className="space-y-6">
+             <div className="h-12 bg-gray-200 rounded animate-pulse" />
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+               {[...Array(4)].map((_, i) => (
+                 <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
+               ))}
+             </div>
+             <div className="h-96 bg-gray-200 rounded animate-pulse" />
+           </div>
+         </MainLayout>
+       </RequireRole>
+     );
+   }
+
+   return (
+     <RequireRole role="OWNER">
+       <MainLayout>
+         <div className="space-y-6">
+           {/* Header */}
+           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+             <div>
+               <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3 flex-wrap">
+                 <Home className="w-8 h-8 text-blue-600" />
+                 {selectedPropertyDetails
+                   ? `${selectedPropertyDetails.name} • Room Details`
+                   : 'Room Occupancy Details'}
+               </h1>
+               <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
+                 {selectedPropertyDetails?.address
+                   ? `${selectedPropertyDetails.address}${selectedPropertyDetails.city ? `, ${selectedPropertyDetails.city}` : ''}`
+                   : 'Complete overview of all rooms across your properties'}
+               </p>
+             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
               <Button
                 fullWidth
@@ -366,73 +441,71 @@ export default function RoomOccupancyPage() {
             </Card>
           </div>
 
-          {/* Filters */}
-          <Card className="bg-white dark:bg-gray-800 shadow-xl border-0">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Property Filter */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                    Filter by Property
-                  </label>
-                  <Select value={selectedProperty} onValueChange={setSelectedProperty}>
-                    <SelectTrigger className="bg-gray-50 dark:bg-gray-900">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">All Properties</SelectItem>
-                      {properties.map((prop: any) => (
-                        <SelectItem key={prop.id} value={prop.id}>
-                          {prop.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+           {/* Filters */}
+           <Card className="bg-white dark:bg-gray-800 shadow-xl border-0">
+             <CardContent className="p-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {/* Property Info */}
+                 <div>
+                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                     Viewing Property
+                   </label>
+                   <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3">
+                     <Building2 className="w-6 h-6 text-blue-500" />
+                     <div>
+                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                         {selectedPropertyDetails?.name || 'Property not found'}
+                       </p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400">
+                         Manage rooms for this property via the Properties page
+                       </p>
+                     </div>
+                   </div>
+                 </div>
 
-                {/* Occupancy Filter */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                    Occupancy Status
-                  </label>
-                  <div className="flex gap-2">
-                    {['ALL', 'FULL', 'PARTIAL', 'VACANT'].map((status) => (
-                      <Button
-                        key={status}
-                        onClick={() => setOccupancyFilter(status as any)}
-                        variant={occupancyFilter === status ? 'default' : 'outline'}
-                        size="sm"
-                        className={
-                          occupancyFilter === status
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-700 dark:text-gray-300'
-                        }
-                      >
-                        {status}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+                 {/* Occupancy Filter */}
+                 <div>
+                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                     Occupancy Status
+                   </label>
+                   <div className="flex gap-2 flex-wrap">
+                     {['ALL', 'FULL', 'PARTIAL', 'VACANT'].map((status) => (
+                       <Button
+                         key={status}
+                         onClick={() => setOccupancyFilter(status as any)}
+                         variant={occupancyFilter === status ? 'default' : 'outline'}
+                         size="sm"
+                         className={
+                           occupancyFilter === status
+                             ? 'bg-blue-600 text-white'
+                             : 'text-gray-700 dark:text-gray-300'
+                         }
+                       >
+                         {status}
+                       </Button>
+                     ))}
+                   </div>
+                 </div>
 
-                {/* Search */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                    Search Room
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Room number..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-10 bg-gray-50 dark:bg-gray-900"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                 {/* Search */}
+                 <div className="md:col-span-2">
+                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                     Search Room
+                   </label>
+                   <div className="relative">
+                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                     <Input
+                       type="text"
+                       placeholder="Room number..."
+                       value={search}
+                       onChange={(e) => setSearch(e.target.value)}
+                       className="pl-10 bg-gray-50 dark:bg-gray-900"
+                     />
+                   </div>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
 
           {/* Rooms Table */}
           <Card className="bg-white dark:bg-gray-800 shadow-xl border-0">

@@ -151,8 +151,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           const normalized = extractNotifications(response.data as NotificationApiResponse | AppNotification[]);
           setNotifications(normalized);
         }
-      } catch (error) {
-        console.error('❌ Failed to load notifications:', error);
+      } catch (error: any) {
+        // Handle 404 or route not found gracefully - endpoint may not exist yet
+        if (error?.message?.includes('Route not found') || error?.message?.includes('404') || error?.response?.status === 404) {
+          console.log('ℹ️ Notifications API endpoint not available yet. Using WebSocket only.');
+          // Don't set error state - WebSocket notifications will still work
+          setNotifications([]);
+        } else {
+          console.error('❌ Failed to load notifications:', error);
+        }
       } finally {
         setIsLoading(false);
       }
