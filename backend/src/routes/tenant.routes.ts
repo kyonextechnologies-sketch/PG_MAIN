@@ -5,6 +5,7 @@ import {
   getAllTenants,
   getTenantById,
   getMyTenantProfile,
+  updateMyTenantProfile,
   updateTenant,
   checkoutTenant,
   deleteTenant,
@@ -19,6 +20,8 @@ const router = Router();
 
 // ✅ Get current tenant's own profile (for TENANT users) - No role check needed
 router.get('/profile/me', authenticate, getMyTenantProfile);
+// ✅ Update current tenant's own profile (for TENANT users)
+router.put('/profile/me', authenticate, updateMyTenantProfile);
 
 // All other tenant routes require auth and owner role
 router.use(authenticate, isOwner);

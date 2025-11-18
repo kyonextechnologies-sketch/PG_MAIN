@@ -28,6 +28,8 @@ import { useUIStore } from '@/store/ui';
 import { crudToasts } from '@/lib/toast';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/apiClient';
+import { CreditCard, Copy, CheckCircle2 } from 'lucide-react';
+import { useUPISettings } from '@/hooks/useUPISettings';
 
 // ❌ MOCK DATA DISABLED - Showing raw/empty state
 // Mock data for tenant profile
@@ -88,6 +90,8 @@ export default function TenantProfilePage() {
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const { addNotification } = useUIStore();
   const { data: session } = useSession();
+  const { settings: upiSettings } = useUPISettings();
+  const [copiedUPI, setCopiedUPI] = useState(false);
 
   // Load saved data on component mount
   React.useEffect(() => {
@@ -155,11 +159,21 @@ export default function TenantProfilePage() {
         throw new Error('Please enter a valid emergency contact number');
       }
 
-      // Save to localStorage
+      // Make API call to update profile
+      const response = await apiClient.put('/tenants/profile/me', {
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        emergencyContact: profileData.emergencyContact,
+        address: profileData.address,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to update profile');
+      }
+
+      // Also save to localStorage as backup
       localStorage.setItem('tenantProfile', JSON.stringify(profileData));
-      
-      // In real app, make API call here
-      // await api.updateTenantProfile(profileData);
       
       setSaveStatus({ type: 'success', message: 'Profile updated successfully!' });
       crudToasts.update.success('Profile');
@@ -290,7 +304,7 @@ export default function TenantProfilePage() {
           </div>
 
           <Tabs defaultValue="personal" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-gray-100 to-gray-200 p-1 rounded-xl shadow-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 to-gray-200 p-1 rounded-xl shadow-lg">
               <TabsTrigger 
                 value="personal"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
@@ -308,6 +322,12 @@ export default function TenantProfilePage() {
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 Accommodation
+              </TabsTrigger>
+              <TabsTrigger 
+                value="payment"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+              >
+                Payment Details
               </TabsTrigger>
             </TabsList>
 
@@ -553,6 +573,92 @@ export default function TenantProfilePage() {
                       </Button>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Payment Details */}
+            <TabsContent value="payment">
+              <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                  <CardTitle className="flex items-center text-lg font-bold text-gray-900">
+                    <div className="p-2 bg-green-500 rounded-lg mr-3">
+                      <CreditCard className="h-5 w-5 text-white" />
+                    </div>
+                    Owner Payment Details
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-600 font-semibold">
+                    Use these payment details to make rent payments to your owner
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {upiSettings?.upiId ? (
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
+                        <h4 className="font-bold text-gray-900 mb-4 text-lg">UPI Payment Information</h4>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center py-3 border-b border-green-100">
+                            <span className="text-gray-700 font-semibold">UPI Display Name:</span>
+                            <span className="font-bold text-green-800">{upiSettings.upiName || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-3 border-b border-green-100">
+                            <span className="text-gray-700 font-semibold">UPI ID:</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-green-800 break-all">{upiSettings.upiId}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(upiSettings.upiId);
+                                    setCopiedUPI(true);
+                                    setTimeout(() => setCopiedUPI(false), 2000);
+                                    addNotification({
+                                      type: 'success',
+                                      title: 'Copied!',
+                                      message: 'UPI ID copied to clipboard',
+                                      read: false,
+                                    });
+                                  } catch (error) {
+                                    console.error('Failed to copy:', error);
+                                  }
+                                }}
+                                className="border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400"
+                              >
+                                {copiedUPI ? (
+                                  <>
+                                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                                    Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-4 w-4 mr-1" />
+                                    Copy
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                        <h5 className="font-semibold text-gray-900 mb-2">Payment Instructions:</h5>
+                        <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                          <li>Use the UPI ID above to make rent payments</li>
+                          <li>You can use any UPI app (Google Pay, PhonePe, Paytm, etc.)</li>
+                          <li>Always include the invoice number in the payment note</li>
+                          <li>Keep the transaction receipt for your records</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">Payment details not available</p>
+                      <p className="text-sm text-gray-500 mt-2">Please contact your owner to set up payment information</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

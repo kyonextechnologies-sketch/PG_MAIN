@@ -218,6 +218,54 @@ export const getMyTenantProfile = asyncHandler(async (req: AuthRequest, res: Res
 });
 
 /**
+ * Update current tenant's own profile (for TENANT role users)
+ */
+export const updateMyTenantProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new AppError('Authentication required', 401);
+  if (req.user.role !== 'TENANT') throw new AppError('Only tenants can update their own profile', 403);
+
+  const tenantProfile = await prisma.tenantProfile.findFirst({
+    where: { userId: req.user.id },
+  });
+
+  if (!tenantProfile) {
+    throw new AppError('Tenant profile not found', 404);
+  }
+
+  const { name, email, phone, emergencyContact, address } = req.body;
+
+  // Update tenant profile
+  const updatedTenant = await prisma.tenantProfile.update({
+    where: { id: tenantProfile.id },
+    data: {
+      ...(name && { name }),
+      ...(email && { email }),
+      ...(phone && { phone }),
+      ...(emergencyContact !== undefined && { emergencyContact }),
+      ...(address !== undefined && { address }),
+    },
+    include: {
+      property: { select: { id: true, name: true } },
+      room: { select: { id: true, name: true, roomNumber: true } },
+      bed: { select: { id: true, name: true, bedNumber: true } },
+    },
+  });
+
+  // Also update user table if name/email changed
+  if (name || email) {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+      },
+    });
+  }
+
+  res.json({ success: true, message: 'Profile updated successfully', data: updatedTenant });
+});
+
+/**
  * Update tenant
  */
 export const updateTenant = asyncHandler(async (req: AuthRequest, res: Response) => {
