@@ -1,32 +1,64 @@
 import admin from 'firebase-admin';
 import path from 'path';
+import fs from 'fs';
 
 let firebaseApp: admin.app.App | null = null;
+let firebaseInitialized = false;
 
 /**
  * Initialize Firebase Admin SDK
  */
-export const initializeFirebase = (): admin.app.App => {
+export const initializeFirebase = (): admin.app.App | null => {
   if (firebaseApp) {
     return firebaseApp;
   }
 
+  if (firebaseInitialized) {
+    // Already tried to initialize, return null to avoid repeated errors
+    return null;
+  }
+
+  firebaseInitialized = true;
+
   try {
+    // Option 1: Try environment variable (most secure for production)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        firebaseApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        console.log('✅ Firebase Admin SDK initialized from environment variable');
+        return firebaseApp;
+      } catch (parseError: any) {
+        console.warn('⚠️  Failed to parse FIREBASE_SERVICE_ACCOUNT env variable:', parseError.message);
+      }
+    }
+
+    // Option 2: Try file path
     const serviceAccountPath = path.join(
       __dirname,
       '../..',
       'firebase-service-account.json'
     );
 
-    firebaseApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccountPath),
-    });
-
-    console.log('✅ Firebase Admin SDK initialized successfully');
-    return firebaseApp;
-  } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
-    throw error;
+    if (fs.existsSync(serviceAccountPath)) {
+      firebaseApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountPath),
+      });
+      console.log('✅ Firebase Admin SDK initialized from file');
+      return firebaseApp;
+    } else {
+      console.warn('⚠️  Firebase service account file not found at:', serviceAccountPath);
+      console.warn('⚠️  Firebase features will be disabled. To enable:');
+      console.warn('   1. Download service account JSON from Firebase Console');
+      console.warn('   2. Save it as: backend/firebase-service-account.json');
+      console.warn('   3. OR set FIREBASE_SERVICE_ACCOUNT environment variable with JSON content');
+      return null;
+    }
+  } catch (error: any) {
+    console.warn('⚠️  Firebase initialization failed (notifications will be disabled):', error.message);
+    return null;
   }
 };
 
@@ -43,7 +75,10 @@ export const sendFCMNotification = async (
 ): Promise<{ success: boolean; response?: string; error?: string }> => {
   try {
     if (!firebaseApp) {
-      initializeFirebase();
+      const app = initializeFirebase();
+      if (!app) {
+        return { success: false, error: 'Firebase not configured' };
+      }
     }
 
     const messaging = admin.messaging(firebaseApp!);
@@ -99,7 +134,10 @@ export const sendFCMNotificationMulticast = async (
 ): Promise<{ successCount: number; failureCount: number; responses: admin.messaging.SendResponse[] }> => {
   try {
     if (!firebaseApp) {
-      initializeFirebase();
+      const app = initializeFirebase();
+      if (!app) {
+        throw new Error('Firebase not configured');
+      }
     }
 
     const messaging = admin.messaging(firebaseApp!);
@@ -148,7 +186,10 @@ export const subscribeToTopic = async (
 ): Promise<void> => {
   try {
     if (!firebaseApp) {
-      initializeFirebase();
+      const app = initializeFirebase();
+      if (!app) {
+        throw new Error('Firebase not configured');
+      }
     }
 
     const messaging = admin.messaging(firebaseApp!);
@@ -170,7 +211,10 @@ export const unsubscribeFromTopic = async (
 ): Promise<void> => {
   try {
     if (!firebaseApp) {
-      initializeFirebase();
+      const app = initializeFirebase();
+      if (!app) {
+        throw new Error('Firebase not configured');
+      }
     }
 
     const messaging = admin.messaging(firebaseApp!);
