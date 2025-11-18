@@ -7,6 +7,8 @@ import {
   getDashboardStats,
   getMaintenanceRequests,
   getAuditLogs,
+  getSubscriptions,
+  updateSubscription,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -21,5 +23,7 @@ router.get('/owners/:id', getOwnerDetails);
 router.post('/owners/:id/verify', verifyOwner);
 router.get('/maintenance-requests', getMaintenanceRequests);
 router.get('/audit-logs', getAuditLogs);
+router.get('/subscriptions', getSubscriptions);
+router.put('/subscriptions/:ownerId', updateSubscription);
 
 export default router;

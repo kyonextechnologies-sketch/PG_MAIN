@@ -4,6 +4,7 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 import prisma from '../config/database';
 import { logAdminAction } from '../middleware/auditLog';
 import { createNotification } from '../services/notification.service';
+import { Prisma } from '@prisma/client';
 
 /**
  * Verify admin role middleware
@@ -562,6 +563,204 @@ export const getAuditLogs = asyncHandler(async (req: AuthRequest, res: Response)
         totalPages: Math.ceil(total / limit),
       },
     },
+  });
+});
+
+/**
+ * @swagger
+ * /admin/subscriptions:
+ *   get:
+ *     summary: Get all owner subscriptions
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, EXPIRED, CANCELLED, SUSPENDED]
+ *       - in: query
+ *         name: package
+ *         schema:
+ *           type: string
+ *           enum: [BASIC, STANDARD, PREMIUM, ENTERPRISE]
+ *     responses:
+ *       200:
+ *         description: List of subscriptions
+ */
+export const getSubscriptions = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const status = req.query.status as string;
+  const packageName = req.query.package as string;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.SubscriptionWhereInput = {};
+  
+  if (status) {
+    where.status = status as any;
+  }
+  
+  if (packageName) {
+    where.packageName = packageName as any;
+  }
+
+  const [subscriptions, total] = await Promise.all([
+    prisma.subscription.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            _count: {
+              select: {
+                properties: true,
+                ownedTenants: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.subscription.count({ where }),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      subscriptions,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
+  });
+});
+
+/**
+ * @swagger
+ * /admin/subscriptions/{ownerId}:
+ *   put:
+ *     summary: Update owner subscription
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ownerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               packageName:
+ *                 type: string
+ *                 enum: [BASIC, STANDARD, PREMIUM, ENTERPRISE]
+ *               status:
+ *                 type: string
+ *                 enum: [ACTIVE, EXPIRED, CANCELLED, SUSPENDED]
+ *               price:
+ *                 type: number
+ *               billingCycle:
+ *                 type: string
+ *                 enum: [MONTHLY, BI_MONTHLY, QUARTERLY]
+ *               autoRenew:
+ *                 type: boolean
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Subscription updated
+ */
+export const updateSubscription = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  const { ownerId } = req.params;
+  const { packageName, status, price, billingCycle, autoRenew, endDate } = req.body;
+
+  // Check if owner exists
+  const owner = await prisma.user.findUnique({
+    where: { id: ownerId, role: 'OWNER' },
+  });
+
+  if (!owner) {
+    throw new AppError('Owner not found', 404);
+  }
+
+  // Update or create subscription
+  const subscription = await prisma.subscription.upsert({
+    where: { ownerId },
+    create: {
+      ownerId,
+      packageName: packageName || 'BASIC',
+      status: status || 'ACTIVE',
+      price: price ? new Prisma.Decimal(price) : new Prisma.Decimal(0),
+      billingCycle: billingCycle || 'MONTHLY',
+      autoRenew: autoRenew !== undefined ? autoRenew : true,
+      endDate: endDate ? new Date(endDate) : null,
+    },
+    update: {
+      ...(packageName && { packageName }),
+      ...(status && { status }),
+      ...(price !== undefined && { price: new Prisma.Decimal(price) }),
+      ...(billingCycle && { billingCycle }),
+      ...(autoRenew !== undefined && { autoRenew }),
+      ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+      ...(status === 'CANCELLED' && {
+        cancelledAt: new Date(),
+        cancelledBy: req.user!.id,
+      }),
+    },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+  // Log admin action
+  await logAdminAction(req.user!.id, 'UPDATE_SUBSCRIPTION', 'Subscription', subscription.id, req, {
+    ownerId,
+    packageName: subscription.packageName,
+    status: subscription.status,
+  });
+
+  res.json({
+    success: true,
+    message: 'Subscription updated successfully',
+    data: subscription,
   });
 });
 

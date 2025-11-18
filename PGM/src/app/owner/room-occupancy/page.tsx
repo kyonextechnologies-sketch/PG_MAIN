@@ -20,7 +20,10 @@ import {
   Download,
   Eye,
   Clock,
-  Plus
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/lib/apiClient';
@@ -62,6 +65,9 @@ export default function RoomOccupancyPage() {
   const [occupancyFilter, setOccupancyFilter] = useState<'ALL' | 'FULL' | 'VACANT' | 'PARTIAL'>('ALL');
   const [showRoomForm, setShowRoomForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   
   const { properties } = useProperties();
   const { createRoom, updateRoom } = useRooms();
@@ -179,6 +185,19 @@ useEffect(() => {
   }
 }, [loadRooms, selectedProperty]);
 
+// Close action menu when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (actionMenuOpen && !(event.target as Element).closest('.relative')) {
+      setActionMenuOpen(null);
+    }
+  };
+  if (actionMenuOpen) {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }
+}, [actionMenuOpen]);
+
    const handleRoomSubmit = async (data: any) => {
      try {
        if (!selectedProperty) {
@@ -219,6 +238,7 @@ useEffect(() => {
        }
        setShowRoomForm(false);
        setEditingRoom(null);
+       setActionMenuOpen(null);
      } catch (err: any) {
        addNotification({
          type: 'error',
@@ -226,6 +246,48 @@ useEffect(() => {
          message: err.message || 'Failed to process room request',
          read: false,
        });
+     }
+   };
+
+   const handleEditRoom = (room: Room) => {
+     setEditingRoom(room);
+     setShowRoomForm(true);
+     setActionMenuOpen(null);
+   };
+
+   const handleDeleteRoom = async (roomId: string) => {
+     if (deleteConfirm !== roomId) {
+       setDeleteConfirm(roomId);
+       setActionMenuOpen(null);
+       return;
+     }
+
+     try {
+       setDeleting(true);
+       const response = await apiClient.delete(`/rooms/id/${roomId}`);
+       
+       if (response.success) {
+         addNotification({
+           type: 'success',
+           title: 'Room Deleted',
+           message: 'Room and all related data have been deleted successfully.',
+           read: false,
+         });
+         await loadRooms(); // Refresh room list
+         setDeleteConfirm(null);
+       } else {
+         throw new Error(response.message || 'Failed to delete room');
+       }
+     } catch (err: any) {
+       addNotification({
+         type: 'error',
+         title: 'Delete Failed',
+         message: err.message || 'Failed to delete room. Make sure the room is empty.',
+         read: false,
+       });
+     } finally {
+       setDeleting(false);
+       setDeleteConfirm(null);
      }
    };
 
@@ -567,6 +629,9 @@ useEffect(() => {
                         <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                           Status
                         </th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -685,6 +750,47 @@ useEffect(() => {
                               </span>
                             )}
                           </td>
+
+                          {/* Actions */}
+                          <td className="px-6 py-4 text-center">
+                            <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuOpen(actionMenuOpen === room.id ? null : room.id);
+                                }}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                aria-label="Actions"
+                              >
+                                <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                              </button>
+                              
+                              {actionMenuOpen === room.id && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditRoom(room);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 rounded-t-lg transition-colors"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteRoom(room.id);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {deleteConfirm === room.id ? 'Confirm Delete' : 'Remove'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
                         </motion.tr>
                       ))}
                     </tbody>
@@ -696,15 +802,18 @@ useEffect(() => {
 
           {/* Room Form Modal */}
           {showRoomForm && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => {
+              setShowRoomForm(false);
+              setEditingRoom(null);
+            }}>
+              <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 <RoomDetailsForm
                   onSubmit={handleRoomSubmit}
                   initialData={editingRoom}
                   isEditing={!!editingRoom}
                   properties={properties}
                 />
-                <div className="p-4 border-t">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                   <Button 
                     variant="outline" 
                     onClick={() => {
@@ -714,6 +823,43 @@ useEffect(() => {
                     className="w-full"
                   >
                     Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deleteConfirm && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
+              <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
+                    <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Room</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                <p className="text-gray-700 dark:text-gray-300 mb-6">
+                  Are you sure you want to delete this room? All related data including beds and tenant associations will be permanently removed.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteConfirm(null)}
+                    className="flex-1"
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleDeleteRoom(deleteConfirm)}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Deleting...' : 'Delete Room'}
                   </Button>
                 </div>
               </div>

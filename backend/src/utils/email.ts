@@ -177,16 +177,42 @@ export const sendEmail = async (emailData: EmailData): Promise<void> => {
 const getEmailTemplate = (template: string, data: Record<string, any>): string => {
   const templates: Record<string, (data: any) => string> = {
     welcome: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to PG Management System!</h2>
-        <p>Hello ${data.name},</p>
-        <p>Your tenant account has been created successfully.</p>
-        <p><strong>Login Credentials:</strong></p>
-        <p>Email: ${data.email}<br/>Password: ${data.password}</p>
-        <p>Please login and change your password immediately.</p>
-        <p>Login URL: <a href="${data.loginUrl}">${data.loginUrl}</a></p>
-        <br/>
-        <p>Best regards,<br/>PG Management Team</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-top: 0; font-size: 24px;">
+            Welcome to ${data.propertyName || 'PG Management System'}!
+          </h2>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">Hello <strong>${data.name}</strong>,</p>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+            Your tenant account has been created successfully for <strong>${data.propertyName || 'the property'}</strong>.
+          </p>
+          <div style="background-color: #f3f4f6; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin-top: 0; margin-bottom: 10px;">Login Credentials:</p>
+            <p style="color: #4b5563; font-size: 14px; margin: 5px 0;">
+              <strong>Email:</strong> ${data.email}
+            </p>
+            <p style="color: #4b5563; font-size: 14px; margin: 5px 0;">
+              <strong>Password:</strong> ${data.password}
+            </p>
+          </div>
+          <p style="color: #dc2626; font-size: 14px; font-weight: 600; margin: 20px 0;">
+            ⚠️ Please login and change your password immediately for security.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.loginUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Login to Your Account
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Or copy and paste this URL in your browser:<br/>
+            <a href="${data.loginUrl}" style="color: #3b82f6; word-break: break-all;">${data.loginUrl}</a>
+          </p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+            Best regards,<br/>
+            <strong style="color: #1f2937;">PG Management Team</strong>
+          </p>
+        </div>
       </div>
     `,
     invoiceGenerated: (data) => `

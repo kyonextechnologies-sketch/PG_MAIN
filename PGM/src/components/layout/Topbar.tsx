@@ -50,7 +50,7 @@ export function Topbar() {
           </Button>
 
           {/* User menu */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="w-8 h-8 bg-gradient-to-br from-[#f5c518] to-[#e6b800] rounded-full flex items-center justify-center shadow-lg shadow-[#f5c518]/20">
               <User className="h-4 w-4 text-[#0d0d0d]" />
             </div>
@@ -59,18 +59,21 @@ export function Topbar() {
                 {session?.user?.name}
               </p>
               <p className="text-xs text-[#737373] capitalize font-medium">
-                {session?.user?.role?.toLowerCase()}
+                {session?.user?.role?.toLowerCase() === 'admin' 
+                  ? 'Logged in as Admin' 
+                  : session?.user?.role?.toLowerCase()}
               </p>
             </div>
             <Button 
               variant="ghost" 
-              size="icon" 
+              size="sm"
               onClick={handleSignOut}
-              className="group hover:bg-red-900/30 text-white transition-all duration-200"
+              className="group hover:bg-red-900/30 text-white transition-all duration-200 flex items-center gap-2"
               title="Logout"
               aria-label="Logout"
             >
-              <LogOut className="h-5 w-5 group-hover:text-red-400 transition-colors" />
+              <LogOut className="h-4 w-4 group-hover:text-red-400 transition-colors" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>

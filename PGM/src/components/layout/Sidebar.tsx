@@ -76,7 +76,7 @@ export function Sidebar() {
       <div
         className={cn(
           'w-64 bg-[#0d0d0d] backdrop-blur-md shadow-2xl border-r border-[#222222]',
-          'fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto lg:block',
+          'fixed inset-y-0 left-0 z-40 lg:sticky lg:top-0 lg:h-screen lg:z-auto lg:block',
           'transform transition-all duration-300 ease-in-out',
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}

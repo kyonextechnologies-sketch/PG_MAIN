@@ -30,6 +30,7 @@ model User {
   ownedTenants        TenantProfile[]      @relation("OwnerToTenants")
   tenantProfile       TenantProfile?       @relation("UserToTenant")
   ownerVerification   OwnerVerification?
+  subscription        Subscription?
   notifications       Notification[]
   auditLogs           AuditLog[]
   otps                OTP[]
@@ -429,6 +430,28 @@ model OwnerVerification {
   @@index([ownerId])
 }
 
+model Subscription {
+  id                String            @id @default(uuid())
+  ownerId           String            @unique
+  packageName       SubscriptionPackage
+  status            SubscriptionStatus @default(ACTIVE)
+  startDate         DateTime          @default(now())
+  endDate           DateTime?
+  price             Decimal           @db.Decimal(10, 2)
+  billingCycle      BillingCycle      @default(MONTHLY)
+  autoRenew         Boolean           @default(true)
+  cancelledAt       DateTime?
+  cancelledBy       String?
+  cancellationReason String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  owner             User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([packageName])
+}
+
 enum NotificationType {
   MAINTENANCE_REQUEST
   MAINTENANCE_UPDATE
@@ -450,4 +473,18 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum SubscriptionPackage {
+  BASIC
+  STANDARD
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
 }

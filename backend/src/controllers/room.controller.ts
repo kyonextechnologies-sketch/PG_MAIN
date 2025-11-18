@@ -82,21 +82,40 @@ export const getRoomsByProperty = asyncHandler(async (req: AuthRequest, res: Res
 
   const { propertyId } = req.params;
 
-  // Verify property ownership
-  const property = await prisma.property.findFirst({
-    where: { id: propertyId, ownerId: req.user.id },
-  });
+  // Admin can access any property, owners can only access their own
+  let property;
+  if (req.user.role === 'ADMIN') {
+    property = await prisma.property.findFirst({
+      where: { id: propertyId },
+    });
+  } else {
+    property = await prisma.property.findFirst({
+      where: { id: propertyId, ownerId: req.user.id },
+    });
+  }
 
   if (!property) {
     throw new AppError('Property not found', 404);
   }
 
-  console.log('🔍 [getRoomsByProperty] Fetching rooms for property:', propertyId);
+  console.log('🔍 [getRoomsByProperty] Fetching rooms for property:', propertyId, 'by', req.user.role);
 
   const rooms = await prisma.room.findMany({
     where: { propertyId },
     include: {
-      beds: true,
+      beds: {
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              status: true,
+            },
+          },
+        },
+      },
       _count: {
         select: { tenants: true },
       },
@@ -380,22 +399,52 @@ export const deleteRoom = asyncHandler(async (req: AuthRequest, res: Response) =
 
   const room = await prisma.room.findFirst({
     where: { id },
-    include: { property: true },
+    include: { 
+      property: true,
+      beds: {
+        include: {
+          tenant: true,
+        },
+      },
+      tenants: true,
+    },
   });
 
   if (!room || room.property.ownerId !== req.user.id) {
     throw new AppError('Room not found', 404);
   }
 
-  if (room.occupied > 0) {
-    throw new AppError('Cannot delete room with occupied beds', 400);
+  // Check if any beds are occupied
+  const occupiedBeds = room.beds.filter(bed => bed.occupied);
+  if (occupiedBeds.length > 0) {
+    throw new AppError(`Cannot delete room with ${occupiedBeds.length} occupied bed(s). Please remove tenants first.`, 400);
   }
 
-  await prisma.room.delete({ where: { id } });
+  // Delete all related data in transaction
+  await prisma.$transaction(async (tx) => {
+    // 1. Remove tenant associations (set roomId, bedId to null)
+    await tx.tenantProfile.updateMany({
+      where: { roomId: id },
+      data: {
+        roomId: null,
+        bedId: null,
+      },
+    });
+
+    // 2. Delete all beds in this room
+    await tx.bed.deleteMany({
+      where: { roomId: id },
+    });
+
+    // 3. Delete the room itself
+    await tx.room.delete({
+      where: { id },
+    });
+  });
 
   res.json({
     success: true,
-    message: 'Room deleted successfully',
+    message: 'Room and all related data deleted successfully',
   });
 });
 

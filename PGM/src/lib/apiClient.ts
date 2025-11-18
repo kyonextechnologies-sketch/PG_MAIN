@@ -219,9 +219,17 @@ class ApiClient {
         }
 
         const json = await this.safeJson(res);
+        
+        // Handle different response formats
+        let responseData = json;
+        if (json && typeof json === 'object') {
+          // If response has a 'data' field, use it; otherwise use the whole json
+          responseData = json.data !== undefined ? json.data : json;
+        }
+        
         return {
           success: true,
-          data: json?.data ?? json,
+          data: responseData,
           message: json?.message ?? 'Success',
           timestamp: new Date().toISOString(),
         };
@@ -261,13 +269,21 @@ class ApiClient {
       }
     }
 
-    // Don't log 404s as final failures - they're expected for optional endpoints
+    // Don't log 404s or connection errors as final failures
     const isNotFoundError = lastError?.message?.includes('404') || 
                            lastError?.message?.includes('Route not found') ||
                            lastError?.message?.includes('Not Found');
     
-    if (!isNotFoundError) {
+    const isConnectionError = lastError?.message?.includes('Failed to fetch') ||
+                             lastError?.message?.includes('ERR_CONNECTION_REFUSED') ||
+                             lastError?.message?.includes('NetworkError') ||
+                             lastError?.message?.includes('ECONNREFUSED');
+    
+    if (!isNotFoundError && !isConnectionError) {
       console.error('🚨 [ApiClient] Final failure:', lastError?.message);
+    } else if (isConnectionError && process.env.NODE_ENV === 'development') {
+      // Only log connection errors in development, and only once
+      console.warn('⚠️ [ApiClient] Backend server not reachable. Ensure backend is running on port 5000.');
     }
     return this.handleError(lastError) as ApiResponse<T>;
   }
@@ -374,20 +390,28 @@ class ApiClient {
 
     const statusCode = (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response) ? (error.response.status as number) : 400;
 
-    // Don't log 404s as errors - they're expected for optional endpoints
-    const isNotFoundError = message.includes('404') || 
-                           message.includes('Route not found') ||
-                           message.includes('Not Found') ||
-                           statusCode === 404;
+        // Don't log 404s or connection errors as errors
+        const isNotFoundError = message.includes('404') || 
+                               message.includes('Route not found') ||
+                               message.includes('Not Found') ||
+                               statusCode === 404;
 
-    if (!isNotFoundError) {
-      console.error('🔴 [ApiClient] Error Details:', { message });
-      ErrorHandler.handle({
-        code: 'HTTP_ERROR',
-        message,
-        statusCode,
-      });
-    }
+        const isConnectionError = message.includes('Failed to fetch') ||
+                                 message.includes('ERR_CONNECTION_REFUSED') ||
+                                 message.includes('NetworkError') ||
+                                 message.includes('ECONNREFUSED');
+
+        if (!isNotFoundError && !isConnectionError) {
+          console.error('🔴 [ApiClient] Error Details:', { message });
+          ErrorHandler.handle({
+            code: 'HTTP_ERROR',
+            message,
+            statusCode,
+          });
+        } else if (isConnectionError && process.env.NODE_ENV === 'development') {
+          // Connection errors are expected if backend is not running
+          console.warn('⚠️ [ApiClient] Connection error (backend may not be running):', message);
+        }
 
     return {
       success: false,

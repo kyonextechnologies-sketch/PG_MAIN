@@ -60,11 +60,10 @@ async function main() {
   // Create Owner Verification record
   await prisma.ownerVerification.create({
     data: {
-      userId: owner.id,
+      ownerId: owner.id,
       verificationStatus: 'VERIFIED',
       verifiedAt: new Date(),
-      reviewedBy: admin.id,
-      notes: 'Seed data - Pre-verified owner',
+      verifiedBy: admin.id,
     },
   });
 

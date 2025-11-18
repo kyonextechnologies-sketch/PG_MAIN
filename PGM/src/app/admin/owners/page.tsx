@@ -73,6 +73,8 @@ export default function OwnersPage() {
   const [deleting, setDeleting] = useState(false);
   const [expandedOwner, setExpandedOwner] = useState<string | null>(null);
   const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
+  const [propertyRooms, setPropertyRooms] = useState<Record<string, any[]>>({});
+  const [loadingRooms, setLoadingRooms] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadOwners();
@@ -80,19 +82,47 @@ export default function OwnersPage() {
 
   const loadOwners = async () => {
     try {
-      let url = '/admin/owners?page=1&limit=100';
+      setLoading(true);
+      const params: any = { page: 1, limit: 100 };
       if (filter !== 'ALL') {
-        url += `&verificationStatus=${filter}`;
+        params.verificationStatus = filter;
       }
 
-      const response = await apiClient.get<{ owners: Owner[] }>(url);
+      const response = await apiClient.get<{ data: { owners: Owner[] } } | { owners: Owner[] }>('/admin/owners', { params });
+      
+      console.log('🔍 [Owners] API Response:', response);
+      
       if (response.success && response.data) {
-        setOwners(response.data.owners || []);
+        // Backend returns: { success: true, data: { owners: [...], pagination: {...} } }
+        // After apiClient processing: response.data = { owners: [...], pagination: {...} }
+        let ownersData: Owner[] = [];
+        
+        // Check for nested data structure
+        if ((response.data as any).owners && Array.isArray((response.data as any).owners)) {
+          ownersData = (response.data as any).owners;
+        } else if ((response.data as any).data && (response.data as any).data.owners) {
+          ownersData = (response.data as any).data.owners;
+        } else if (Array.isArray(response.data)) {
+          ownersData = response.data as Owner[];
+        }
+        
+        console.log('✅ [Owners] Loaded', ownersData.length, 'owners');
+        setOwners(ownersData);
+      } else {
+        console.warn('⚠️ [Owners] API returned success=false or no data');
+        console.warn('Response:', response);
+        // Don't clear existing data if we have it
+        if (owners.length === 0) {
+          setOwners([]);
+        }
       }
-    } catch (error) {
-      console.error('Failed to load owners:', error);
-      // Set empty array on error
-      setOwners([]);
+    } catch (error: any) {
+      console.error('❌ [Owners] Failed to load owners:', error);
+      console.error('Error details:', error.message, error.response?.data);
+      // Don't set empty array immediately - keep previous data if available
+      if (owners.length === 0) {
+        setOwners([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -119,6 +149,52 @@ export default function OwnersPage() {
       toast.error('Failed to delete owner');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const loadRoomsForProperty = async (propertyId: string) => {
+    if (propertyRooms[propertyId]) {
+      return; // Already loaded
+    }
+
+    setLoadingRooms(prev => ({ ...prev, [propertyId]: true }));
+    try {
+      const response = await apiClient.get(`/rooms/property/${propertyId}`);
+      console.log('🔍 [Admin] Rooms API response:', response);
+      
+      if (response.success) {
+        // Handle different response formats
+        let roomsData: any[] = [];
+        
+        if (Array.isArray(response.data)) {
+          roomsData = response.data;
+        } else if (response.data && Array.isArray((response.data as any).data)) {
+          roomsData = (response.data as any).data;
+        } else if (response.data && typeof response.data === 'object' && 'rooms' in response.data) {
+          roomsData = (response.data as any).rooms || [];
+        }
+        
+        console.log('📦 [Admin] Parsed rooms data:', roomsData.length, 'rooms');
+        setPropertyRooms(prev => ({ ...prev, [propertyId]: roomsData }));
+      } else {
+        console.warn('⚠️ [Admin] Rooms API returned success=false');
+        setPropertyRooms(prev => ({ ...prev, [propertyId]: [] }));
+      }
+    } catch (error: any) {
+      console.error('❌ [Admin] Failed to load rooms for property:', propertyId, error);
+      console.error('Error details:', error.message, error.response?.data);
+      setPropertyRooms(prev => ({ ...prev, [propertyId]: [] }));
+    } finally {
+      setLoadingRooms(prev => ({ ...prev, [propertyId]: false }));
+    }
+  };
+
+  const handlePropertyExpand = (propertyId: string) => {
+    if (expandedProperty === propertyId) {
+      setExpandedProperty(null);
+    } else {
+      setExpandedProperty(propertyId);
+      loadRoomsForProperty(propertyId);
     }
   };
 
@@ -439,7 +515,7 @@ export default function OwnersPage() {
                                   <div key={property.id}>
                                     {/* Property Row */}
                                     <div
-                                      onClick={() => setExpandedProperty(expandedProperty === property.id ? null : property.id)}
+                                      onClick={() => handlePropertyExpand(property.id)}
                                       className="flex items-center justify-between p-4 bg-[#1a1a1a] rounded-lg hover:bg-[#1f1f1f] cursor-pointer border border-[#333333] hover:border-[#f5c518]/50 transition-all"
                                     >
                                       <div className="flex items-center gap-3">
@@ -500,38 +576,66 @@ export default function OwnersPage() {
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-[#333333]/50">
-                                              {/* Mock room data - replace with API call */}
-                                              {[...Array(property.totalRooms || 3)].map((_, idx) => (
-                                                <tr key={idx} className="hover:bg-[#252525]/50">
-                                                  <td className="px-4 py-3 text-white font-medium">
-                                                    Room {idx + 101}
-                                                  </td>
-                                                  <td className="px-4 py-3 text-center text-gray-300">
-                                                    {idx % 2 === 0 ? 'Single' : 'Double'}
-                                                  </td>
-                                                  <td className="px-4 py-3 text-center text-white font-semibold">
-                                                    {idx % 2 === 0 ? '1' : '2'}
-                                                  </td>
-                                                  <td className="px-4 py-3 text-center">
-                                                    <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded">
-                                                      {idx % 2 === 0 ? '1' : '2'}
-                                                    </span>
-                                                  </td>
-                                                  <td className="px-4 py-3 text-center">
-                                                    <span className="px-2 py-1 bg-red-500/10 text-red-400 rounded">
-                                                      0
-                                                    </span>
-                                                  </td>
-                                                  <td className="px-4 py-3 text-right text-[#f5c518] font-semibold">
-                                                    ₹{idx % 2 === 0 ? '12,000' : '15,000'}
-                                                  </td>
-                                                  <td className="px-4 py-3 text-center">
-                                                    <span className="px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded-full">
-                                                      Active
-                                                    </span>
+                                              {loadingRooms[property.id] ? (
+                                                <tr>
+                                                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                                                    Loading rooms...
                                                   </td>
                                                 </tr>
-                                              ))}
+                                              ) : propertyRooms[property.id] && propertyRooms[property.id].length > 0 ? (
+                                                propertyRooms[property.id].map((room: any) => {
+                                                  const sharingType = room.sharingType || room.type || 'SINGLE';
+                                                  const totalBeds = room.totalBeds || room.beds?.length || 0;
+                                                  const occupiedBeds = room.occupiedBeds || room.tenants?.length || 0;
+                                                  const availableBeds = totalBeds - occupiedBeds;
+                                                  const rentPerBed = room.rentPerBed || 0;
+                                                  
+                                                  return (
+                                                    <tr key={room.id} className="hover:bg-[#252525]/50">
+                                                      <td className="px-4 py-3 text-white font-medium">
+                                                        {room.roomNumber || `Room ${room.id.slice(0, 8)}`}
+                                                        {room.floor && (
+                                                          <span className="text-xs text-gray-400 ml-2">Floor {room.floor}</span>
+                                                        )}
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center text-gray-300 capitalize">
+                                                        {sharingType.toLowerCase()}
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center text-white font-semibold">
+                                                        {totalBeds}
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center">
+                                                        <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded">
+                                                          {occupiedBeds}
+                                                        </span>
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center">
+                                                        <span className="px-2 py-1 bg-red-500/10 text-red-400 rounded">
+                                                          {availableBeds}
+                                                        </span>
+                                                      </td>
+                                                      <td className="px-4 py-3 text-right text-[#f5c518] font-semibold">
+                                                        ₹{rentPerBed.toLocaleString('en-IN')}
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center">
+                                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                                          room.active !== false 
+                                                            ? 'bg-green-500/10 text-green-400' 
+                                                            : 'bg-red-500/10 text-red-400'
+                                                        }`}>
+                                                          {room.active !== false ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                })
+                                              ) : (
+                                                <tr>
+                                                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                                                    No rooms found for this property
+                                                  </td>
+                                                </tr>
+                                              )}
                                             </tbody>
                                           </table>
                                         </div>

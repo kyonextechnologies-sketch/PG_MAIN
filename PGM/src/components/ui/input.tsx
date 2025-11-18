@@ -21,7 +21,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const togglePasswordVisibility = () => setShowPassword(prev => !prev);
     
     return (
-      <div className="relative">
+      <div className="relative" suppressHydrationWarning>
         {icon && (
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]">
             {icon}
@@ -56,6 +56,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             onClick={togglePasswordVisibility}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] hover:text-white transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
+            suppressHydrationWarning
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>

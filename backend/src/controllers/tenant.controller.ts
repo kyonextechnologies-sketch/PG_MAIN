@@ -113,13 +113,14 @@ export const createTenant = asyncHandler(async (req: AuthRequest, res: Response)
   try {
     await sendEmail({
       to: normalizedEmail,
-      subject: 'Welcome to PG Management System',
+      subject: `Welcome to ${property.name} - PG Management System`,
       template: 'welcome',
       data: {
         name,
         email: normalizedEmail,
         password: finalPassword,
         loginUrl: `${process.env.FRONTEND_URL}/login`,
+        propertyName: property.name,
       },
     });
   } catch (err) {

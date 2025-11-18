@@ -8,20 +8,19 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
-  Building2,
-  Wrench,
   FileText,
   LogOut,
   Shield,
   Menu,
   X,
+  Package,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Owners', href: '/admin/owners', icon: Users },
-  { name: 'Properties', href: '/admin/properties', icon: Building2 },
+  { name: 'Subscriptions', href: '/admin/subscriptions', icon: Package },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
 ];
 
@@ -126,7 +125,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* User Info */}
           <div className="p-4 border-t border-[#333333]">
-            <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-[#252525] rounded-lg">
+            <div className="flex items-center gap-3 px-4 py-2 bg-[#252525] rounded-lg">
               <div className="w-10 h-10 bg-[#f5c518] rounded-full flex items-center justify-center">
                 <span className="text-[#0d0d0d] font-bold">
                   {session?.user?.name?.[0] || 'A'}
@@ -139,13 +138,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <p className="text-xs text-gray-400 truncate">{session?.user?.email}</p>
               </div>
             </div>
-            <button
-              onClick={() => router.push('/api/auth/signout')}
-              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </button>
           </div>
         </div>
       </aside>
@@ -171,6 +163,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="hidden sm:inline text-sm text-gray-400">
                 Logged in as <span className="text-[#f5c518] font-semibold">Admin</span>
               </span>
+              <button
+                onClick={() => router.push('/api/auth/signout')}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20 hover:border-red-500/40"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
             </div>
           </div>
         </header>
