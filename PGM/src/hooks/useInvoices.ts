@@ -18,12 +18,14 @@ interface Invoice {
 }
 
 interface InvoiceData {
+  tenantId?: string;
   month: string;
   amount: number;
   status?: 'PAID' | 'DUE' | 'OVERDUE' | 'PARTIAL';
   dueDate?: string;
   paidAt?: string;
   receiptNo?: string;
+  description?: string;
 }
 
 interface UseInvoicesReturn {
