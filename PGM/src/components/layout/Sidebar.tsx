@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Zap,
   Building,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StayTrackLogo } from '@/components/common/StayTrackLogo';
@@ -37,6 +38,7 @@ const tenantNavigation = [
   { name: 'Payments', href: '/tenant/payments', icon: CreditCard },
   { name: 'Electricity', href: '/tenant/electricity', icon: Zap },
   { name: 'Requests', href: '/tenant/requests', icon: Building },
+  { name: 'Notifications', href: '/tenant/notifications', icon: Bell },
   { name: 'Profile', href: '/tenant/profile', icon: Users },
 ];
 

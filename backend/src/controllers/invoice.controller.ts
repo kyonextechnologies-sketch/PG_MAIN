@@ -8,6 +8,7 @@ import {
   getDueDateForMonth,
 } from '../utils/helpers';
 import { sendEmail } from '../utils/email';
+import { createNotification } from '../services/notification.service';
 
 // ✅ Generate Invoice
 export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -89,6 +90,31 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
     } catch (err) {
       console.error('Email sending failed:', err);
     }
+  }
+
+  // ✅ Send notification to tenant
+  try {
+    await createNotification({
+      userId: tenant.userId,
+      type: 'PAYMENT_DUE',
+      title: 'New Invoice Generated',
+      message: `A new invoice for ₹${totalAmount.toLocaleString('en-IN')} has been generated for ${month}. Due date: ${dueDate.toLocaleDateString()}`,
+      data: {
+        invoiceId: invoice.id,
+        month,
+        amount: totalAmount,
+        dueDate: dueDate.toISOString(),
+        baseRent,
+        electricityCharges,
+        otherCharges,
+      },
+      channels: ['WEBSOCKET', 'EMAIL'],
+      priority: 'HIGH',
+    });
+    console.log(`✅ Notification sent to tenant ${tenant.userId} for invoice ${invoice.id}`);
+  } catch (err) {
+    console.error('❌ Failed to send notification to tenant:', err);
+    // Don't fail the invoice creation if notification fails
   }
 
   res.status(201).json({
