@@ -50,3 +50,6 @@ prisma/migrations/
 # Others
 package-lock.json
 "@ | Out-File -Encoding UTF8 .gitignore
+
+# Firebase
+firebase-service-account.json
