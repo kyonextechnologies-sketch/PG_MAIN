@@ -32,7 +32,8 @@ const nextConfig = {
   
   // ✅ Use standalone output for Render (handles error pages better)
   // Note: This still requires not-found.tsx for Next.js 15, but standalone helps
-  output: 'standalone',
+  // Temporarily disabled to fix build issues
+  // output: 'standalone',
   
   // ✅ Disable static optimization to prevent 404 page generation issues
   // This makes all pages dynamic, avoiding the Html import error
@@ -90,36 +91,16 @@ const nextConfig = {
         ];
       }
       
-      // Bundle optimization for production
+      // Bundle optimization for production - simplified to avoid chunk issues
       if (!dev && !isServer) {
-        config.optimization.splitChunks = {
-          chunks: 'all',
-          minSize: 20000,
-          maxSize: 244000,
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              chunks: 'all',
-              priority: 10,
-              enforce: true,
-            },
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              enforce: true,
-              priority: 5,
-            },
-            ui: {
-              test: /[\\/]node_modules[\\/](@radix-ui|lucide-react)[\\/]/,
-              name: 'ui',
-              chunks: 'all',
-              priority: 15,
-              enforce: true,
-            },
-          },
-        };
+        // Use default Next.js chunking strategy to avoid module not found errors
+        // config.optimization.splitChunks = {
+        //   chunks: 'all',
+        //   cacheGroups: {
+        //     default: false,
+        //     vendors: false,
+        //   },
+        // };
       }
 
       // ⚠️ IMPORTANT: Disable webpack cache in development to avoid cache corruption

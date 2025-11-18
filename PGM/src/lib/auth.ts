@@ -58,12 +58,15 @@ export const authOptions: NextAuthOptions = {
 
           // Return user data from backend
           const userData = result.data?.user;
+          const accessToken = result.data?.accessToken || result.data?.token;
+          
           if (userData) {
             return {
               id: userData.id,
               email: userData.email,
               name: userData.name,
               role: userData.role,
+              accessToken: accessToken, // Include access token
             };
           }
 
@@ -88,6 +91,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.id = user.id;
+        token.accessToken = (user as any).accessToken; // Store access token in JWT
       }
       return token;
     },
@@ -95,6 +99,8 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as 'OWNER' | 'TENANT' | 'ADMIN';
+        // Add accessToken to session for WebSocket authentication
+        (session as any).accessToken = token.accessToken;
       }
       return session;
     },

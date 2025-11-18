@@ -18,8 +18,20 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
 
   const tenant = await prisma.tenantProfile.findFirst({
     where: { id: tenantId, ownerId: req.user.id },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      email: true,
+      monthlyRent: true,
+    },
   });
   if (!tenant) throw new AppError('Tenant not found', 404);
+  
+  if (!tenant.userId) {
+    console.error('❌ Tenant userId is missing:', tenant);
+    throw new AppError('Tenant user ID not found', 500);
+  }
 
   // ✅ Ensure composite unique key exists in schema.prisma:
   // @@unique([tenantId, month], name: "tenantId_month")
@@ -94,6 +106,9 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
 
   // ✅ Send notification to tenant
   try {
+    console.log(`📬 Preparing to send notification to tenant userId: ${tenant.userId}`);
+    console.log(`📬 Invoice details: ${month}, Amount: ₹${totalAmount}, Due: ${dueDate.toLocaleDateString()}`);
+    
     await createNotification({
       userId: tenant.userId,
       type: 'PAYMENT_DUE',
@@ -111,9 +126,14 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
       channels: ['WEBSOCKET', 'EMAIL'],
       priority: 'HIGH',
     });
-    console.log(`✅ Notification sent to tenant ${tenant.userId} for invoice ${invoice.id}`);
-  } catch (err) {
+    console.log(`✅ Notification sent successfully to tenant userId: ${tenant.userId} for invoice ${invoice.id}`);
+  } catch (err: any) {
     console.error('❌ Failed to send notification to tenant:', err);
+    console.error('❌ Error details:', {
+      message: err?.message,
+      stack: err?.stack,
+      tenantUserId: tenant.userId,
+    });
     // Don't fail the invoice creation if notification fails
   }
 

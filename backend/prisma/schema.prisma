@@ -18,6 +18,13 @@ model User {
   phoneVerified       Boolean              @default(false)
   phoneVerifiedAt     DateTime?
   fcmToken            String?
+  company             String?
+  // Payment settings
+  upiId               String?
+  upiName             String?
+  autoGenerateInvoices Boolean             @default(true)
+  invoiceReminderDays  Int                 @default(3)
+  lateFeePercentage    Decimal             @default(2) @db.Decimal(5, 2)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   electricityBills    ElectricityBill[]

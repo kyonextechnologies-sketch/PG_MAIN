@@ -142,3 +142,201 @@ export const uploadOwnerVerificationDocuments = asyncHandler(async (req: AuthReq
   });
 });
 
+/**
+ * Get owner profile
+ */
+export const getOwnerProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      company: true,
+    },
+  });
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.json({
+    success: true,
+    data: user,
+  });
+});
+
+/**
+ * Update owner profile
+ */
+export const updateOwnerProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401);
+  }
+
+  const { name, email, phone, company } = req.body;
+
+  // Validate email if provided
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError('Invalid email format', 400);
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase().trim(),
+        NOT: { id: req.user.id },
+      },
+    });
+
+    if (existingUser) {
+      throw new AppError('Email already in use', 400);
+    }
+  }
+
+  // Validate phone if provided
+  if (phone) {
+    // Check if phone is already taken by another user
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        phone,
+        NOT: { id: req.user.id },
+      },
+    });
+
+    if (existingUser) {
+      throw new AppError('Phone number already in use', 400);
+    }
+  }
+
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (email !== undefined) updateData.email = email.toLowerCase().trim();
+  if (phone !== undefined) updateData.phone = phone;
+  if (company !== undefined) updateData.company = company;
+
+  const updatedUser = await prisma.user.update({
+    where: { id: req.user.id },
+    data: updateData,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      company: true,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: updatedUser,
+  });
+});
+
+/**
+ * Get owner payment settings
+ */
+export const getOwnerPaymentSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      upiId: true,
+      upiName: true,
+      autoGenerateInvoices: true,
+      invoiceReminderDays: true,
+      lateFeePercentage: true,
+    },
+  });
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.json({
+    success: true,
+    data: {
+      upiId: user.upiId || '',
+      upiName: user.upiName || '',
+      autoGenerateInvoices: user.autoGenerateInvoices ?? true,
+      invoiceReminderDays: user.invoiceReminderDays ?? 3,
+      lateFeePercentage: Number(user.lateFeePercentage) || 2,
+    },
+  });
+});
+
+/**
+ * Update owner payment settings
+ */
+export const updateOwnerPaymentSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401);
+  }
+
+  const { upiId, upiName, autoGenerateInvoices, invoiceReminderDays, lateFeePercentage } = req.body;
+
+  // Validate UPI ID format if provided
+  if (upiId && upiId.trim()) {
+    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    if (!upiIdRegex.test(upiId)) {
+      throw new AppError('Please enter a valid UPI ID (e.g., owner@paytm)', 400);
+    }
+  }
+
+  // Validate invoice reminder days
+  if (invoiceReminderDays !== undefined) {
+    if (invoiceReminderDays < 1 || invoiceReminderDays > 30) {
+      throw new AppError('Invoice reminder days must be between 1 and 30', 400);
+    }
+  }
+
+  // Validate late fee percentage
+  if (lateFeePercentage !== undefined) {
+    if (lateFeePercentage < 0 || lateFeePercentage > 50) {
+      throw new AppError('Late fee percentage must be between 0 and 50', 400);
+    }
+  }
+
+  const updateData: any = {};
+  if (upiId !== undefined) updateData.upiId = upiId || null;
+  if (upiName !== undefined) updateData.upiName = upiName || null;
+  if (autoGenerateInvoices !== undefined) updateData.autoGenerateInvoices = autoGenerateInvoices;
+  if (invoiceReminderDays !== undefined) updateData.invoiceReminderDays = invoiceReminderDays;
+  if (lateFeePercentage !== undefined) updateData.lateFeePercentage = new Prisma.Decimal(lateFeePercentage);
+
+  const updatedUser = await prisma.user.update({
+    where: { id: req.user.id },
+    data: updateData,
+    select: {
+      upiId: true,
+      upiName: true,
+      autoGenerateInvoices: true,
+      invoiceReminderDays: true,
+      lateFeePercentage: true,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'Payment settings updated successfully',
+    data: {
+      upiId: updatedUser.upiId || '',
+      upiName: updatedUser.upiName || '',
+      autoGenerateInvoices: updatedUser.autoGenerateInvoices ?? true,
+      invoiceReminderDays: updatedUser.invoiceReminderDays ?? 3,
+      lateFeePercentage: Number(updatedUser.lateFeePercentage) || 2,
+    },
+  });
+});
+

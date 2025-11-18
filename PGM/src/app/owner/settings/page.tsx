@@ -118,15 +118,48 @@ export default function SettingsPage() {
 
   // Load saved data from backend on component mount (not localStorage)
   React.useEffect(() => {
-    // Load profile data from backend API if available
-    const loadOwnerProfile = async () => {
+    // Load profile and payment settings from backend API
+    const loadOwnerData = async () => {
       try {
-        // You can add API call here to fetch owner profile from backend
-        // For now, keeping fields empty as requested
+        // Load profile data
+        const profileResponse = await apiClient.get<{ name: string; email: string; phone: string | null; company: string | null }>('/owners/profile/me');
+        if (profileResponse.success && profileResponse.data) {
+          const data = profileResponse.data as any;
+          setProfileData({
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            company: data.company || '',
+          });
+        }
+
+        // Load payment settings
+        const paymentResponse = await apiClient.get<{ upiId: string | null; upiName: string | null; autoGenerateInvoices: boolean; invoiceReminderDays: number; lateFeePercentage: number }>('/owners/payment-settings');
+        if (paymentResponse.success && paymentResponse.data) {
+          const data = paymentResponse.data as any;
+          setPaymentSettings({
+            upiId: data.upiId || '',
+            upiName: data.upiName || '',
+            autoGenerateInvoices: data.autoGenerateInvoices ?? true,
+            invoiceReminderDays: data.invoiceReminderDays ?? 3,
+            lateFeePercentage: data.lateFeePercentage ?? 2,
+          });
+
+          // Also update localStorage for payment modal compatibility
+          if (data.upiId || data.upiName) {
+            localStorage.setItem('upiSettings', JSON.stringify({
+              upiId: data.upiId || '',
+              upiName: data.upiName || '',
+            }));
+          }
+        }
       } catch (error) {
-        console.error('Failed to load owner profile:', error);
+        console.error('Failed to load owner data:', error);
+        // Don't show error to user - fields will remain empty
       }
     };
+    
+    loadOwnerData();
     
     // Only load notification settings from localStorage (these are UI preferences)
     const savedNotificationSettings = localStorage.getItem('ownerNotificationSettings');
@@ -177,16 +210,35 @@ export default function SettingsPage() {
       }
 
       // Validate phone format
-      const phoneRegex = /^\+?[\d\s-()]+$/;
-      if (!phoneRegex.test(profileData.phone)) {
-        throw new Error('Please enter a valid phone number');
+      if (profileData.phone && profileData.phone.trim()) {
+        const phoneRegex = /^\+?[\d\s-()]+$/;
+        if (!phoneRegex.test(profileData.phone)) {
+          throw new Error('Please enter a valid phone number');
+        }
       }
 
-      // Save to localStorage
-      localStorage.setItem('ownerProfile', JSON.stringify(profileData));
-      
-      // In real app, make API call here
-      // await api.updateProfile(profileData);
+      // Save to backend API
+      const response = await apiClient.put('/owners/profile/me', {
+        name: profileData.name.trim(),
+        email: profileData.email.trim(),
+        phone: profileData.phone?.trim() || null,
+        company: profileData.company?.trim() || null,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to update profile');
+      }
+
+      // Update local state with response data
+      if (response.data) {
+        const data = response.data as any;
+        setProfileData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          company: data.company || '',
+        });
+      }
       
       setSaveStatus({ type: 'success', message: 'Profile updated successfully!' });
       crudToasts.update.success('Profile');
@@ -212,10 +264,12 @@ export default function SettingsPage() {
     setSaveStatus({ type: null, message: '' });
     
     try {
-      // Validate UPI ID format
-      const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
-      if (!upiIdRegex.test(paymentSettings.upiId)) {
-        throw new Error('Please enter a valid UPI ID (e.g., owner@paytm)');
+      // Validate UPI ID format if provided
+      if (paymentSettings.upiId && paymentSettings.upiId.trim()) {
+        const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+        if (!upiIdRegex.test(paymentSettings.upiId)) {
+          throw new Error('Please enter a valid UPI ID (e.g., owner@paytm)');
+        }
       }
 
       if (paymentSettings.invoiceReminderDays < 1 || paymentSettings.invoiceReminderDays > 30) {
@@ -226,17 +280,36 @@ export default function SettingsPage() {
         throw new Error('Late fee percentage must be between 0 and 50');
       }
 
-      // Save to localStorage
-      localStorage.setItem('ownerPaymentSettings', JSON.stringify(paymentSettings));
-      
-      // Save UPI settings for payment modal
+      // Save to backend API
+      const response = await apiClient.put('/owners/payment-settings', {
+        upiId: paymentSettings.upiId?.trim() || null,
+        upiName: paymentSettings.upiName?.trim() || null,
+        autoGenerateInvoices: paymentSettings.autoGenerateInvoices,
+        invoiceReminderDays: paymentSettings.invoiceReminderDays,
+        lateFeePercentage: paymentSettings.lateFeePercentage,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to update payment settings');
+      }
+
+      // Update local state with response data
+      if (response.data) {
+        const data = response.data as any;
+        setPaymentSettings({
+          upiId: data.upiId || '',
+          upiName: data.upiName || '',
+          autoGenerateInvoices: data.autoGenerateInvoices ?? true,
+          invoiceReminderDays: data.invoiceReminderDays ?? 3,
+          lateFeePercentage: data.lateFeePercentage ?? 2,
+        });
+      }
+
+      // Also save UPI settings to localStorage for payment modal (temporary compatibility)
       localStorage.setItem('upiSettings', JSON.stringify({
         upiId: paymentSettings.upiId,
         upiName: paymentSettings.upiName
       }));
-      
-      // In real app, make API call here
-      // await api.updatePaymentSettings(paymentSettings);
       
       setSaveStatus({ type: 'success', message: 'Payment settings updated successfully!' });
       crudToasts.update.success('Payment settings');
