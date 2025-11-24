@@ -251,11 +251,21 @@ class ApiClient {
                                lastError.message.includes('Route not found') ||
                                lastError.message.includes('Not Found');
         
+        // Don't log validation errors (400) as retry attempts - they're client-side errors
+        const isValidationError = lastError.message.includes('400') ||
+                                 lastError.message.includes('Validation failed') ||
+                                 lastError.message.includes('Bad Request');
+        
         if (isAuthError) {
           console.warn(`⚠️ [ApiClient] Authentication error (not retrying):`, lastError.message);
         } else if (isNotFoundError) {
           // Silently handle 404s - don't log as errors
           // The calling code should handle this gracefully
+        } else if (isValidationError) {
+          // Validation errors shouldn't be retried - log once without retry count
+          if (attempt === 0) {
+            console.warn(`⚠️ [ApiClient] Validation error (not retrying):`, lastError.message);
+          }
         } else {
           console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
         }
@@ -358,6 +368,13 @@ class ApiClient {
         error.message.includes('Unauthorized') ||
         error.message.includes('User not found') ||
         error.message.includes('inactive')) {
+      return false;
+    }
+    
+    // Don't retry validation errors (400) - client-side errors that won't be fixed by retrying
+    if (error.message.includes('400') ||
+        error.message.includes('Validation failed') ||
+        error.message.includes('Bad Request')) {
       return false;
     }
     

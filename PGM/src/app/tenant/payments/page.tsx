@@ -31,7 +31,7 @@ export default function TenantPaymentsPage() {
   const router = useRouter();
   const { addNotification } = useUIStore();
   const { invoices, loading: invoicesLoading, error: invoicesError } = useInvoices();
-  const { settings } = useUPISettings();
+  const { settings, loading: upiLoading, refresh: refreshUPI } = useUPISettings();
   
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [showUPIModal, setShowUPIModal] = useState(false);

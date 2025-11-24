@@ -266,6 +266,54 @@ export const updateMyTenantProfile = asyncHandler(async (req: AuthRequest, res: 
 });
 
 /**
+ * Get owner payment settings for current tenant
+ */
+export const getOwnerPaymentSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new AppError('Authentication required', 401);
+  if (req.user.role !== 'TENANT') throw new AppError('Only tenants can access this endpoint', 403);
+
+  // Find tenant profile to get ownerId
+  const tenant = await prisma.tenantProfile.findFirst({
+    where: { userId: req.user.id },
+    select: { ownerId: true },
+  });
+
+  if (!tenant) {
+    throw new AppError('Tenant profile not found', 404);
+  }
+
+  // Get owner's payment settings
+  const owner = await prisma.user.findUnique({
+    where: { id: tenant.ownerId },
+    select: {
+      id: true,
+      name: true,
+      upiId: true,
+      upiName: true,
+      autoGenerateInvoices: true,
+      invoiceReminderDays: true,
+      lateFeePercentage: true,
+    },
+  });
+
+  if (!owner) {
+    throw new AppError('Owner not found', 404);
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ownerName: owner.name,
+      upiId: owner.upiId || '',
+      upiName: owner.upiName || '',
+      autoGenerateInvoices: owner.autoGenerateInvoices ?? true,
+      invoiceReminderDays: owner.invoiceReminderDays ?? 3,
+      lateFeePercentage: Number(owner.lateFeePercentage) || 2,
+    },
+  });
+});
+
+/**
  * Update tenant
  */
 export const updateTenant = asyncHandler(async (req: AuthRequest, res: Response) => {

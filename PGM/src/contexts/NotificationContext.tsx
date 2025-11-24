@@ -75,6 +75,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     // Add to notifications list
     setNotifications(prev => [normalizeNotification(notification), ...prev]);
 
+    // If payment settings updated, trigger refresh event for UPI settings hook
+    if (notification.type === 'SYSTEM' && notification.title === 'Payment Details Updated') {
+      // Dispatch custom event to trigger UPI settings refresh
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('paymentSettingsNotification', { detail: notification }));
+      }
+    }
+
     // Show toast notification
     const createIcon = (symbol: string, label: string): ToastIcon => (
       <span role="img" aria-label={label} className="text-lg">
@@ -92,6 +100,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       OWNER_ACKNOWLEDGED: { icon: createIcon('✅', 'Owner acknowledged'), color: 'success' },
       PAYMENT_DUE: { icon: createIcon('💰', 'Payment due'), color: 'warning' },
       PAYMENT_RECEIVED: { icon: createIcon('✅', 'Payment received'), color: 'success' },
+      RENT_REMINDER: { icon: createIcon('⏰', 'Rent reminder'), color: 'warning' },
+      SYSTEM: { icon: createIcon('🔔', 'System notification'), color: 'info' },
       SYSTEM_ALERT: { icon: createIcon('🔔', 'System alert'), color: 'info' },
     };
 

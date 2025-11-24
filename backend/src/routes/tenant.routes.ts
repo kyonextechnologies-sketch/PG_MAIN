@@ -6,6 +6,7 @@ import {
   getTenantById,
   getMyTenantProfile,
   updateMyTenantProfile,
+  getOwnerPaymentSettings,
   updateTenant,
   checkoutTenant,
   deleteTenant,
@@ -22,6 +23,8 @@ const router = Router();
 router.get('/profile/me', authenticate, getMyTenantProfile);
 // ✅ Update current tenant's own profile (for TENANT users)
 router.put('/profile/me', authenticate, updateMyTenantProfile);
+// ✅ Get owner payment settings (for TENANT users)
+router.get('/owner/payment-settings', authenticate, getOwnerPaymentSettings);
 
 // All other tenant routes require auth and owner role
 router.use(authenticate, isOwner);

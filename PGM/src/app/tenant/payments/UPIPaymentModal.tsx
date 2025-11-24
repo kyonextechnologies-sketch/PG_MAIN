@@ -155,10 +155,13 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     if (!app) return;
 
     const amount = invoice.amount;
+    // Format amount to 2 decimal places to avoid UPI payment limit warnings
+    const formattedAmount = Number(amount.toFixed(2));
     const transactionNote = `Rent payment for ${invoice.month}`;
     
     // Create UPI payment URL with proper encoding
-    const upiParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+    // Use formatted amount to ensure proper decimal handling
+    const upiParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
     
     let url = '';
     
@@ -217,6 +220,8 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
 
     try {
       const amount = invoice.amount;
+      // Format amount to 2 decimal places to avoid UPI payment limit warnings
+      const formattedAmount = Number(amount.toFixed(2));
       const transactionNote = `Rent payment for ${invoice.month}`;
       const transactionRef = `rent_${Date.now()}`;
       
@@ -224,7 +229,7 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
       const collectRequest = {
         payeeAddress: customUpiId.trim(),
         payeeName: upiName,
-        amount: amount,
+        amount: formattedAmount,
         currency: 'INR',
         transactionNote: transactionNote,
         transactionRef: transactionRef,
@@ -258,7 +263,9 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
         console.log('API call failed, simulating UPI collect request');
         
         // Fallback: Create UPI collect URL for manual testing
-        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${transactionRef}`;
+        // Format amount to 2 decimal places to avoid payment limit warnings
+        const formattedAmount = Number(amount.toFixed(2));
+        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${transactionRef}`;
         const upiCollectUrl = `upi://pay?${upiCollectParams}`;
         
         console.log(`Fallback UPI Collect URL:`, upiCollectUrl);
@@ -521,7 +528,9 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
                     </button>
                     <button
                       onClick={() => {
-                        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${invoice.amount}&cu=INR&tn=${encodeURIComponent(`Rent payment for ${invoice.month}`)}&tr=rent_${Date.now()}`;
+                        // Format amount to 2 decimal places to avoid payment limit warnings
+                        const formattedAmount = Number(invoice.amount.toFixed(2));
+                        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Rent payment for ${invoice.month}`)}&tr=rent_${Date.now()}`;
                         const upiCollectUrl = `upi://pay?${upiCollectParams}`;
                         setPaymentUrl(upiCollectUrl);
                       }}

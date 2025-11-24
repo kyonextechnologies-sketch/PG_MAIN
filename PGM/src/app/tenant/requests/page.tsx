@@ -100,6 +100,7 @@ export default function TenantRequestsPage() {
           description: newRequest.description,
           priority: newRequest.priority as 'LOW' | 'MEDIUM' | 'HIGH' | undefined,
           status: 'OPEN',
+          category: newRequest.category,
         });
 
         if (result) {
@@ -170,8 +171,8 @@ export default function TenantRequestsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Maintenance Requests</h1>
-              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 font-semibold">Submit and track maintenance requests</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 !text-white dark:text-white">Maintenance Requests</h1>
+              <p className="text-sm sm:text-base text-gray-700 !text-white-600 dark:text-gray-200 font-semibold">Submit and track maintenance requests</p>
             </div>
             <div className="bg-black rounded-lg p-2">
               <Button onClick={() => setIsCreatingRequest(true)}>
@@ -228,13 +229,13 @@ export default function TenantRequestsPage() {
                       setNewRequest({ ...newRequest, priority: value as 'LOW' | 'MEDIUM' | 'HIGH' })
                     }
                   >
-                    <SelectTrigger className="bg-white text-black border-1 margin-top-2">
+                    <SelectTrigger className="bg-white !text-white border-1 margin-top-2">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white text-black border-1 margin-top-2">
-                      <SelectItem value="LOW">Low</SelectItem>
-                      <SelectItem value="MEDIUM">Medium</SelectItem>
-                      <SelectItem value="HIGH">High</SelectItem>
+                    <SelectContent className="bg-white !text-white dark:!text-white border-1 margin-top-2">
+                      <SelectItem value="LOW" className="!text-white dark:!text-white">Low</SelectItem>
+                      <SelectItem value="MEDIUM" className="!text-white dark:!text-white">Medium</SelectItem>
+                      <SelectItem value="HIGH" className="!text-white dark:!text-white">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

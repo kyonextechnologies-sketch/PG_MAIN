@@ -7,6 +7,7 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { validateUploadedFiles } from '../utils/fileValidation';
 import { getFileUrl } from '../utils/fileUpload';
 import { logFileUpload } from '../middleware/auditLog';
+import { createNotification } from '../services/notification.service';
 
 type UploadedDocument = {
   id: string;
@@ -326,6 +327,34 @@ export const updateOwnerPaymentSettings = asyncHandler(async (req: AuthRequest, 
       lateFeePercentage: true,
     },
   });
+
+  // Notify all tenants of this owner about payment settings update
+  try {
+    const tenants = await prisma.tenantProfile.findMany({
+      where: { ownerId: req.user.id },
+      select: { userId: true },
+    });
+
+    for (const tenant of tenants) {
+      await createNotification({
+        userId: tenant.userId,
+        type: 'SYSTEM_ALERT',
+        title: 'Payment Details Updated',
+        message: `Your owner has updated payment details. UPI ID: ${updatedUser.upiId || 'Not set'}`,
+        data: {
+          upiId: updatedUser.upiId || '',
+          upiName: updatedUser.upiName || '',
+          updatedAt: new Date().toISOString(),
+        },
+        channels: ['WEBSOCKET'],
+        priority: 'MEDIUM',
+      });
+    }
+    console.log(`✅ Notified ${tenants.length} tenants about payment settings update`);
+  } catch (err) {
+    console.error('❌ Failed to notify tenants about payment settings update:', err);
+    // Don't fail the update if notification fails
+  }
 
   res.json({
     success: true,

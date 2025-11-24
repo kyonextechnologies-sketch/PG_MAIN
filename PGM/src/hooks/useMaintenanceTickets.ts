@@ -22,6 +22,7 @@ interface TicketData {
   description?: string;
   status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  category?: string;
   assignedTo?: string;
 }
 
