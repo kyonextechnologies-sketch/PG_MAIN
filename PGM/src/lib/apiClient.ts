@@ -9,6 +9,9 @@ import { getSession } from 'next-auth/react';
 import { ErrorHandler } from './errors';
 import { getSessionId } from './session';
 import { getTabSession } from './tabSession';
+import { getTabId, getSessionCookieName } from './auth/tabSession';
+import { getSessionCookie } from './auth/cookies';
+import { readSession } from './auth/readSession';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -92,10 +95,50 @@ class ApiClient {
           };
         }
 
-        // Check for tab session first (per-tab authentication)
+        // Get tab ID for per-tab cookie isolation
+        const tabId = getTabId();
+        if (tabId) {
+          config.headers = {
+            ...config.headers,
+            'X-Tab-ID': tabId,
+          };
+        }
+
+        // Priority 1: Check for per-tab session cookie (new system)
+        if (tabId && typeof document !== 'undefined') {
+          const sessionCookie = getSessionCookie();
+          const session = readSession();
+          
+          if (sessionCookie && session) {
+            // Use per-tab session cookie
+            config.headers = {
+              ...config.headers,
+              'Authorization': `Bearer ${sessionCookie}`,
+              'X-User-ID': session.userId,
+              'X-User-Role': session.role,
+              'X-Tab-ID': tabId,
+            };
+            
+            // Include cookie in request for server-side API routes
+            const cookieName = getSessionCookieName();
+            config.headers = {
+              ...config.headers,
+              'Cookie': `${cookieName}=${sessionCookie}`,
+            };
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔐 [ApiClient] Per-tab session cookie used:', {
+                tabId,
+                cookieName,
+                userId: session.userId,
+              });
+            }
+            return config;
+          }
+        }
+
+        // Priority 2: Check for old tab session system
         const tabSession = getTabSession();
-        
-        // If tab session exists, use it; otherwise fall back to NextAuth session
         if (tabSession && tabSession.accessToken) {
           config.headers = {
             ...config.headers,
@@ -104,37 +147,29 @@ class ApiClient {
             'X-User-Role': tabSession.role,
             'X-Tab-ID': tabSession.tabId,
           };
-          // Log in development for debugging
           if (process.env.NODE_ENV === 'development') {
             console.log('🔐 [ApiClient] Tab session headers added:', {
               tabId: tabSession.tabId,
               userId: tabSession.userId,
-              role: tabSession.role,
             });
           }
-        } else {
-          // Fall back to NextAuth session
-          const session = await getSession();
+          return config;
+        }
 
-          if (session?.user?.id) {
-            const accessToken = (session as any).accessToken;
-            config.headers = {
-              ...config.headers,
-              'X-User-ID': session.user.id,
-              'X-User-Role': session.user.role || 'USER',
-              ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-            };
-            // Log in development for debugging
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🔐 [ApiClient] NextAuth session headers added:', {
-                sessionId,
-                userId: session.user.id,
-                role: session.user.role,
-              });
-            }
-          } else {
-            // Don't log warning for public endpoints - session is optional for auth endpoints
-            // The request will continue without user session headers
+        // Priority 3: Fall back to NextAuth session
+        const session = await getSession();
+        if (session?.user?.id) {
+          const accessToken = (session as any).accessToken;
+          config.headers = {
+            ...config.headers,
+            'X-User-ID': session.user.id,
+            'X-User-Role': session.user.role || 'USER',
+            ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+          };
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔐 [ApiClient] NextAuth session headers added:', {
+              userId: session.user.id,
+            });
           }
         }
       } catch (error) {
@@ -292,8 +327,16 @@ class ApiClient {
                                  lastError.message.includes('Validation failed') ||
                                  lastError.message.includes('Bad Request');
         
+        const isConnectionError = lastError.message.includes('Failed to fetch') ||
+                                 lastError.message.includes('ERR_CONNECTION_REFUSED') ||
+                                 lastError.message.includes('NetworkError') ||
+                                 lastError.message.includes('ECONNREFUSED');
+        
         if (isAuthError) {
-          console.warn(`⚠️ [ApiClient] Authentication error (not retrying):`, lastError.message);
+          // Only log auth errors once
+          if (attempt === 0) {
+            console.warn(`⚠️ [ApiClient] Authentication error (not retrying):`, lastError.message);
+          }
         } else if (isNotFoundError) {
           // Silently handle 404s - don't log as errors
           // The calling code should handle this gracefully
@@ -302,8 +345,17 @@ class ApiClient {
           if (attempt === 0) {
             console.warn(`⚠️ [ApiClient] Validation error (not retrying):`, lastError.message);
           }
+        } else if (isConnectionError) {
+          // Only log connection errors on first attempt and final failure
+          // Don't spam console with retry attempts
+          if (attempt === 0 && process.env.NODE_ENV === 'development') {
+            console.warn(`⚠️ [ApiClient] Connection error (attempting retry):`, lastError.message);
+          }
         } else {
-          console.error(`❌ [ApiClient] Attempt ${attempt + 1}/${retries + 1} failed:`, lastError.message);
+          // Only log non-connection errors on first attempt
+          if (attempt === 0) {
+            console.warn(`⚠️ [ApiClient] Request failed (attempting retry):`, lastError.message);
+          }
         }
 
         // Don't retry authentication errors
@@ -326,10 +378,18 @@ class ApiClient {
                              lastError?.message?.includes('ECONNREFUSED');
     
     if (!isNotFoundError && !isConnectionError) {
-      console.error('🚨 [ApiClient] Final failure:', lastError?.message);
-    } else if (isConnectionError && process.env.NODE_ENV === 'development') {
-      // Only log connection errors in development, and only once
-      console.warn('⚠️ [ApiClient] Backend server not reachable. Ensure backend is running on port 5000.');
+      // Only log non-connection errors as final failures
+      console.error('🚨 [ApiClient] Request failed after retries:', lastError?.message);
+    } else if (isConnectionError) {
+      // Only log connection errors in development, and only once per request
+      if (process.env.NODE_ENV === 'development') {
+        // Use a flag to prevent multiple logs for the same error
+        const errorKey = `connection_error_${Date.now()}`;
+        if (!(window as any).__lastConnectionError || (window as any).__lastConnectionError < Date.now() - 5000) {
+          console.warn('⚠️ [ApiClient] Backend server not reachable. Ensure backend is running on port 5000.');
+          (window as any).__lastConnectionError = Date.now();
+        }
+      }
     }
     return this.handleError(lastError) as ApiResponse<T>;
   }
@@ -455,16 +515,16 @@ class ApiClient {
                                  message.includes('ECONNREFUSED');
 
         if (!isNotFoundError && !isConnectionError) {
+          // Only log non-connection errors
           console.error('🔴 [ApiClient] Error Details:', { message });
           ErrorHandler.handle({
             code: 'HTTP_ERROR',
             message,
             statusCode,
           });
-        } else if (isConnectionError && process.env.NODE_ENV === 'development') {
-          // Connection errors are expected if backend is not running
-          console.warn('⚠️ [ApiClient] Connection error (backend may not be running):', message);
         }
+        // Connection errors are silently handled - they're expected if backend is not running
+        // Don't spam console with connection errors
 
     return {
       success: false,

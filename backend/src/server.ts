@@ -157,6 +157,7 @@ const corsOptions = {
     'X-User-ID',
     'X-User-Role',
     'X-Session-ID',
+    'X-Tab-ID',
     'Accept',
     'Origin',
     'Access-Control-Request-Method',
@@ -188,7 +189,7 @@ app.options('*', (req: Request, res: Response) => {
     const allowOrigin = origin || '*';
     res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, X-Session-ID, Accept, Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, X-Session-ID, X-Tab-ID, Accept, Origin');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
     

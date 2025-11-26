@@ -68,8 +68,19 @@ export const useInvoices = (): UseInvoicesReturn => {
       }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch invoices';
-      setError(errorMsg);
-      console.error('❌ Error fetching invoices:', errorMsg, err);
+      const isConnectionError = errorMsg.includes('Failed to fetch') ||
+                                errorMsg.includes('ERR_CONNECTION_REFUSED') ||
+                                errorMsg.includes('NetworkError');
+      
+      // Only set error for non-connection errors
+      // Connection errors are expected if backend is not running
+      if (!isConnectionError) {
+        setError(errorMsg);
+        console.error('❌ Error fetching invoices:', errorMsg);
+      } else if (process.env.NODE_ENV === 'development') {
+        // Only log connection errors in development
+        console.warn('⚠️ Backend not reachable - invoices not loaded');
+      }
     } finally {
       setLoading(false);
     }

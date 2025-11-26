@@ -7,15 +7,46 @@ import { Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { clearTabSession } from '@/lib/tabSession';
+import { getTabId } from '@/lib/auth/tabSession';
+import { destroySession } from '@/lib/auth/destroySession';
 
 export function Topbar() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const handleSignOut = () => {
-    // Clear tab session before signing out
-    clearTabSession();
-    signOut({ callbackUrl: '/' });
+  const handleSignOut = async () => {
+    try {
+      // Get tab ID for per-tab cookie deletion
+      const tabId = getTabId();
+      
+      // Call logout API to delete per-tab cookie
+      if (tabId) {
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tabId }),
+          });
+        } catch (error) {
+          console.warn('Logout API call failed:', error);
+        }
+      }
+      
+      // Destroy per-tab session (new system)
+      destroySession();
+      
+      // Clear old tab session (backward compatibility)
+      clearTabSession();
+      
+      // Sign out from NextAuth
+      signOut({ callbackUrl: '/' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still try to sign out even if there's an error
+      signOut({ callbackUrl: '/' });
+    }
   };
 
   const handleNotificationClick = () => {

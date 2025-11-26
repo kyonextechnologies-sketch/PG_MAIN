@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { setTabSession } from '@/lib/tabSession';
+import { getTabId } from '@/lib/auth/tabSession';
+import { useTabSession } from '@/lib/auth/useTabSession';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginFormData } from '@/lib/validation';
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const router = useRouter();
+  const { login: loginWithTabSession } = useTabSession();
 
   const {
     register,
@@ -38,48 +41,69 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const result = await signIn('credentials', {
+      // Get tab ID for per-tab cookie isolation
+      const tabId = getTabId();
+      
+      // Call custom login API with tabId for per-tab cookie creation
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          tabId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success || !result.data) {
+        setError(result.message || 'Invalid credentials');
+        return;
+      }
+
+      const { user, accessToken } = result.data;
+      console.log('✅ Login successful - User role:', user.role);
+      
+      // Create per-tab session using the hook
+      await loginWithTabSession(data.email, data.password);
+      
+      // Also use NextAuth for compatibility
+      await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
       });
-
-      if (result?.error) {
-        setError('Invalid credentials');
-        return;
-      }
-
-      // Get session to determine redirect
-      const session = await getSession();
-      console.log('✅ Login successful - User role:', session?.user?.role);
       
-      // Store session in tab sessionStorage for per-tab session management
-      if (session?.user) {
-        const accessToken = (session as any).accessToken;
+      // Store in old tab session system for backward compatibility
+      if (user && accessToken) {
         setTabSession({
-          userId: session.user.id || '',
-          email: session.user.email || data.email,
-          name: session.user.name || '',
-          role: session.user.role || 'TENANT',
-          accessToken: accessToken || '',
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role as 'OWNER' | 'TENANT' | 'ADMIN',
+          accessToken,
         });
-        console.log('✅ Tab session stored for this browser tab');
       }
       
-      if (session?.user?.role === 'ADMIN') {
+      // Redirect based on role
+      if (user.role === 'ADMIN') {
         console.log('🔐 Admin login - Redirecting to admin portal');
         router.push('/admin');
-      } else if (session?.user?.role === 'OWNER') {
+      } else if (user.role === 'OWNER') {
         console.log('👤 Owner login - Redirecting to owner dashboard');
         router.push('/owner/dashboard');
-      } else if (session?.user?.role === 'TENANT') {
+      } else if (user.role === 'TENANT') {
         console.log('🏠 Tenant login - Redirecting to tenant dashboard');
         router.push('/tenant/dashboard');
       } else {
-        console.error('❌ Unknown role:', session?.user?.role);
+        console.error('❌ Unknown role:', user.role);
         setError('Invalid user role. Please contact support.');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

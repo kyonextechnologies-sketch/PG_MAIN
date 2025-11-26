@@ -162,12 +162,25 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           setNotifications(normalized);
         }
       } catch (error: any) {
+        const errorMsg = error?.message || String(error);
+        const isConnectionError = errorMsg.includes('Failed to fetch') ||
+                                 errorMsg.includes('ERR_CONNECTION_REFUSED') ||
+                                 errorMsg.includes('NetworkError');
+        
         // Handle 404 or route not found gracefully - endpoint may not exist yet
         if (error?.message?.includes('Route not found') || error?.message?.includes('404') || error?.response?.status === 404) {
           console.log('ℹ️ Notifications API endpoint not available yet. Using WebSocket only.');
           // Don't set error state - WebSocket notifications will still work
           setNotifications([]);
+        } else if (isConnectionError) {
+          // Connection errors are expected if backend is not running
+          // Don't log as error - WebSocket will handle notifications
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ Backend not reachable - notifications will use WebSocket only');
+          }
+          setNotifications([]);
         } else {
+          // Only log non-connection errors
           console.error('❌ Failed to load notifications:', error);
         }
       } finally {

@@ -50,8 +50,17 @@ export default function TenantDashboard() {
         if (response.success) {
           setTenantProfile(response.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch tenant profile:', error);
+      } catch (error: unknown) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        const isConnectionError = errorMsg.includes('Failed to fetch') ||
+                                 errorMsg.includes('ERR_CONNECTION_REFUSED') ||
+                                 errorMsg.includes('NetworkError');
+        
+        // Only log non-connection errors
+        if (!isConnectionError) {
+          console.error('Failed to fetch tenant profile:', error);
+        }
+        // Connection errors are silently handled - expected if backend is not running
       } finally {
         setLoadingProfile(false);
       }
