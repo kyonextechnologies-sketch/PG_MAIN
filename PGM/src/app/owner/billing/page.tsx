@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export default function BillingPage() {
   
   // ✅ Using real API hooks - automatically fetches from backend database
   // ✅ Data is automatically isolated by ownerId/tenantId from backend
-  const { invoices, loading, error, createInvoice, updateInvoice, deleteInvoice, fetchInvoices } = useInvoices();
+  const { invoices, loading, error, createInvoice, updateInvoice, deleteInvoice, fetchInvoices, sendReminder } = useInvoices();
   const { tenants } = useTenants();  // ✅ Fetch tenants for dropdown
   const { addNotification } = useUIStore();
 
@@ -62,6 +62,76 @@ export default function BillingPage() {
   const outstandingDues = filteredInvoices
     .filter(inv => inv.status === 'DUE' || inv.status === 'OVERDUE')
     .reduce((sum, inv) => sum + inv.amount, 0);
+
+  // ✅ Calculate revenue trend data (monthly revenue)
+  const revenueTrendData = useMemo(() => {
+    const monthlyRevenue: Record<string, number> = {};
+    
+    filteredInvoices
+      .filter(inv => inv.status === 'PAID')
+      .forEach(inv => {
+        const month = inv.month || 'Unknown';
+        monthlyRevenue[month] = (monthlyRevenue[month] || 0) + inv.amount;
+      });
+
+    // Convert to array format for chart
+    const data = Object.entries(monthlyRevenue)
+      .map(([name, value]) => ({ name, value }));
+
+    // Sort by date if month contains date info, otherwise alphabetical
+    return data.sort((a, b) => {
+      // Try to parse dates from month names
+      const aDate = new Date(a.name);
+      const bDate = new Date(b.name);
+      
+      // If both are valid dates, sort by date
+      if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+        return aDate.getTime() - bDate.getTime();
+      }
+      
+      // Otherwise, try month name matching
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      const aIndex = monthNames.findIndex(m => a.name.includes(m)) !== -1 
+        ? monthNames.findIndex(m => a.name.includes(m))
+        : monthAbbr.findIndex(m => a.name.includes(m));
+      const bIndex = monthNames.findIndex(m => b.name.includes(m)) !== -1
+        ? monthNames.findIndex(m => b.name.includes(m))
+        : monthAbbr.findIndex(m => b.name.includes(m));
+      
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+      
+      // Fallback to alphabetical
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredInvoices]);
+
+  // ✅ Calculate payment status distribution
+  const paymentStatusData = useMemo(() => {
+    const statusCount: Record<string, number> = {
+      PAID: 0,
+      DUE: 0,
+      OVERDUE: 0,
+      PENDING: 0,
+    };
+
+    filteredInvoices.forEach(inv => {
+      const status = inv.status || 'PENDING';
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    });
+
+    // Convert to array format for pie chart
+    return Object.entries(statusCount)
+      .filter(([_, count]) => count > 0)
+      .map(([name, value]) => ({ name, value }))
+      .map((item, index) => ({
+        ...item,
+        name: item.name.charAt(0) + item.name.slice(1).toLowerCase(),
+      }));
+  }, [filteredInvoices]);
 
   const handleInvoiceSubmit = async (data: any) => {
     try {
@@ -149,13 +219,32 @@ export default function BillingPage() {
     });
   };
 
-  const handleSendReminder = (invoiceId: string) => {
-    addNotification({
-      type: 'success',
-      title: 'Reminder Sent',
-      message: 'Payment reminder has been sent to the tenant.',
-      read: false,
-    });
+  const handleSendReminder = async (invoiceId: string) => {
+    try {
+      const result = await sendReminder(invoiceId);
+      if (result) {
+        addNotification({
+          type: 'success',
+          title: 'Reminder Sent',
+          message: 'Payment reminder has been sent to the tenant via email and notification.',
+          read: false,
+        });
+      } else {
+        addNotification({
+          type: 'error',
+          title: 'Failed to Send Reminder',
+          message: 'Failed to send payment reminder. Please try again.',
+          read: false,
+        });
+      }
+    } catch (error: any) {
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error.message || 'An error occurred while sending the reminder.',
+        read: false,
+      });
+    }
   };
 
   const handleDownloadReceipt = (receiptNo: string) => {
@@ -265,12 +354,12 @@ export default function BillingPage() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <LineChartComponent
-              data={[]}
+              data={revenueTrendData}
               title="Revenue Trend"
               description="Monthly revenue over time"
             />
             <PieChartComponent
-              data={[]}
+              data={paymentStatusData}
               title="Payment Status"
               description="Distribution of payment statuses"
             />

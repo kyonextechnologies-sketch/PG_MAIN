@@ -39,6 +39,7 @@ interface UseInvoicesReturn {
   updateInvoice: (id: string, data: InvoiceData) => Promise<Invoice | null>;
   deleteInvoice: (id: string) => Promise<boolean>;
   getInvoiceById: (id: string) => Promise<Invoice | null>;
+  sendReminder: (id: string) => Promise<boolean>;
 }
 
 export const useInvoices = (): UseInvoicesReturn => {
@@ -216,6 +217,26 @@ export const useInvoices = (): UseInvoicesReturn => {
     }
   }, []);
 
+  const sendReminder = useCallback(async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.post(`/invoices/${id}/send-reminder`, {});
+      if (response.success) {
+        console.log('✅ Payment reminder sent successfully');
+        return true;
+      }
+      return false;
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to send reminder';
+      setError(errorMsg);
+      console.error('Error sending reminder:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch invoices on mount
   useEffect(() => {
     fetchInvoices();
@@ -270,5 +291,6 @@ export const useInvoices = (): UseInvoicesReturn => {
     updateInvoice,
     deleteInvoice,
     getInvoiceById,
+    sendReminder,
   };
 };

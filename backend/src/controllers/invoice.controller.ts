@@ -404,4 +404,112 @@ export const updateOverdueInvoices = asyncHandler(async (_req: AuthRequest, res:
       data: { count: overdueInvoices.length },
     });
   });
+
+// ✅ Send Payment Reminder
+export const sendPaymentReminder = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) throw new AppError('Authentication required', 401);
+
+  const { id } = req.params;
+
+  // Get invoice with tenant details
+  const invoice = await prisma.invoice.findFirst({
+    where: {
+      id,
+      ownerId: req.user.id, // Ensure owner owns this invoice
+    },
+    include: {
+      tenant: {
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!invoice) {
+    throw new AppError('Invoice not found', 404);
+  }
+
+  if (!invoice.tenant.userId) {
+    throw new AppError('Tenant user ID not found', 500);
+  }
+
+  // Calculate days remaining until due date
+  const today = new Date();
+  const dueDate = new Date(invoice.dueDate);
+  const daysRemaining = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const daysRemainingText = daysRemaining > 0 
+    ? `${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining`
+    : daysRemaining === 0 
+      ? 'Due today'
+      : `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) > 1 ? 's' : ''} overdue`;
+
+  // Send email notification
+  if (invoice.tenant.email) {
+    try {
+      const amount = Number(invoice.amount);
+      await sendEmail({
+        to: invoice.tenant.email,
+        subject: `Payment Reminder: Invoice for ${invoice.month}`,
+        template: 'paymentReminder',
+        data: {
+          tenantName: invoice.tenant.name,
+          month: invoice.month,
+          amount: amount.toLocaleString('en-IN'),
+          dueDate: dueDate.toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+          daysRemaining: daysRemainingText,
+        },
+      });
+      console.log(`✅ Payment reminder email sent to ${invoice.tenant.email}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send payment reminder email:', emailError);
+      // Don't fail the request if email fails
+    }
+  }
+
+  // Send in-app notification
+  try {
+    const amount = Number(invoice.amount);
+    await createNotification({
+      userId: invoice.tenant.userId,
+      type: 'PAYMENT_DUE',
+      title: 'Payment Reminder',
+      message: `Reminder: Your payment of ₹${amount.toLocaleString('en-IN')} for ${invoice.month} is ${daysRemainingText}. Due date: ${dueDate.toLocaleDateString('en-IN')}`,
+      data: {
+        invoiceId: invoice.id,
+        month: invoice.month,
+        amount: amount,
+        dueDate: dueDate.toISOString(),
+        daysRemaining,
+      },
+      channels: ['WEBSOCKET', 'EMAIL'],
+      priority: 'MEDIUM',
+    });
+    console.log(`✅ Payment reminder notification sent to tenant ${invoice.tenant.userId}`);
+  } catch (notifError) {
+    console.error('❌ Failed to send payment reminder notification:', notifError);
+    // Don't fail the request if notification fails
+  }
+
+  // Emit real-time update
+  emitDataUpdate(invoice.tenant.userId, 'invoice', 'update', invoice);
+
+  res.json({
+    success: true,
+    message: 'Payment reminder sent successfully',
+    data: {
+      invoiceId: invoice.id,
+      tenantName: invoice.tenant.name,
+      emailSent: !!invoice.tenant.email,
+      notificationSent: true,
+    },
+  });
+});
   
