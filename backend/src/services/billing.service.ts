@@ -11,7 +11,7 @@ import prisma from '../config/database';
 import { sendEmail } from '../utils/email';
 import { createNotification } from './notification.service';
 import { calculateLateFees, getDueDateForMonth } from '../utils/helpers';
-import { getRedisConnection } from './queue.service';
+import { getRedisConnection, isRedisAvailable } from './queue.service';
 
 interface MonthlyBillingJob {
   month: string; // Format: "YYYY-MM" (e.g., "2024-02" for February 2024)
@@ -37,20 +37,27 @@ function getBillingQueue(): Queue | null {
   if (billingQueue) return billingQueue;
 
   const redisConnection = getRedisConnection();
-  if (!redisConnection) {
+  if (!redisConnection || !isRedisAvailable()) {
     console.warn('⚠️  Redis unavailable - billing jobs will not be scheduled');
     return null;
   }
 
   try {
+    // Wrap in try-catch to handle any synchronous errors from Queue constructor
     billingQueue = new Queue('monthly-billing', {
       connection: redisConnection,
+    });
+
+    // Handle queue errors gracefully
+    billingQueue.on('error', (error) => {
+      console.warn('⚠️  Billing queue error (Redis may be unavailable):', error.message);
     });
 
     console.log('✅ Billing queue initialized');
     return billingQueue;
   } catch (error: any) {
     console.error('❌ Failed to initialize billing queue:', error.message);
+    billingQueue = null; // Reset to allow retry
     return null;
   }
 }
@@ -455,12 +462,13 @@ export function initializeBillingWorker(): Worker | null {
   if (billingWorker) return billingWorker;
 
   const redisConnection = getRedisConnection();
-  if (!redisConnection) {
+  if (!redisConnection || !isRedisAvailable()) {
     console.warn('⚠️  Redis unavailable - billing worker not initialized');
     return null;
   }
 
   try {
+    // Wrap in try-catch to handle any synchronous errors from Worker constructor
     billingWorker = new Worker(
       'monthly-billing',
       async (job: Job<MonthlyBillingJob>) => {
@@ -493,10 +501,15 @@ export function initializeBillingWorker(): Worker | null {
       console.error(`❌ Billing job ${job?.id} failed:`, err.message);
     });
 
+    billingWorker.on('error', (error) => {
+      console.warn('⚠️  Billing worker error (Redis may be unavailable):', error.message);
+    });
+
     console.log('✅ Billing worker initialized');
     return billingWorker;
   } catch (error: any) {
     console.error('❌ Failed to initialize billing worker:', error.message);
+    billingWorker = null; // Reset to allow retry
     return null;
   }
 }
@@ -517,15 +530,33 @@ function getNextMonth(): string {
 export async function initializeBillingService(): Promise<void> {
   console.log('🚀 Initializing billing service...');
 
-  // Initialize worker
-  initializeBillingWorker();
+  try {
+    // Initialize worker (will return null if Redis unavailable)
+    const worker = initializeBillingWorker();
+    
+    if (!worker) {
+      console.log('ℹ️  Billing service initialized (Redis unavailable - scheduled jobs disabled)');
+      return;
+    }
 
-  // Schedule recurring monthly billing
-  await scheduleRecurringMonthlyBilling();
+    // Schedule recurring monthly billing (will skip if Redis unavailable)
+    try {
+      await scheduleRecurringMonthlyBilling();
+    } catch (error: any) {
+      console.warn('⚠️  Failed to schedule recurring billing:', error.message);
+    }
 
-  // Schedule daily overdue processing
-  await schedulePaymentReminders();
+    // Schedule daily overdue processing (will skip if Redis unavailable)
+    try {
+      await schedulePaymentReminders();
+    } catch (error: any) {
+      console.warn('⚠️  Failed to schedule payment reminders:', error.message);
+    }
 
-  console.log('✅ Billing service initialized');
+    console.log('✅ Billing service initialized');
+  } catch (error: any) {
+    console.error('❌ Error initializing billing service:', error.message);
+    // Don't throw - allow server to start even if billing service fails
+  }
 }
 

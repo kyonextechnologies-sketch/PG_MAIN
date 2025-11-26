@@ -12,6 +12,11 @@ let maintenanceReminderQueue: Queue | null = null;
 let maintenanceReminderWorker: Worker | null = null;
 let redisAvailable = false;
 
+// Export function to check if Redis is available
+export function isRedisAvailable(): boolean {
+  return redisAvailable;
+}
+
 // Initialize Redis connection lazily
 export function getRedisConnection(): Redis | null {
   if (connection) return connection;
@@ -19,13 +24,15 @@ export function getRedisConnection(): Redis | null {
   try {
     // Only try to connect if REDIS_HOST is explicitly set
     // Otherwise, assume Redis is optional
-    if (!process.env.REDIS_HOST && process.env.NODE_ENV === 'production') {
-      console.log('ℹ️  Redis not configured - queue features will be disabled');
+    if (!process.env.REDIS_HOST) {
+      if (process.env.NODE_ENV === 'production') {
+        console.log('ℹ️  Redis not configured (REDIS_HOST not set) - queue features will be disabled');
+      }
       return null;
     }
 
     connection = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
+      host: process.env.REDIS_HOST,
       port: parseInt(process.env.REDIS_PORT || '6379'),
       maxRetriesPerRequest: null, // Required by BullMQ
       retryStrategy: (times) => {
@@ -38,6 +45,8 @@ export function getRedisConnection(): Redis | null {
       },
       password: process.env.REDIS_PASSWORD,
       lazyConnect: true, // Don't connect immediately
+      enableOfflineQueue: false, // Don't queue commands when offline
+      enableReadyCheck: false, // Skip ready check to avoid connection errors
     });
 
     // Handle connection events
@@ -50,8 +59,18 @@ export function getRedisConnection(): Redis | null {
       }
     });
 
+    connection.on('ready', () => {
+      console.log('✅ Redis is ready');
+      redisAvailable = true;
+    });
+
     connection.on('error', (error) => {
-      // Only log if we haven't already warned about Redis being unavailable
+      // Suppress repeated connection errors
+      const errorCode = (error as Error & { code?: string })?.code;
+      if (errorCode === 'ECONNREFUSED' && !redisAvailable) {
+        // Already logged, don't spam
+        return;
+      }
       if (redisAvailable) {
         console.warn('⚠️  Redis connection error (queue features disabled):', error.message);
       }
@@ -59,7 +78,9 @@ export function getRedisConnection(): Redis | null {
     });
 
     connection.on('close', () => {
-      console.log('ℹ️  Redis connection closed');
+      if (redisAvailable) {
+        console.log('ℹ️  Redis connection closed');
+      }
       redisAvailable = false;
     });
 
@@ -83,7 +104,14 @@ function getQueue(): Queue | null {
     return null;
   }
 
+  // Don't create queue if Redis is not available
+  // Wait for Redis to connect first
+  if (!redisAvailable) {
+    return null;
+  }
+
   try {
+    // Wrap in try-catch to handle any synchronous errors from Queue constructor
     maintenanceReminderQueue = new Queue('maintenance-reminders', {
       connection: redisConnection,
       defaultJobOptions: {
@@ -96,9 +124,18 @@ function getQueue(): Queue | null {
         },
       },
     });
+
+    // Handle queue errors gracefully
+    maintenanceReminderQueue.on('error', (error) => {
+      console.warn('⚠️  Queue error (Redis may be unavailable):', error.message);
+      redisAvailable = false;
+    });
+
     return maintenanceReminderQueue;
   } catch (error: any) {
     console.warn('⚠️  Failed to create queue:', error.message);
+    redisAvailable = false;
+    maintenanceReminderQueue = null; // Reset to allow retry
     return null;
   }
 }
@@ -306,7 +343,13 @@ function initializeWorker(): Worker | null {
     return null;
   }
 
+  // Don't create worker if Redis is not available
+  if (!redisAvailable) {
+    return null;
+  }
+
   try {
+    // Wrap in try-catch to handle any synchronous errors from Worker constructor
     maintenanceReminderWorker = new Worker(
       'maintenance-reminders',
       async (job: Job<MaintenanceReminderJob>) => {
@@ -416,9 +459,10 @@ function initializeWorker(): Worker | null {
 
     maintenanceReminderWorker.on('error', (error) => {
       console.warn('⚠️  Worker error (Redis may be unavailable):', error.message);
+      redisAvailable = false;
     });
 
-    // Only start worker if Redis is available
+    // Only log if Redis is available
     if (redisAvailable) {
       console.log('✅ Maintenance reminder worker initialized');
     }
@@ -426,6 +470,8 @@ function initializeWorker(): Worker | null {
     return maintenanceReminderWorker;
   } catch (error: any) {
     console.warn('⚠️  Failed to initialize worker:', error.message);
+    redisAvailable = false;
+    maintenanceReminderWorker = null; // Reset to allow retry
     return null;
   }
 }

@@ -19,6 +19,39 @@ import { initializeBillingService } from './services/billing.service';
 // Load environment variables
 dotenv.config();
 
+// Handle unhandled promise rejections to prevent crashes
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  const errorMessage = reason instanceof Error ? reason.message : String(reason);
+  const errorCode = (reason as Error & { code?: string })?.code;
+  
+  // Suppress Redis connection errors (we handle these gracefully)
+  if (errorCode === 'ECONNREFUSED' && errorMessage.includes('6379')) {
+    console.warn('⚠️  Unhandled Redis connection rejection (this is expected if Redis is not available)');
+    return; // Don't crash on Redis connection errors
+  }
+  
+  // Log other unhandled rejections but don't crash
+  console.error('⚠️  Unhandled Promise Rejection:', errorMessage);
+  if (reason instanceof Error && reason.stack) {
+    console.error('Stack:', reason.stack);
+  }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error: Error) => {
+  const errorCode = (error as Error & { code?: string })?.code;
+  
+  // Suppress Redis connection errors
+  if (errorCode === 'ECONNREFUSED' && error.message.includes('6379')) {
+    console.warn('⚠️  Uncaught Redis connection exception (this is expected if Redis is not available)');
+    return; // Don't crash on Redis connection errors
+  }
+  
+  console.error('❌ Uncaught Exception:', error.message);
+  console.error('Stack:', error.stack);
+  // Don't exit - let the server continue running
+});
+
 const app: Application = express();
 const httpServer = createServer(app);
 
