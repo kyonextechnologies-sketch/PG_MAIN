@@ -31,45 +31,6 @@ import { apiClient } from '@/lib/apiClient';
 import { CreditCard, Copy, CheckCircle2 } from 'lucide-react';
 import { useUPISettings } from '@/hooks/useUPISettings';
 
-// ❌ MOCK DATA DISABLED - Showing raw/empty state
-// Mock data for tenant profile
-// const mockTenantProfile = {
-//   id: 'tenant-1',
-//   name: 'Jane Smith',
-//   email: 'jane@example.com',
-//   phone: '+91-9876543210',
-//   property: 'Sunshine PG',
-//   room: 'Room 101',
-//   bed: 'Bed A',
-//   moveInDate: '2024-01-15',
-//   kycStatus: 'VERIFIED',
-//   emergencyContact: '+91-9876543211',
-//   address: '123 Main Street, Koramangala, Bangalore',
-// };
-// 
-// const mockKycDocuments = [
-//   {
-//     id: 'doc-1',
-//     type: 'Aadhaar Card',
-//     status: 'VERIFIED',
-//     uploadedAt: '2024-01-10',
-//     documentUrl: '#',
-//   },
-//   {
-//     id: 'doc-2',
-//     type: 'PAN Card',
-//     status: 'VERIFIED',
-//     uploadedAt: '2024-01-10',
-//     documentUrl: '#',
-//   },
-//   {
-//     id: 'doc-3',
-//     type: 'Bank Statement',
-//     status: 'PENDING',
-//     uploadedAt: '2024-01-15',
-//     documentUrl: '#',
-//   },
-// ];
 
 export default function TenantProfilePage() {
   const [profileData, setProfileData] = useState({
@@ -269,8 +230,8 @@ export default function TenantProfilePage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-        <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-700 font-semibold">Manage your personal information and documents</p>
+        <h1 className="text-3xl font-bold text-white dark:!text-white">Profile</h1>
+        <p className="text-white-700 dark:!text-white-700 font-semibold">Manage your personal information and documents</p>
             </div>
             <div className="flex space-x-2">
               {!isEditing ? (
@@ -307,25 +268,25 @@ export default function TenantProfilePage() {
             <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-gray-100 to-gray-200 p-1 rounded-xl shadow-lg">
               <TabsTrigger 
                 value="personal"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+                className="text-black dark:!text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 Personal Info
               </TabsTrigger>
               <TabsTrigger 
                 value="documents"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+                className="text-black dark:!text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 KYC Documents
               </TabsTrigger>
               <TabsTrigger 
                 value="accommodation"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+                className="text-black dark:!text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 Accommodation
               </TabsTrigger>
               <TabsTrigger 
                 value="payment"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
+                className="text-black dark:!text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-300"
               >
                 Payment Details
               </TabsTrigger>

@@ -186,8 +186,8 @@ export default function TenantRequestsPage() {
           {isCreatingRequest && (
             <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg">
-                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Create New Request</CardTitle>
-                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-semibold">
+                <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-black">Create New Request</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-700 font-semibold">
                   Describe the issue you're experiencing
                 </CardDescription>
               </CardHeader>
@@ -283,10 +283,10 @@ export default function TenantRequestsPage() {
           {/* Requests List */}
           <Card className="bg-white shadow-xl border-0 hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
-              <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+              <CardTitle className="text-base sm:text-lg font-bold text-black-900 dark:text-black">
                 Your Requests ({tickets.length})
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-200 font-semibold">
+              <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-700 font-semibold">
                 Track the status of your maintenance requests
               </CardDescription>
             </CardHeader>
@@ -304,8 +304,8 @@ export default function TenantRequestsPage() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium">{request.title}</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{request.description}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-700 mt-1">{request.description}</p>
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-700">
                             <span className="flex items-center">
                               <Calendar className="h-3 w-3 mr-1" />
                               Created: {formatDate(request.createdAt)}
