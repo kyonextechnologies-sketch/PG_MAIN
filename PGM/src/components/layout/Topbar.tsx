@@ -6,12 +6,15 @@ import { useRouter } from 'next/navigation';
 import { Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { clearTabSession } from '@/lib/tabSession';
 
 export function Topbar() {
   const { data: session } = useSession();
   const router = useRouter();
 
   const handleSignOut = () => {
+    // Clear tab session before signing out
+    clearTabSession();
     signOut({ callbackUrl: '/' });
   };
 

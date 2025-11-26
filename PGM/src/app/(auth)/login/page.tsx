@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { setTabSession } from '@/lib/tabSession';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginFormData } from '@/lib/validation';
@@ -51,6 +52,19 @@ export default function LoginPage() {
       // Get session to determine redirect
       const session = await getSession();
       console.log('✅ Login successful - User role:', session?.user?.role);
+      
+      // Store session in tab sessionStorage for per-tab session management
+      if (session?.user) {
+        const accessToken = (session as any).accessToken;
+        setTabSession({
+          userId: session.user.id || '',
+          email: session.user.email || data.email,
+          name: session.user.name || '',
+          role: session.user.role || 'TENANT',
+          accessToken: accessToken || '',
+        });
+        console.log('✅ Tab session stored for this browser tab');
+      }
       
       if (session?.user?.role === 'ADMIN') {
         console.log('🔐 Admin login - Redirecting to admin portal');

@@ -8,6 +8,7 @@
 import { getSession } from 'next-auth/react';
 import { ErrorHandler } from './errors';
 import { getSessionId } from './session';
+import { getTabSession } from './tabSession';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -91,25 +92,50 @@ class ApiClient {
           };
         }
 
-        const session = await getSession();
-
-        if (session?.user?.id) {
+        // Check for tab session first (per-tab authentication)
+        const tabSession = getTabSession();
+        
+        // If tab session exists, use it; otherwise fall back to NextAuth session
+        if (tabSession && tabSession.accessToken) {
           config.headers = {
             ...config.headers,
-            'X-User-ID': session.user.id,
-            'X-User-Role': session.user.role || 'USER',
+            'Authorization': `Bearer ${tabSession.accessToken}`,
+            'X-User-ID': tabSession.userId,
+            'X-User-Role': tabSession.role,
+            'X-Tab-ID': tabSession.tabId,
           };
           // Log in development for debugging
           if (process.env.NODE_ENV === 'development') {
-            console.log('🔐 [ApiClient] Session headers added:', {
-              sessionId,
-              userId: session.user.id,
-              role: session.user.role,
+            console.log('🔐 [ApiClient] Tab session headers added:', {
+              tabId: tabSession.tabId,
+              userId: tabSession.userId,
+              role: tabSession.role,
             });
           }
         } else {
-          // Don't log warning for public endpoints - session is optional for auth endpoints
-          // The request will continue without user session headers
+          // Fall back to NextAuth session
+          const session = await getSession();
+
+          if (session?.user?.id) {
+            const accessToken = (session as any).accessToken;
+            config.headers = {
+              ...config.headers,
+              'X-User-ID': session.user.id,
+              'X-User-Role': session.user.role || 'USER',
+              ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+            };
+            // Log in development for debugging
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔐 [ApiClient] NextAuth session headers added:', {
+                sessionId,
+                userId: session.user.id,
+                role: session.user.role,
+              });
+            }
+          } else {
+            // Don't log warning for public endpoints - session is optional for auth endpoints
+            // The request will continue without user session headers
+          }
         }
       } catch (error) {
         console.warn('⚠️ [ApiClient] Error getting session:', error);

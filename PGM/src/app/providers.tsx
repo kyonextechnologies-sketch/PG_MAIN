@@ -5,6 +5,7 @@ import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { ThemeProvider } from '@/lib/theme';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { TabSessionManager } from '@/components/common/TabSessionManager';
 
 // Safe toast function that checks if toast is available
 const safeToastError = (message: string) => {
@@ -83,6 +84,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         refetchWhenOffline={false}
         basePath="/api/auth"
       >
+        <TabSessionManager />
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>
             {children}
