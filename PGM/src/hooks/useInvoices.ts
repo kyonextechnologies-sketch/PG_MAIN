@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/apiClient';
+import { socketService } from '@/services/socket.service';
 
 interface Invoice {
   id: string;
@@ -208,8 +210,48 @@ export const useInvoices = (): UseInvoicesReturn => {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  // Real-time updates via WebSocket
+  const { data: session } = useSession();
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const token = (session as any)?.accessToken;
+    if (!token) return;
+
+    // Ensure socket is connected
+    if (!socketService.isSocketConnected()) {
+      socketService.connect(token);
+    }
+
+    // Listen for real-time invoice updates
+    socketService.onDataUpdate('invoice', (event, data) => {
+      console.log('🔄 Real-time invoice update:', event, data);
+      
+      if (event === 'create') {
+        setInvoices(prev => [...prev, data]);
+      } else if (event === 'update') {
+        setInvoices(prev => prev.map(inv => inv.id === data.id ? data : inv));
+      } else if (event === 'delete') {
+        setInvoices(prev => prev.filter(inv => inv.id !== data.id));
+      }
+    });
+
+    return () => {
+      socketService.offDataUpdate('invoice');
+    };
+  }, [session]);
+
+  // Memoize filtered/sorted invoices
+  const sortedInvoices = useMemo(() => {
+    return [...invoices].sort((a, b) => {
+      const dateA = new Date(a.dueDate).getTime();
+      const dateB = new Date(b.dueDate).getTime();
+      return dateB - dateA; // Newest first
+    });
+  }, [invoices]);
+
   return {
-    invoices,
+    invoices: sortedInvoices,
     loading,
     error,
     fetchInvoices,

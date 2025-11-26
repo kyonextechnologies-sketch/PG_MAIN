@@ -3,6 +3,7 @@ import { AuthRequest } from '../types';
 import prisma from '../config/database';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { generatePaginatedResponse } from '../utils/helpers';
+import { emitDataUpdate } from '../services/notification.service';
 
 /**
  * @swagger
@@ -42,6 +43,9 @@ export const createProperty = asyncHandler(async (req: AuthRequest, res: Respons
       amenities: amenities || [],
     },
   });
+
+  // Emit real-time update
+  emitDataUpdate(req.user.id, 'property', 'create', property);
 
   res.status(201).json({
     success: true,
@@ -301,6 +305,9 @@ export const updateProperty = asyncHandler(async (req: AuthRequest, res: Respons
     },
   });
 
+  // Emit real-time update
+  emitDataUpdate(req.user.id, 'property', 'update', property);
+
   res.json({
     success: true,
     message: 'Property updated successfully',
@@ -360,6 +367,9 @@ export const deleteProperty = asyncHandler(async (req: AuthRequest, res: Respons
   await prisma.property.delete({
     where: { id },
   });
+
+  // Emit real-time delete
+  emitDataUpdate(req.user.id, 'property', 'delete', { id });
 
   res.json({
     success: true,

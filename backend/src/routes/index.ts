@@ -12,6 +12,7 @@ import maintenanceRoutes from './maintenance.routes';
 import reportsRoutes from './reports.routes';
 import uploadRoutes from './upload.routes';
 import ownerRoutes from './owner.routes';
+import subscriptionRoutes from './subscription.routes';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/maintenance', maintenanceRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/owners', ownerRoutes);
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;
 

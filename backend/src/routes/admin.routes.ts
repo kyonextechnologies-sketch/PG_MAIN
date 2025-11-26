@@ -9,6 +9,10 @@ import {
   getAuditLogs,
   getSubscriptions,
   updateSubscription,
+  triggerMonthlyBilling,
+  processOverdueInvoicesManual,
+  getSubscriptionUpiSettings,
+  updateSubscriptionUpiSettings,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -25,5 +29,13 @@ router.get('/maintenance-requests', getMaintenanceRequests);
 router.get('/audit-logs', getAuditLogs);
 router.get('/subscriptions', getSubscriptions);
 router.put('/subscriptions/:ownerId', updateSubscription);
+
+// Billing management routes
+router.post('/billing/generate', triggerMonthlyBilling);
+router.post('/billing/overdue', processOverdueInvoicesManual);
+
+// Subscription UPI settings routes
+router.get('/subscription-upi-settings', getSubscriptionUpiSettings);
+router.put('/subscription-upi-settings', updateSubscriptionUpiSettings);
 
 export default router;

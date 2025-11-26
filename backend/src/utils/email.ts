@@ -375,6 +375,35 @@ const getEmailTemplate = (template: string, data: Record<string, any>): string =
         </div>
       </div>
     `,
+    emailVerification: (data) => `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-top: 0; font-size: 24px;">Verify Your Email Address</h2>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">Hello <strong>${data.name}</strong>,</p>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+            Thank you for registering! Please verify your email address to complete your account setup.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.verificationUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Verify Email Address
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            Or copy and paste this URL in your browser:<br/>
+            <a href="${data.verificationUrl}" style="color: #3b82f6; word-break: break-all;">${data.verificationUrl}</a>
+          </p>
+          <p style="color: #dc2626; font-size: 14px; margin-top: 20px;">
+            ⚠️ This link will expire in ${data.expiryHours} hours.
+          </p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+            If you didn't create an account, please ignore this email.<br/>
+            Best regards,<br/>
+            <strong style="color: #1f2937;">PG Management Team</strong>
+          </p>
+        </div>
+      </div>
+    `,
   };
 
   return templates[template]?.(data) || '<p>No template found</p>';

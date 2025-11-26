@@ -179,16 +179,28 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Initialize socket connection when user is authenticated
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      // Disconnect if user logs out
+      socketService.disconnect();
+      setIsConnected(false);
+      return;
+    }
 
     refreshNotifications();
 
     const token = (session as any)?.accessToken;
 
-    if (!token) return;
+    if (!token) {
+      console.warn('⚠️ Cannot initialize WebSocket: No access token in session');
+      return;
+    }
 
     console.log('🔌 Initializing WebSocket connection...');
-    socketService.connect(token);
+    
+    // Small delay to ensure session is fully established
+    const connectTimeout = setTimeout(() => {
+      socketService.connect(token);
+    }, 500);
 
     socketService.on('connect', () => {
       console.log('✅ WebSocket connected');
@@ -200,9 +212,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setIsConnected(false);
     });
 
+    socketService.on('connect_error', (error: any) => {
+      console.error('❌ WebSocket connection error:', error);
+      setIsConnected(false);
+      // Don't show error to user - this is expected if server is not running
+    });
+
     socketService.onNotification(handleNewNotification);
 
     return () => {
+      clearTimeout(connectTimeout);
       console.log('🔌 Cleaning up WebSocket connection');
       socketService.disconnect();
     };

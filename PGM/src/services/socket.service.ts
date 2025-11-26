@@ -15,9 +15,21 @@ class SocketService {
       return;
     }
 
+    if (!token) {
+      console.warn('⚠️ Cannot connect socket: No token provided');
+      return;
+    }
+
+    // Disconnect existing socket if any
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
     const socketURL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
     console.log(`🔌 Connecting to WebSocket: ${socketURL}`);
+    console.log(`🔑 Token provided: ${token ? 'Yes' : 'No'}`);
 
     this.socket = io(socketURL, {
       auth: {
@@ -28,6 +40,8 @@ class SocketService {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: this.maxReconnectAttempts,
+      timeout: 20000, // 20 seconds timeout
+      forceNew: true, // Force new connection
     });
 
     this.setupEventListeners();
@@ -52,13 +66,23 @@ class SocketService {
     });
 
     // Connection error
-    this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
+    this.socket.on('connect_error', (error: Error & { type?: string }) => {
+      // Only log error details in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ Socket connection error (this is normal if backend is not running):', {
+          message: error.message,
+          ...(error.type && { type: error.type }),
+        });
+      }
       this.isConnected = false;
       this.reconnectAttempts++;
 
+      // Only log if max attempts reached (don't show to user)
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('❌ Max reconnection attempts reached');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Max reconnection attempts reached. Socket will not reconnect automatically.');
+          console.warn('💡 This is normal if the backend server is not running. Real-time features will be unavailable.');
+        }
       }
     });
 
@@ -118,6 +142,34 @@ class SocketService {
       console.log('📬 New notification received:', data);
       callback(data);
     });
+  }
+
+  /**
+   * Listen for real-time data updates (create/update/delete)
+   */
+  onDataUpdate(
+    resource: string,
+    callback: (event: 'create' | 'update' | 'delete', data: any) => void
+  ): void {
+    if (!this.socket) {
+      console.warn('⚠️ Socket not connected. Call connect() first.');
+      return;
+    }
+
+    const eventName = `${resource}:update`;
+    this.socket.on(eventName, (payload: { event: 'create' | 'update' | 'delete'; data: any }) => {
+      console.log(`🔄 Real-time update for ${resource}:`, payload);
+      callback(payload.event, payload.data);
+    });
+  }
+
+  /**
+   * Unsubscribe from data updates
+   */
+  offDataUpdate(resource: string): void {
+    if (!this.socket) return;
+    const eventName = `${resource}:update`;
+    this.socket.off(eventName);
   }
 
   /**

@@ -5,6 +5,7 @@ import prisma from '../config/database';
 import { logAdminAction } from '../middleware/auditLog';
 import { createNotification } from '../services/notification.service';
 import { Prisma } from '@prisma/client';
+import { scheduleMonthlyBilling, processOverdueInvoices } from '../services/billing.service';
 
 /**
  * Verify admin role middleware
@@ -761,6 +762,198 @@ export const updateSubscription = asyncHandler(async (req: AuthRequest, res: Res
     success: true,
     message: 'Subscription updated successfully',
     data: subscription,
+  });
+});
+
+/**
+ * @swagger
+ * /admin/billing/generate:
+ *   post:
+ *     summary: Manually trigger monthly invoice generation
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               month:
+ *                 type: string
+ *                 format: YYYY-MM
+ *                 description: Month to generate invoices for (defaults to next month)
+ *               ownerId:
+ *                 type: string
+ *                 description: Optional owner ID to generate for specific owner only
+ *     responses:
+ *       200:
+ *         description: Invoice generation triggered
+ */
+export const triggerMonthlyBilling = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  const { month, ownerId } = req.body;
+
+  try {
+    const jobId = await scheduleMonthlyBilling(month);
+
+    if (!jobId) {
+      throw new AppError('Failed to schedule billing job. Redis may be unavailable.', 500);
+    }
+
+    // Log admin action
+    await logAdminAction(req.user!.id, 'TRIGGER_BILLING', 'Billing', jobId, req, {
+      month,
+      ownerId,
+    });
+
+    res.json({
+      success: true,
+      message: 'Monthly billing job scheduled successfully',
+      data: {
+        jobId,
+        month: month || 'Next month (auto-calculated)',
+        ownerId: ownerId || 'All owners',
+      },
+    });
+  } catch (error: any) {
+    throw new AppError(error.message || 'Failed to trigger monthly billing', 500);
+  }
+});
+
+/**
+ * @swagger
+ * /admin/billing/overdue:
+ *   post:
+ *     summary: Manually process overdue invoices and apply late fees
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Overdue invoices processed
+ */
+export const processOverdueInvoicesManual = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  try {
+    const processedCount = await processOverdueInvoices();
+
+    // Log admin action
+    await logAdminAction(req.user!.id, 'PROCESS_OVERDUE', 'Billing', 'overdue-invoices', req, {
+      processedCount,
+    });
+
+    res.json({
+      success: true,
+      message: `Processed ${processedCount} overdue invoices`,
+      data: {
+        processedCount,
+      },
+    });
+  } catch (error: any) {
+    throw new AppError(error.message || 'Failed to process overdue invoices', 500);
+  }
+});
+
+/**
+ * @swagger
+ * /admin/subscription-upi-settings:
+ *   get:
+ *     summary: Get subscription UPI settings
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Subscription UPI settings
+ */
+export const getSubscriptionUpiSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  // Get admin user's UPI settings (admin user is used to store subscription payment UPI)
+  const admin = await prisma.user.findFirst({
+    where: { role: 'ADMIN' },
+    select: {
+      upiId: true,
+      upiName: true,
+    },
+    orderBy: { createdAt: 'asc' }, // Get first admin user
+  });
+
+  res.json({
+    success: true,
+    data: {
+      upiId: admin?.upiId || '',
+      upiName: admin?.upiName || 'PG Management System',
+    },
+  });
+});
+
+/**
+ * @swagger
+ * /admin/subscription-upi-settings:
+ *   put:
+ *     summary: Update subscription UPI settings
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               upiId:
+ *                 type: string
+ *               upiName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Subscription UPI settings updated
+ */
+export const updateSubscriptionUpiSettings = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  const { upiId, upiName } = req.body;
+
+  // Validate UPI ID format if provided
+  if (upiId && upiId.trim()) {
+    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    if (!upiIdRegex.test(upiId)) {
+      throw new AppError('Please enter a valid UPI ID (e.g., admin@paytm)', 400);
+    }
+  }
+
+  // Update admin user's UPI settings (use the requesting admin's ID)
+  const updatedAdmin = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: {
+      upiId: upiId || null,
+      upiName: upiName || null,
+    },
+    select: {
+      upiId: true,
+      upiName: true,
+    },
+  });
+
+  // Log admin action
+  await logAdminAction(req.user!.id, 'UPDATE_SUBSCRIPTION_UPI', 'Settings', 'subscription-upi', req, {
+    upiId: updatedAdmin.upiId,
+    upiName: updatedAdmin.upiName,
+  });
+
+  res.json({
+    success: true,
+    message: 'Subscription UPI settings updated successfully',
+    data: {
+      upiId: updatedAdmin.upiId || '',
+      upiName: updatedAdmin.upiName || 'PG Management System',
+    },
   });
 });
 

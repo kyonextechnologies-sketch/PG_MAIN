@@ -12,6 +12,8 @@ import {
   verifyStoredRefreshToken,
   deleteRefreshToken,
   deleteAllUserRefreshTokens,
+  generateEmailVerificationToken,
+  verifyEmailVerificationToken,
 } from '../utils/auth';
 import { sendEmail } from '../utils/email';
 import { validateVerificationToken } from '../services/otp.service';
@@ -103,6 +105,11 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
 
   console.log('Registering user:', { email: normalizedEmail, role, phone: phone ? '***' : null });
 
+  // Generate email verification token
+  const emailVerificationToken = generateEmailVerificationToken();
+  const emailVerificationTokenExpiry = new Date();
+  emailVerificationTokenExpiry.setHours(emailVerificationTokenExpiry.getHours() + 24); // 24 hours expiry
+
   // Create user
   const user = await prisma.user.create({
     data: {
@@ -113,6 +120,9 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
       phone: phone || null,
       phoneVerified: phoneValidated, // Use validated status from token check
       phoneVerifiedAt: phoneValidated ? new Date() : null,
+      emailVerified: false,
+      emailVerificationToken,
+      emailVerificationTokenExpiry,
     },
     select: {
       id: true,
@@ -136,10 +146,31 @@ export const register = asyncHandler(async (req: AuthRequest, res: Response) => 
     });
   }
 
+  // Send email verification email
+  try {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
+    await sendEmail({
+      to: normalizedEmail,
+      subject: 'Verify your email address',
+      template: 'emailVerification',
+      data: {
+        name,
+        verificationUrl,
+        expiryHours: 24,
+      },
+    });
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+    // Don't fail registration if email fails
+  }
+
   res.status(201).json({
     success: true,
-    message: 'User registered successfully',
-    data: user,
+    message: 'User registered successfully. Please check your email to verify your account.',
+    data: {
+      ...user,
+      emailVerificationToken: undefined, // Don't send token in response
+    },
   });
 });
 
@@ -547,6 +578,118 @@ export const forgotPassword = asyncHandler(async (req: AuthRequest, res: Respons
  *       200:
  *         description: Password reset successfully
  */
+/**
+ * Verify email address
+ */
+export const verifyEmail = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { token } = req.body;
+
+  if (!token) {
+    throw new AppError('Verification token is required', 400);
+  }
+
+  // Verify token
+  const verification = verifyEmailVerificationToken(token);
+  if (!verification.valid) {
+    throw new AppError(verification.error || 'Invalid or expired verification token', 400);
+  }
+
+  // Find user by token
+  const user = await prisma.user.findFirst({
+    where: {
+      emailVerificationToken: token,
+      emailVerificationTokenExpiry: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  if (!user) {
+    throw new AppError('Invalid or expired verification token', 400);
+  }
+
+  // Update user
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      emailVerificationToken: null,
+      emailVerificationTokenExpiry: null,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'Email verified successfully',
+  });
+});
+
+/**
+ * Resend email verification
+ */
+export const resendEmailVerification = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new AppError('Email is required', 400);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
+
+  if (!user) {
+    // Don't reveal if user exists
+    res.json({
+      success: true,
+      message: 'If an account exists with this email, a verification link has been sent.',
+    });
+    return;
+  }
+
+  if (user.emailVerified) {
+    throw new AppError('Email is already verified', 400);
+  }
+
+  // Generate new token
+  const emailVerificationToken = generateEmailVerificationToken();
+  const emailVerificationTokenExpiry = new Date();
+  emailVerificationTokenExpiry.setHours(emailVerificationTokenExpiry.getHours() + 24);
+
+  // Update user
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerificationToken,
+      emailVerificationTokenExpiry,
+    },
+  });
+
+  // Send email
+  try {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'Verify your email address',
+      template: 'emailVerification',
+      data: {
+        name: user.name,
+        verificationUrl,
+        expiryHours: 24,
+      },
+    });
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+    throw new AppError('Failed to send verification email', 500);
+  }
+
+  res.json({
+    success: true,
+    message: 'Verification email sent successfully',
+  });
+});
+
 export const resetPassword = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { token, newPassword } = req.body;
 

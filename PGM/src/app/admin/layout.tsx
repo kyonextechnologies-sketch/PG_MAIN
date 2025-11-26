@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Package,
+  Settings,
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Owners', href: '/admin/owners', icon: Users },
   { name: 'Subscriptions', href: '/admin/subscriptions', icon: Package },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

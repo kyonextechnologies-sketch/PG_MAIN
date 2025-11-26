@@ -6,10 +6,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Allow public routes and API routes (especially NextAuth)
+  // NextAuth routes must be allowed to pass through without modification
   if (pathname.startsWith('/login') || 
       pathname.startsWith('/register') ||
       pathname === '/' ||
-      pathname.startsWith('/api/auth') || // NextAuth routes
+      pathname.startsWith('/api/auth') || // NextAuth routes - must be first
       pathname.startsWith('/api') ||
       pathname.startsWith('/_next') ||
       pathname.startsWith('/_vercel') ||

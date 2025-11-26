@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import {
 import { motion } from 'framer-motion';
 import { useUIStore } from '@/store/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useElectricity } from '@/hooks/useElectricity';
 
 // ❌ MOCK DATA DISABLED - Showing raw/empty state
 // Mock electricity bill data
@@ -66,6 +67,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function ElectricityBillPage() {
   const { addNotification } = useUIStore();
+  const { bills, settings, loading: electricityLoading, submitBill: submitElectricityBill } = useElectricity();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [extractedReading, setExtractedReading] = useState<number | null>(null);
@@ -73,6 +75,27 @@ export default function ElectricityBillPage() {
   const [currentReading, setCurrentReading] = useState<string>('');
   const [previousReading, setPreviousReading] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Set previous reading from last bill
+  useEffect(() => {
+    if (settings.lastReading !== null && !previousReading) {
+      setPreviousReading(settings.lastReading.toString());
+    }
+  }, [settings.lastReading, previousReading]);
+
+  // Calculate due date
+  const getDueDateDisplay = () => {
+    if (!settings.dueDate) return 'N/A';
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const dueDate = new Date(currentYear, currentMonth, settings.dueDate);
+    if (dueDate < now) {
+      const nextMonth = new Date(currentYear, currentMonth + 1, settings.dueDate);
+      return formatDate(nextMonth.toISOString());
+    }
+    return formatDate(dueDate.toISOString());
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -127,7 +150,8 @@ export default function ElectricityBillPage() {
     }
 
     const units = current - previous;
-    const amount = units * 8; // Default rate: 8 per unit
+    const rate = settings.ratePerUnit || 8;
+    const amount = units * rate;
 
     if (units < 0) {
       addNotification({
@@ -142,12 +166,12 @@ export default function ElectricityBillPage() {
     addNotification({
       type: 'success',
       title: 'Bill Calculated',
-      message: `${units} units × ₹${amount.toFixed(2)} = ₹${amount.toFixed(2)}`,
+      message: `${units} units × ₹${rate.toFixed(2)} = ₹${amount.toFixed(2)}`,
       read: false,
     });
   };
 
-  const submitBill = () => {
+  const submitBill = async () => {
     if (!currentReading || !previousReading) {
       addNotification({
         type: 'error',
@@ -158,19 +182,71 @@ export default function ElectricityBillPage() {
       return;
     }
 
-    addNotification({
-      type: 'success',
-      title: 'Bill Submitted',
-      message: 'Electricity bill submitted successfully!',
-      read: false,
-    });
+    const current = parseFloat(currentReading);
+    const previous = parseFloat(previousReading);
 
-    // Reset form
-    setSelectedImage(null);
-    setImagePreview(null);
-    setExtractedReading(null);
-    setCurrentReading('');
-    setPreviousReading('');
+    if (isNaN(current) || isNaN(previous)) {
+      addNotification({
+        type: 'error',
+        title: 'Invalid Reading',
+        message: 'Please enter valid meter readings',
+        read: false,
+      });
+      return;
+    }
+
+    if (current <= previous) {
+      addNotification({
+        type: 'error',
+        title: 'Invalid Reading',
+        message: 'Current reading must be greater than previous reading',
+        read: false,
+      });
+      return;
+    }
+
+    // Get current month in YYYY-MM format
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    try {
+      const bill = await submitElectricityBill({
+        month,
+        previousReading: previous,
+        currentReading: current,
+        imageUrl: imagePreview || undefined,
+      });
+
+      if (bill) {
+        addNotification({
+          type: 'success',
+          title: 'Bill Submitted',
+          message: 'Electricity bill submitted successfully!',
+          read: false,
+        });
+
+        // Reset form
+        setSelectedImage(null);
+        setImagePreview(null);
+        setExtractedReading(null);
+        setCurrentReading('');
+        // Keep previous reading for next submission
+      } else {
+        addNotification({
+          type: 'error',
+          title: 'Submission Failed',
+          message: 'Failed to submit electricity bill. Please try again.',
+          read: false,
+        });
+      }
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Submission Failed',
+        message: 'An error occurred while submitting the bill.',
+        read: false,
+      });
+    }
   };
 
   const removeImage = () => {
@@ -203,10 +279,10 @@ export default function ElectricityBillPage() {
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
               <span className="text-sm font-semibold text-gray-700">Electricity Bill Management</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white-900 dark:text-white">
               Electricity Bills
             </h1>
-            <p className="text-xl text-gray-800 max-w-2xl mx-auto font-semibold">
+            <p className="text-xl text-white-800 max-w-2xl mx-auto font-semibold">
               Submit your meter reading and manage electricity bills
             </p>
           </motion.div>
@@ -225,20 +301,32 @@ export default function ElectricityBillPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-white/80 rounded-xl">
-                    <p className="text-sm font-semibold text-gray-600">Rate per Unit</p>
-                    <p className="text-2xl font-bold text-blue-600">₹8</p>
+                {electricityLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
                   </div>
-                  <div className="text-center p-4 bg-white/80 rounded-xl">
-                    <p className="text-sm font-semibold text-gray-600">Last Reading</p>
-                    <p className="text-2xl font-bold text-green-600">N/A</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-white/80 rounded-xl">
+                      <p className="text-sm font-semibold text-gray-600">Rate per Unit</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        ₹{settings.ratePerUnit?.toFixed(2) || '8.00'}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-white/80 rounded-xl">
+                      <p className="text-sm font-semibold text-gray-600">Last Reading</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {settings.lastReading !== null ? settings.lastReading : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-white/80 rounded-xl">
+                      <p className="text-sm font-semibold text-gray-600">Due Date</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        {getDueDateDisplay()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-white/80 rounded-xl">
-                    <p className="text-sm font-semibold text-gray-600">Due Date</p>
-                    <p className="text-2xl font-bold text-orange-600">N/A</p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -255,7 +343,7 @@ export default function ElectricityBillPage() {
                   <Camera className="h-6 w-6 text-green-600 mr-2" />
                   Submit New Meter Reading
                 </CardTitle>
-                <CardDescription>Upload a photo of your electricity meter to automatically extract the reading</CardDescription>
+                <CardDescription className="text-gray-800 dark:text-gray-700">Upload a photo of your electricity meter to automatically extract the reading</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Image Upload Section */}
@@ -345,17 +433,18 @@ export default function ElectricityBillPage() {
                 {/* Manual Entry */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="previousReading">Previous Reading</Label>
+                    <Label htmlFor="previousReading" className="text-gray-800 dark:text-gray-700">Previous Reading</Label>
                     <Input
                       id="previousReading"
                       type="number"
                       placeholder="Enter previous reading"
+                      className=" bg-white-900 dark:bg-gray-900 text-gray-800 dark:text-gray-700"
                       value={previousReading}
                       onChange={(e) => setPreviousReading(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="currentReading">Current Reading</Label>
+                    <Label htmlFor="currentReading" className="text-gray-800 dark:text-gray-700">Current Reading</Label>
                     <Input
                       id="currentReading"
                       type="number"
@@ -403,46 +492,64 @@ export default function ElectricityBillPage() {
                 <CardDescription>Your electricity bill submission history</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* mockElectricityBills.map((bill, index) => ( */}
-                  {/* <motion.div */}
-                  {/*   key={bill.id} */}
-                  {/*   initial={{ opacity: 0, x: -20 }} */}
-                  {/*   animate={{ opacity: 1, x: 0 }} */}
-                  {/*   transition={{ duration: 0.4, delay: index * 0.1 }} */}
-                  {/*   className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300" */}
-                  {/* > */}
-                  {/*   <div className="flex items-center space-x-4"> */}
-                  {/*     <div className="p-3 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl"> */}
-                  {/*       <Zap className="h-6 w-6 text-blue-600" /> */}
-                  {/*     </div> */}
-                  {/*     <div> */}
-                  {/*       <p className="font-bold text-gray-900">{bill.month}</p> */}
-                  {/*       <p className="text-sm text-gray-600"> */}
-                  {/*         Reading: {bill.previousReading} → {bill.currentReading} ({bill.units} units) */}
-                  {/*       </p> */}
-                  {/*       <p className="text-sm text-gray-500"> */}
-                  {/*         Submitted: {formatDate(bill.submittedAt)} */}
-                  {/*       </p> */}
-                  {/*     </div> */}
-                  {/*   </div> */}
-                  {/*   <div className="text-right"> */}
-                  {/*     <p className="font-bold text-lg text-gray-900">{formatCurrency(bill.amount)}</p> */}
-                  {/*     <Badge  */}
-                  {/*       variant={bill.status === 'PAID' ? 'default' : 'secondary'} */}
-                  {/*       className="mt-1" */}
-                  {/*     > */}
-                  {/*       {bill.status} */}
-                  {/*     </Badge> */}
-                  {/*     {bill.paidAt && ( */}
-                  {/*       <p className="text-xs text-gray-500 mt-1"> */}
-                  {/*         Paid: {formatDate(bill.paidAt)} */}
-                  {/*       </p> */}
-                  {/*     )} */}
-                  {/*   </div> */}
-                  {/* </motion.div> */}
-                  {/* ))} */}
-                </div>
+                {electricityLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin text-purple-600" />
+                  </div>
+                ) : bills.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">No electricity bills submitted yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {bills.map((bill, index) => (
+                      <motion.div
+                        key={bill.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                        className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="p-3 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl">
+                            <Zap className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900">{bill.month}</p>
+                            <p className="text-sm text-gray-600">
+                              Reading: {bill.previousReading} → {bill.currentReading} ({bill.units} units)
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Submitted: {formatDate(bill.submittedAt || bill.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg text-gray-900">
+                            {formatCurrency(typeof bill.amount === 'string' ? parseFloat(bill.amount) : bill.amount)}
+                          </p>
+                          <Badge
+                            variant={
+                              bill.status === 'APPROVED'
+                                ? 'default'
+                                : bill.status === 'REJECTED'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            className="mt-1"
+                          >
+                            {bill.status}
+                          </Badge>
+                          {bill.approvedAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Approved: {formatDate(bill.approvedAt)}
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>

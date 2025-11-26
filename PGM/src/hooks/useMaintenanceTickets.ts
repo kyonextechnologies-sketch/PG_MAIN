@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/apiClient';
+import { socketService } from '@/services/socket.service';
 
 export interface MaintenanceTicket {
   id: string;
@@ -148,6 +150,37 @@ export const useMaintenanceTickets = (): UseMaintenanceTicketsReturn => {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  // Real-time updates via WebSocket
+  const { data: session } = useSession();
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const token = (session as any)?.accessToken;
+    if (!token) return;
+
+    // Ensure socket is connected
+    if (!socketService.isSocketConnected()) {
+      socketService.connect(token);
+    }
+
+    // Listen for real-time maintenance ticket updates
+    socketService.onDataUpdate('maintenance', (event, data) => {
+      console.log('🔄 Real-time maintenance update:', event, data);
+      
+      if (event === 'create') {
+        setTickets(prev => [...prev, data]);
+      } else if (event === 'update') {
+        setTickets(prev => prev.map(t => t.id === data.id ? data : t));
+      } else if (event === 'delete') {
+        setTickets(prev => prev.filter(t => t.id !== data.id));
+      }
+    });
+
+    return () => {
+      socketService.offDataUpdate('maintenance');
+    };
+  }, [session]);
 
   return {
     tickets,

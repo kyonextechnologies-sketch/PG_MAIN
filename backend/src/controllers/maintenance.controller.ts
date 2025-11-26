@@ -8,6 +8,7 @@ import {
   notifyOwnerOfMaintenanceRequest,
   notifyTenantOwnerAcknowledged,
   notifyTenantOfMaintenanceUpdate,
+  emitDataUpdate,
 } from '../services/notification.service';
 import {
   scheduleMaintenanceReminders,
@@ -112,6 +113,17 @@ export const createTicket = asyncHandler(async (req: AuthRequest, res: Response)
     priority: ticketPriority,
     category,
   });
+
+  // Emit real-time update to tenant
+  emitDataUpdate(tenant.userId, 'maintenance', 'create', ticket);
+  // Also emit to owner
+  const owner = await prisma.user.findUnique({
+    where: { id: tenant.ownerId },
+    select: { id: true },
+  });
+  if (owner) {
+    emitDataUpdate(owner.id, 'maintenance', 'create', ticket);
+  }
 
   res.status(201).json({
     success: true,
@@ -320,6 +332,10 @@ export const updateTicket = asyncHandler(async (req: AuthRequest, res: Response)
     changes: changes.join(', '),
   });
 
+  // Emit real-time update
+  emitDataUpdate(updatedTicket.tenant.userId, 'maintenance', 'update', updatedTicket);
+  emitDataUpdate(req.user.id, 'maintenance', 'update', updatedTicket);
+
   // Send email notification
   try {
     await sendEmail({
@@ -357,6 +373,7 @@ export const deleteTicket = asyncHandler(async (req: AuthRequest, res: Response)
   if (req.user.role === 'OWNER') {
     ticket = await prisma.maintenanceTicket.findFirst({
       where: { id, ownerId: req.user.id },
+      include: { tenant: { select: { userId: true } } },
     });
   } else {
     const tenant = await prisma.tenantProfile.findFirst({
@@ -365,6 +382,7 @@ export const deleteTicket = asyncHandler(async (req: AuthRequest, res: Response)
     if (tenant) {
       ticket = await prisma.maintenanceTicket.findFirst({
         where: { id, tenantId: tenant.id, status: 'OPEN' },
+        include: { tenant: { select: { userId: true } } },
       });
     }
   }
@@ -373,7 +391,17 @@ export const deleteTicket = asyncHandler(async (req: AuthRequest, res: Response)
     throw new AppError('Ticket not found or cannot be deleted', 404);
   }
 
+  // Store IDs before deletion for socket emission
+  const tenantUserId = ticket.tenant?.userId;
+  const ownerId = ticket.ownerId;
+
   await prisma.maintenanceTicket.delete({ where: { id } });
+
+  // Emit real-time delete event
+  if (tenantUserId) {
+    emitDataUpdate(tenantUserId, 'maintenance', 'delete', { id });
+  }
+  emitDataUpdate(ownerId, 'maintenance', 'delete', { id });
 
   res.json({
     success: true,

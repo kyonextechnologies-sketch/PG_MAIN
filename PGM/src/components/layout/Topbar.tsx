@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -40,6 +41,9 @@ export function Topbar() {
         
 
         <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications */}
           <Button 
             variant="ghost" 

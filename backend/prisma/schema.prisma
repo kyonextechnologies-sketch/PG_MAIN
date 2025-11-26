@@ -17,6 +17,10 @@ model User {
   phone               String?              @unique
   phoneVerified       Boolean              @default(false)
   phoneVerifiedAt     DateTime?
+  emailVerified       Boolean              @default(false)
+  emailVerifiedAt     DateTime?
+  emailVerificationToken String?           @unique
+  emailVerificationTokenExpiry DateTime?
   fcmToken            String?
   company             String?
   // Payment settings
@@ -45,6 +49,10 @@ model User {
   @@index([email])
   @@index([role])
   @@index([phone])
+  @@index([emailVerified])
+  @@index([emailVerificationToken])
+  @@index([isActive, role])
+  @@index([createdAt])
 }
 
 model RefreshToken {
@@ -240,6 +248,10 @@ model Invoice {
   @@index([status])
   @@index([month])
   @@index([dueDate])
+  @@index([ownerId, status])
+  @@index([tenantId, status])
+  @@index([dueDate, status])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -292,6 +304,9 @@ model MaintenanceTicket {
   @@index([propertyId])
   @@index([status])
   @@index([priority])
+  @@index([ownerId, status])
+  @@index([tenantId, status])
+  @@index([createdAt])
 }
 
 enum UserRole {
@@ -425,16 +440,43 @@ model OwnerVerification {
   id                   String             @id @default(uuid())
   ownerId              String             @unique
   verificationStatus   VerificationStatus @default(PENDING)
-  legalDocuments       Json?
+  legalDocuments       Json?              // Legacy field - kept for backward compatibility
   rejectionReason      String?
   verifiedAt           DateTime?
   verifiedBy           String?
   submittedAt          DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+  // Separate document fields for better tracking
+  aadhaarFront         String?            // File path/URL for Aadhaar front
+  aadhaarBack          String?            // File path/URL for Aadhaar back
+  pan                  String?            // File path/URL for PAN card
+  gst                  String?            // File path/URL for GST certificate (optional)
+  addressProof         String?            // File path/URL for address proof
+  ownerPhoto           String?            // File path/URL for owner photo
+  // Document verification status per type
+  aadhaarFrontStatus   DocumentStatus     @default(PENDING)
+  aadhaarBackStatus    DocumentStatus     @default(PENDING)
+  panStatus            DocumentStatus     @default(PENDING)
+  gstStatus            DocumentStatus     @default(PENDING)
+  addressProofStatus   DocumentStatus     @default(PENDING)
+  ownerPhotoStatus     DocumentStatus     @default(PENDING)
+  // Rejection reasons per document
+  aadhaarFrontRejectionReason String?
+  aadhaarBackRejectionReason  String?
+  panRejectionReason          String?
+  gstRejectionReason          String?
+  addressProofRejectionReason String?
+  ownerPhotoRejectionReason   String?
   owner                User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([verificationStatus])
   @@index([ownerId])
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Subscription {

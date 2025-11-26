@@ -8,7 +8,7 @@ import {
   getDueDateForMonth,
 } from '../utils/helpers';
 import { sendEmail } from '../utils/email';
-import { createNotification } from '../services/notification.service';
+import { createNotification, emitDataUpdate } from '../services/notification.service';
 
 // ✅ Generate Invoice
 export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -136,6 +136,10 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
     });
     // Don't fail the invoice creation if notification fails
   }
+
+  // Emit real-time update
+  emitDataUpdate(tenant.userId, 'invoice', 'create', invoice);
+  emitDataUpdate(req.user.id, 'invoice', 'create', invoice);
 
   res.status(201).json({
     success: true,
@@ -289,9 +293,15 @@ export const updateInvoice = asyncHandler(async (req: AuthRequest, res: Response
     where: { id },
     data: updateData,
     include: {
-      tenant: { select: { id: true, name: true, email: true } },
+      tenant: { select: { id: true, name: true, email: true, userId: true } },
     },
   });
+
+  // Emit real-time update
+  if (updatedInvoice.tenant?.userId) {
+    emitDataUpdate(updatedInvoice.tenant.userId, 'invoice', 'update', updatedInvoice);
+  }
+  emitDataUpdate(req.user.id, 'invoice', 'update', updatedInvoice);
 
   res.json({
     success: true,
@@ -308,7 +318,7 @@ export const deleteInvoice = asyncHandler(async (req: AuthRequest, res: Response
 
   const invoice = await prisma.invoice.findFirst({
     where: { id, ownerId: req.user.id },
-    include: { payments: true },
+    include: { payments: true, tenant: { select: { userId: true } } },
   });
 
   if (!invoice) throw new AppError('Invoice not found', 404);
@@ -316,6 +326,12 @@ export const deleteInvoice = asyncHandler(async (req: AuthRequest, res: Response
     throw new AppError('Cannot delete invoice with payments', 400);
 
   await prisma.invoice.delete({ where: { id } });
+
+  // Emit real-time delete
+  if (invoice.tenant?.userId) {
+    emitDataUpdate(invoice.tenant.userId, 'invoice', 'delete', { id });
+  }
+  emitDataUpdate(req.user.id, 'invoice', 'delete', { id });
 
   res.json({
     success: true,

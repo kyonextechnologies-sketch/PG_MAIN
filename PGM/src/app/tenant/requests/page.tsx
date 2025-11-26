@@ -171,8 +171,8 @@ export default function TenantRequestsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 !text-white dark:text-white">Maintenance Requests</h1>
-              <p className="text-sm sm:text-base text-gray-700 !text-white-600 dark:text-gray-200 font-semibold">Submit and track maintenance requests</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white dark:text-white">Maintenance Requests</h1>
+              <p className="text-sm sm:text-base text-gray-300 dark:text-gray-300 font-semibold">Submit and track maintenance requests</p>
             </div>
             <div className="bg-black rounded-lg p-2">
               <Button onClick={() => setIsCreatingRequest(true)}>
@@ -229,13 +229,13 @@ export default function TenantRequestsPage() {
                       setNewRequest({ ...newRequest, priority: value as 'LOW' | 'MEDIUM' | 'HIGH' })
                     }
                   >
-                    <SelectTrigger className="bg-white !text-white border-1 margin-top-2">
-                      <SelectValue placeholder="Select priority" />
+                    <SelectTrigger className="bg-gray-800 !text-white border-1 margin-top-2 [&>span]:!text-white [&_span]:!text-white [&_*]:!text-white">
+                      <SelectValue placeholder="Select priority" className="!text-white" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white !text-white dark:!text-white border-1 margin-top-2">
-                      <SelectItem value="LOW" className="!text-white dark:!text-white">Low</SelectItem>
-                      <SelectItem value="MEDIUM" className="!text-white dark:!text-white">Medium</SelectItem>
-                      <SelectItem value="HIGH" className="!text-white dark:!text-white">High</SelectItem>
+                    <SelectContent className="bg-gray-800 !text-white border-1 margin-top-2">
+                      <SelectItem value="LOW" className="!text-white focus:!text-white hover:!text-white">Low</SelectItem>
+                      <SelectItem value="MEDIUM" className="!text-white focus:!text-white hover:!text-white">Medium</SelectItem>
+                      <SelectItem value="HIGH" className="!text-white focus:!text-white hover:!text-white">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -250,16 +250,16 @@ export default function TenantRequestsPage() {
                       setNewRequest({ ...newRequest, category: value as 'OTHER' | 'ELECTRICAL' | 'PLUMBING' | 'MECHANICAL' | 'CLEANING' | 'SECURITY' | 'OTHER' })
                     }
                   >
-                    <SelectTrigger className="bg-white text-black border-1 margin-top-2">
-                      <SelectValue placeholder="Select category" />
+                    <SelectTrigger className="bg-gray-800 !text-white border-1 margin-top-2 [&>span]:!text-white [&_span]:!text-white [&_*]:!text-white">
+                      <SelectValue placeholder="Select category" className="!text-white" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white text-black border-1 margin-top-2">
-                      <SelectItem value="OTHER">Other</SelectItem>
-                      <SelectItem value="ELECTRICAL">Electrical</SelectItem>
-                      <SelectItem value="PLUMBING">Plumbing</SelectItem>
-                      <SelectItem value="MECHANICAL">Mechanical</SelectItem>
-                      <SelectItem value="CLEANING">Cleaning</SelectItem>
-                      <SelectItem value="SECURITY">Security</SelectItem>
+                    <SelectContent className="bg-gray-800 !text-white border-1 margin-top-2">
+                      <SelectItem value="OTHER" className="!text-white focus:!text-white hover:!text-white">Other</SelectItem>
+                      <SelectItem value="ELECTRICAL" className="!text-white focus:!text-white hover:!text-white">Electrical</SelectItem>
+                      <SelectItem value="PLUMBING" className="!text-white focus:!text-white hover:!text-white">Plumbing</SelectItem>
+                      <SelectItem value="MECHANICAL" className="!text-white focus:!text-white hover:!text-white">Mechanical</SelectItem>
+                      <SelectItem value="CLEANING" className="!text-white focus:!text-white hover:!text-white">Cleaning</SelectItem>
+                      <SelectItem value="SECURITY" className="!text-white focus:!text-white hover:!text-white">Security</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

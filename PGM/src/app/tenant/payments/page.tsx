@@ -84,8 +84,8 @@ export default function TenantPaymentsPage() {
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold text-gray-900">Payment Management</h1>
-            <p className="text-lg text-gray-600">Track and manage your payments</p>
+            <h1 className="text-4xl font-bold text-white-900 dark:text-white">Payment Management</h1>
+            <p className="text-lg text-white-600">Track and manage your payments</p>
           </div>
 
           {/* Statistics Cards */}

@@ -678,13 +678,15 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Button 
-                  variant={plan.popular ? 'default' : 'secondary'}
-                  className="mt-auto"
-                  magnetic
-                >
-                  Get Started
-                </Button>
+                <Link href="/register" className="w-full">
+                  <Button 
+                    variant={plan.popular ? 'default' : 'secondary'}
+                    className="mt-auto w-full"
+                    magnetic
+                  >
+                    Get Started
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

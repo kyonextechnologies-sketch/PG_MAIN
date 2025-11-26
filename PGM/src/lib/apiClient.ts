@@ -7,6 +7,7 @@
 
 import { getSession } from 'next-auth/react';
 import { ErrorHandler } from './errors';
+import { getSessionId } from './session';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -81,6 +82,15 @@ class ApiClient {
     // Default interceptor for session headers
     this.addRequestInterceptor(async (config) => {
       try {
+        // Add per-tab session ID header
+        const sessionId = getSessionId();
+        if (sessionId) {
+          config.headers = {
+            ...config.headers,
+            'X-Session-ID': sessionId,
+          };
+        }
+
         const session = await getSession();
 
         if (session?.user?.id) {
@@ -92,14 +102,14 @@ class ApiClient {
           // Log in development for debugging
           if (process.env.NODE_ENV === 'development') {
             console.log('🔐 [ApiClient] Session headers added:', {
+              sessionId,
               userId: session.user.id,
               role: session.user.role,
             });
           }
         } else {
-          console.warn('⚠️ [ApiClient] No valid session found - user ID missing');
-          // Don't make the request if there's no valid session
-          // This prevents unnecessary API calls
+          // Don't log warning for public endpoints - session is optional for auth endpoints
+          // The request will continue without user session headers
         }
       } catch (error) {
         console.warn('⚠️ [ApiClient] Error getting session:', error);

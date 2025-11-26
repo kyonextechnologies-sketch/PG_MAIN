@@ -171,11 +171,24 @@ export default function RegisterPage() {
 
       console.log('Registration successful:', response.data);
 
-      // Show success message and redirect to login
+      // Show success message and redirect to subscription selection
       setError('');
       
-      // Redirect to login page with success message
-      router.push('/login?registered=true');
+      // Redirect to subscription selection page for owners
+      if (data.role === 'OWNER') {
+        // Store registration credentials temporarily for auto-login after payment
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('pendingRegistration', JSON.stringify({
+            email: data.email.trim().toLowerCase(),
+            password: data.password,
+            userId: response.data?.user?.id,
+          }));
+        }
+        router.push('/subscription?registered=true');
+      } else {
+        // For tenants, redirect to login
+        router.push('/login?registered=true');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       

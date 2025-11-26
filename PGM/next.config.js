@@ -45,6 +45,11 @@ const nextConfig = {
     // Skip static optimization for error pages
     serverActions: {
       bodySizeLimit: '2mb',
+      allowedOrigins: [
+        'localhost:3000',
+        'localhost:5000',
+        process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '').replace('http://', '') || '',
+      ].filter(Boolean),
     },
   },
 

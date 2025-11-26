@@ -14,6 +14,7 @@ import { swaggerSpec } from './config/swagger';
 import path from 'path';
 import { setSocketIO } from './services/notification.service';
 import { verifyAccessToken } from './utils/auth';
+import { initializeBillingService } from './services/billing.service';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,9 @@ const io = new SocketIOServer(httpServer, {
     credentials: true,
   },
   transports: ['websocket', 'polling'],
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
 });
 
 const PORT = process.env.PORT || 5000;
@@ -119,6 +123,7 @@ const corsOptions = {
     'X-Requested-With',
     'X-User-ID',
     'X-User-Role',
+    'X-Session-ID',
     'Accept',
     'Origin',
     'Access-Control-Request-Method',
@@ -150,7 +155,7 @@ app.options('*', (req: Request, res: Response) => {
     const allowOrigin = origin || '*';
     res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, Accept, Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-ID, X-User-Role, X-Session-ID, Accept, Origin');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
     
@@ -304,7 +309,7 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -314,6 +319,25 @@ httpServer.listen(PORT, () => {
   console.log(`   - Credentials: enabled`);
   console.log(`   - Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS`);
   console.log(`🔌 WebSocket server initialized`);
+  
+  // Initialize billing service
+  try {
+    await initializeBillingService();
+  } catch (error) {
+    console.error('❌ Failed to initialize billing service:', error);
+    // Don't crash server if billing service fails to initialize
+  }
+}).on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use.`);
+    console.error(`💡 To fix this, run one of these commands:`);
+    console.error(`   Windows PowerShell: Get-NetTCPConnection -LocalPort ${PORT} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }`);
+    console.error(`   Or change PORT in .env file to a different port (e.g., PORT=5001)`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', error);
+    process.exit(1);
+  }
 });
 
 export default app;

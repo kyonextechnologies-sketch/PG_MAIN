@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { apiClient } from '@/lib/apiClient';
+import { socketService } from '@/services/socket.service';
 
 interface Room {
   id: string;
@@ -188,8 +190,44 @@ export const useProperties = (): UsePropertiesReturn => {
     }
   }, []);  // ✅ Empty - only run once on mount
 
+  // Real-time updates via WebSocket
+  const { data: session } = useSession();
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const token = (session as any)?.accessToken;
+    if (!token) return;
+
+    // Ensure socket is connected
+    if (!socketService.isSocketConnected()) {
+      socketService.connect(token);
+    }
+
+    // Listen for real-time property updates
+    socketService.onDataUpdate('property', (event, data) => {
+      console.log('🔄 Real-time property update:', event, data);
+      
+      if (event === 'create') {
+        setProperties(prev => [...prev, data]);
+      } else if (event === 'update') {
+        setProperties(prev => prev.map(p => p.id === data.id ? data : p));
+      } else if (event === 'delete') {
+        setProperties(prev => prev.filter(p => p.id !== data.id));
+      }
+    });
+
+    return () => {
+      socketService.offDataUpdate('property');
+    };
+  }, [session]);
+
+  // Memoize active properties
+  const activeProperties = useMemo(() => {
+    return properties.filter(p => p.active !== false);
+  }, [properties]);
+
   return {
-    properties,
+    properties: activeProperties,
     loading,
     error,
     fetchProperties,

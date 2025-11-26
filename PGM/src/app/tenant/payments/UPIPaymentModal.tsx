@@ -155,22 +155,42 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     if (!app) return;
 
     const amount = invoice.amount;
-    // Format amount to 2 decimal places to avoid UPI payment limit warnings
-    const formattedAmount = Number(amount.toFixed(2));
+    // Format amount to 2 decimal places with proper UPI standard format
+    // UPI requires amount as string with exactly 2 decimal places (e.g., "1000.00")
+    const formattedAmount = parseFloat(amount.toFixed(2)).toFixed(2);
     const transactionNote = `Rent payment for ${invoice.month}`;
     
+    // Validate amount is within reasonable limits (UPI apps may have limits)
+    if (parseFloat(formattedAmount) > 100000) {
+      alert(`Amount ₹${formattedAmount} exceeds UPI limit. Please use bank transfer for large amounts.`);
+      return;
+    }
+    
     // Create UPI payment URL with proper encoding
-    // Use formatted amount to ensure proper decimal handling
-    const upiParams = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+    // UPI standard: pa=payeeAddress, pn=payeeName, am=amount, cu=currency, tn=transactionNote
+    // Amount must be formatted as "X.XX" (2 decimal places)
+    const upiParams = new URLSearchParams({
+      pa: upiId,
+      pn: upiName,
+      am: formattedAmount, // Already formatted to 2 decimal places
+      cu: 'INR',
+      tn: transactionNote,
+    }).toString();
     
     let url = '';
     
-    if (appId === 'upi') {
-      // Standard UPI deep link - works with any UPI app
-      url = `upi://pay?${upiParams}`;
-    } else {
-      // App-specific deep links
-      url = `${app.scheme}?${upiParams}`;
+    // Always use standard UPI deep link as primary method (works with all UPI apps)
+    // This avoids app-specific limitations and QR code amount restrictions
+    url = `upi://pay?${upiParams}`;
+    
+    // For app-specific deep links, use as fallback only
+    if (appId !== 'upi' && app.scheme) {
+      // Some apps may support their own scheme, but standard upi://pay is more reliable
+      const appUrl = `${app.scheme}?${upiParams}`;
+      // Log both URLs for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('UPI URLs:', { standard: url, appSpecific: appUrl });
+      }
     }
 
     console.log(`Attempting to open ${app.name} with URL:`, url);
@@ -220,16 +240,23 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
 
     try {
       const amount = invoice.amount;
-      // Format amount to 2 decimal places to avoid UPI payment limit warnings
-      const formattedAmount = Number(amount.toFixed(2));
+      // Format amount to 2 decimal places with proper UPI standard format
+      const formattedAmount = parseFloat(amount.toFixed(2)).toFixed(2);
       const transactionNote = `Rent payment for ${invoice.month}`;
       const transactionRef = `rent_${Date.now()}`;
+      
+      // Validate amount
+      if (parseFloat(formattedAmount) > 100000) {
+        alert(`Amount ₹${formattedAmount} exceeds UPI limit. Please use bank transfer for large amounts.`);
+        setIsSendingRequest(false);
+        return;
+      }
       
       // Create UPI collect request - this will actually send a request to the tenant's UPI ID
       const collectRequest = {
         payeeAddress: customUpiId.trim(),
         payeeName: upiName,
-        amount: formattedAmount,
+        amount: parseFloat(formattedAmount), // Convert back to number for API
         currency: 'INR',
         transactionNote: transactionNote,
         transactionRef: transactionRef,
@@ -263,9 +290,16 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
         console.log('API call failed, simulating UPI collect request');
         
         // Fallback: Create UPI collect URL for manual testing
-        // Format amount to 2 decimal places to avoid payment limit warnings
-        const formattedAmount = Number(amount.toFixed(2));
-        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${transactionRef}`;
+        // Format amount to 2 decimal places with proper UPI standard format
+        const formattedAmount = parseFloat(amount.toFixed(2)).toFixed(2);
+        const upiCollectParams = new URLSearchParams({
+          pa: customUpiId.trim(),
+          pn: upiName,
+          am: formattedAmount, // Properly formatted to 2 decimal places
+          cu: 'INR',
+          tn: transactionNote,
+          tr: transactionRef,
+        }).toString();
         const upiCollectUrl = `upi://pay?${upiCollectParams}`;
         
         console.log(`Fallback UPI Collect URL:`, upiCollectUrl);
@@ -528,9 +562,16 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
                     </button>
                     <button
                       onClick={() => {
-                        // Format amount to 2 decimal places to avoid payment limit warnings
-                        const formattedAmount = Number(invoice.amount.toFixed(2));
-                        const upiCollectParams = `pa=${encodeURIComponent(customUpiId.trim())}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Rent payment for ${invoice.month}`)}&tr=rent_${Date.now()}`;
+                        // Format amount to 2 decimal places with proper UPI standard format
+                        const formattedAmount = parseFloat(invoice.amount.toFixed(2)).toFixed(2);
+                        const upiCollectParams = new URLSearchParams({
+                          pa: customUpiId.trim(),
+                          pn: upiName,
+                          am: formattedAmount,
+                          cu: 'INR',
+                          tn: `Rent payment for ${invoice.month}`,
+                          tr: `rent_${Date.now()}`,
+                        }).toString();
                         const upiCollectUrl = `upi://pay?${upiCollectParams}`;
                         setPaymentUrl(upiCollectUrl);
                       }}

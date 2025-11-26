@@ -114,3 +114,26 @@ export const cleanupExpiredTokens = async (): Promise<void> => {
   });
 };
 
+// Generate email verification token
+export const generateEmailVerificationToken = (): string => {
+  return jwt.sign({ type: 'email_verification', timestamp: Date.now() }, JWT_SECRET, {
+    expiresIn: '24h',
+  });
+};
+
+// Verify email verification token
+export const verifyEmailVerificationToken = (token: string): { valid: boolean; error?: string } => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    if (decoded.type !== 'email_verification') {
+      return { valid: false, error: 'Invalid token type' };
+    }
+    return { valid: true };
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      return { valid: false, error: 'Token expired' };
+    }
+    return { valid: false, error: 'Invalid token' };
+  }
+};
+

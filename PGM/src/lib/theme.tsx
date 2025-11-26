@@ -1,45 +1,25 @@
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import type { ComponentProps } from 'react';
 
-interface ThemeContextType {
-  resolvedTheme: 'dark';
-}
+type ThemeProviderProps = ComponentProps<typeof NextThemesProvider>;
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    // Always apply dark mode
-    const root = document.documentElement;
-    const body = document.body;
-    const nextRoot = document.getElementById('__next');
-    
-    // Force dark mode
-    root.classList.add('dark');
-    root.classList.remove('light');
-    root.style.colorScheme = 'dark';
-    root.style.setProperty('background-color', '#0a0a0a', 'important');
-    body.style.setProperty('background-color', '#0a0a0a', 'important');
-    body.style.setProperty('color', '#ededed', 'important');
-    if (nextRoot) {
-      nextRoot.style.setProperty('background-color', '#0a0a0a', 'important');
-      nextRoot.style.setProperty('color', '#ededed', 'important');
-    }
-  }, []);
-
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
-    <ThemeContext.Provider value={{ resolvedTheme: 'dark' }}>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange={false}
+      storageKey="pgms-theme"
+      {...props}
+    >
       {children}
-    </ThemeContext.Provider>
+    </NextThemesProvider>
   );
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-}
+// Re-export useTheme from next-themes for convenience
+export { useTheme } from 'next-themes';
 

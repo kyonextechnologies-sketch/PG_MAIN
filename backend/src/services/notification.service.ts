@@ -44,6 +44,28 @@ export function getSocketIO(): SocketIOServer | null {
   return io;
 }
 
+/**
+ * Emit real-time data update event
+ */
+export function emitDataUpdate(
+  userId: string,
+  resource: string,
+  event: 'create' | 'update' | 'delete',
+  data: any
+): void {
+  if (!io) {
+    console.warn('Socket.IO not initialized - cannot emit data update');
+    return;
+  }
+
+  try {
+    io.to(`user:${userId}`).emit(`${resource}:update`, { event, data });
+    console.log(`✅ Real-time update emitted: ${resource}:${event} to user ${userId}`);
+  } catch (error) {
+    console.error('❌ Failed to emit data update:', error);
+  }
+}
+
 // Notification types
 export type NotificationType =
   | 'MAINTENANCE_REQUEST'

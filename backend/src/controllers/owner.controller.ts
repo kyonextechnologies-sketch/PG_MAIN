@@ -64,18 +64,58 @@ export const getOwnerVerificationStatus = asyncHandler(async (req: AuthRequest, 
     ? verification?.legalDocuments
     : [];
 
+  // Return both legacy format and new separate document fields
+  // Type assertion needed until Prisma client is regenerated after migration
+  const verificationData = verification as any;
+  
   res.json({
     success: true,
     data: {
       verificationStatus: verification?.verificationStatus || 'PENDING',
-      legalDocuments,
+      legalDocuments, // Legacy format for backward compatibility
       rejectionReason: verification?.rejectionReason || '',
       submittedAt: verification?.submittedAt || null,
       verifiedAt: verification?.verifiedAt || null,
+      // New separate document fields
+      documents: {
+        aadhaarFront: {
+          url: verificationData?.aadhaarFront || null,
+          status: verificationData?.aadhaarFrontStatus || 'PENDING',
+          rejectionReason: verificationData?.aadhaarFrontRejectionReason || null,
+        },
+        aadhaarBack: {
+          url: verificationData?.aadhaarBack || null,
+          status: verificationData?.aadhaarBackStatus || 'PENDING',
+          rejectionReason: verificationData?.aadhaarBackRejectionReason || null,
+        },
+        pan: {
+          url: verificationData?.pan || null,
+          status: verificationData?.panStatus || 'PENDING',
+          rejectionReason: verificationData?.panRejectionReason || null,
+        },
+        gst: {
+          url: verificationData?.gst || null,
+          status: verificationData?.gstStatus || 'PENDING',
+          rejectionReason: verificationData?.gstRejectionReason || null,
+        },
+        addressProof: {
+          url: verificationData?.addressProof || null,
+          status: verificationData?.addressProofStatus || 'PENDING',
+          rejectionReason: verificationData?.addressProofRejectionReason || null,
+        },
+        ownerPhoto: {
+          url: verificationData?.ownerPhoto || null,
+          status: verificationData?.ownerPhotoStatus || 'PENDING',
+          rejectionReason: verificationData?.ownerPhotoRejectionReason || null,
+        },
+      },
     },
   });
 });
 
+/**
+ * Upload owner verification documents (legacy method - supports generic document array)
+ */
 export const uploadOwnerVerificationDocuments = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) {
     throw new AppError('Authentication required', 401);
@@ -139,6 +179,124 @@ export const uploadOwnerVerificationDocuments = asyncHandler(async (req: AuthReq
       rejectionReason: verification.rejectionReason,
       submittedAt: verification.submittedAt,
       verifiedAt: verification.verifiedAt,
+    },
+  });
+});
+
+/**
+ * Upload separate document types (new method - supports individual document uploads)
+ * Supports: aadhaarFront, aadhaarBack, pan, gst, addressProof, ownerPhoto
+ */
+export const uploadSeparateDocument = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401);
+  }
+
+  const { docType } = req.body;
+  const allowedDocTypes = ['aadhaarFront', 'aadhaarBack', 'pan', 'gst', 'addressProof', 'ownerPhoto'];
+
+  if (!docType || !allowedDocTypes.includes(docType)) {
+    throw new AppError(`Invalid document type. Allowed types: ${allowedDocTypes.join(', ')}`, 400);
+  }
+
+  const files = extractFilesArray(req.files as any);
+
+  if (!files || files.length === 0) {
+    throw new AppError('Please upload a document', 400);
+  }
+
+  if (files.length > 1) {
+    throw new AppError('Only one file allowed per document type', 400);
+  }
+
+  const file = files[0];
+  const validation = validateUploadedFiles([file]);
+
+  if (!validation.valid) {
+    throw new AppError(validation.errors.join(', '), 400);
+  }
+
+  const fileUrl = getFileUrl(normalizeRelativePath(file.path));
+
+  // Map docType to database field names
+  const fieldMap: Record<string, { urlField: string; statusField: string; rejectionField: string }> = {
+    aadhaarFront: {
+      urlField: 'aadhaarFront',
+      statusField: 'aadhaarFrontStatus',
+      rejectionField: 'aadhaarFrontRejectionReason',
+    },
+    aadhaarBack: {
+      urlField: 'aadhaarBack',
+      statusField: 'aadhaarBackStatus',
+      rejectionField: 'aadhaarBackRejectionReason',
+    },
+    pan: {
+      urlField: 'pan',
+      statusField: 'panStatus',
+      rejectionField: 'panRejectionReason',
+    },
+    gst: {
+      urlField: 'gst',
+      statusField: 'gstStatus',
+      rejectionField: 'gstRejectionReason',
+    },
+    addressProof: {
+      urlField: 'addressProof',
+      statusField: 'addressProofStatus',
+      rejectionField: 'addressProofRejectionReason',
+    },
+    ownerPhoto: {
+      urlField: 'ownerPhoto',
+      statusField: 'ownerPhotoStatus',
+      rejectionField: 'ownerPhotoRejectionReason',
+    },
+  };
+
+  const fields = fieldMap[docType];
+
+  // Update verification record
+  // Using type assertion until Prisma client is regenerated
+  const updateData: any = {
+    verificationStatus: 'PENDING',
+    verifiedAt: null,
+    verifiedBy: null,
+    submittedAt: new Date(),
+  };
+  updateData[fields.urlField] = fileUrl;
+  updateData[fields.statusField] = 'PENDING';
+  updateData[fields.rejectionField] = null;
+
+  const createData: any = {
+    ownerId: req.user.id,
+    verificationStatus: 'PENDING',
+    submittedAt: new Date(),
+  };
+  createData[fields.urlField] = fileUrl;
+  createData[fields.statusField] = 'PENDING';
+  createData[fields.rejectionField] = null;
+
+  const verification = await prisma.ownerVerification.upsert({
+    where: { ownerId: req.user.id },
+    create: createData,
+    update: updateData,
+  });
+
+  // Log file upload
+  await logFileUpload(req.user.id, 'OWNER_VERIFICATION', file.filename, file.size, req, {
+    mimetype: file.mimetype,
+    docType,
+  });
+
+  const verificationData = verification as any;
+
+  res.json({
+    success: true,
+    message: `${docType} uploaded successfully`,
+    data: {
+      docType,
+      url: fileUrl,
+      status: verificationData[fields.statusField] || 'PENDING',
+      verificationStatus: verification.verificationStatus,
     },
   });
 });

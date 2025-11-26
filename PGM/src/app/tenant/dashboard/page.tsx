@@ -130,12 +130,12 @@ export default function TenantDashboard() {
           >
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-full shadow-lg">
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Welcome to your dashboard</span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-900">Welcome to your dashboard</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white dark:text-white">
               Dashboard
             </h1>
-            <p className="text-lg sm:text-xl text-gray-800 dark:text-gray-200 max-w-2xl mx-auto font-semibold">
+            <p className="text-lg sm:text-xl text-white-800 dark:text-gray-200 max-w-2xl mx-auto font-semibold">
               Welcome back, <span className="font-bold text-blue-800 dark:text-blue-300">{session?.user?.name || 'Tenant'}</span>! 
               Here's your personalized overview.
             </p>
@@ -160,9 +160,9 @@ export default function TenantDashboard() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Home className="h-5 w-5 text-blue-700" />
-                        <p className="text-sm font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide">Current Room</p>
+                        <p className="text-sm font-bold text-blue-800 dark:text-blue-800 uppercase tracking-wide">Current Room</p>
                       </div>
-                      <p className="text-3xl sm:text-4xl font-bold text-blue-900 dark:text-blue-300">{tenantProfile?.room?.roomNumber || 'N/A'}</p>
+                      <p className="text-3xl sm:text-4xl font-bold text-blue-900 dark:text-blue-800">{tenantProfile?.room?.roomNumber || 'N/A'}</p>
                       <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-400 font-semibold">{tenantProfile?.bed?.bedNumber || 'N/A'} • {tenantProfile?.property?.name || 'N/A'}</p>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
@@ -185,9 +185,9 @@ export default function TenantDashboard() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-5 w-5 text-orange-700" />
-                        <p className="text-sm font-bold text-orange-800 dark:text-orange-300 uppercase tracking-wide">Next Due Date</p>
+                        <p className="text-sm font-bold text-orange-800 dark:text-orange-800 uppercase tracking-wide">Next Due Date</p>
                       </div>
-                      <p className="text-3xl sm:text-4xl font-bold text-orange-900 dark:text-orange-300">{nextDueInvoice ? formatDate(nextDueInvoice.dueDate) : 'N/A'}</p>
+                      <p className="text-3xl sm:text-4xl font-bold text-orange-900 dark:text-orange-800">{nextDueInvoice ? formatDate(nextDueInvoice.dueDate) : 'N/A'}</p>
                       <p className="text-xs sm:text-sm text-orange-800 dark:text-orange-400 font-semibold">Payment due: {nextDueInvoice ? formatDate(nextDueInvoice.dueDate) : 'N/A'}</p>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
@@ -210,9 +210,9 @@ export default function TenantDashboard() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <DollarSign className="h-5 w-5 text-red-700" />
-                        <p className="text-sm font-bold text-red-800 dark:text-red-300 uppercase tracking-wide">Outstanding Dues</p>
+                        <p className="text-sm font-bold text-red-800 dark:text-red-800 uppercase tracking-wide">Outstanding Dues</p>
                       </div>
-                      <p className="text-3xl sm:text-4xl font-bold text-red-900 dark:text-red-300">{formatCurrency(outstandingDues)}</p>
+                      <p className="text-3xl sm:text-4xl font-bold text-red-900 dark:text-red-800">{formatCurrency(outstandingDues)}</p>
                       <p className="text-xs sm:text-sm text-red-800 dark:text-red-400 font-semibold">Payment required</p>
                     </div>
                     <div className="p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg">
@@ -236,8 +236,8 @@ export default function TenantDashboard() {
                   <Zap className="h-4 w-4 text-purple-600 mr-2" />
                   <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">Quick Actions</span>
                 </div>
-                <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Get Things Done</CardTitle>
-                <CardDescription className="text-sm text-gray-600 dark:text-gray-300">Common tasks and shortcuts for your convenience</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-black">Get Things Done</CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-700">Common tasks and shortcuts for your convenience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <motion.div
@@ -312,8 +312,8 @@ export default function TenantDashboard() {
                       <Calendar className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Upcoming Invoices</CardTitle>
-                      <CardDescription className="text-sm text-gray-600 dark:text-gray-300">Your upcoming rent payments</CardDescription>
+                      <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-black">Upcoming Invoices</CardTitle>
+                      <CardDescription className="text-sm text-gray-600 dark:text-gray-700">Your upcoming rent payments</CardDescription>
                     </div>
                   </div>
                 </CardHeader>

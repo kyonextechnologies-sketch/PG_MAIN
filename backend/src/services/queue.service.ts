@@ -13,7 +13,7 @@ let maintenanceReminderWorker: Worker | null = null;
 let redisAvailable = false;
 
 // Initialize Redis connection lazily
-function getRedisConnection(): Redis | null {
+export function getRedisConnection(): Redis | null {
   if (connection) return connection;
   
   try {
@@ -27,7 +27,7 @@ function getRedisConnection(): Redis | null {
     connection = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null, // Required by BullMQ
       retryStrategy: (times) => {
         if (times > 3) {
           console.warn('⚠️  Redis connection failed after 3 retries - queue features disabled');
