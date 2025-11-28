@@ -145,14 +145,30 @@ export const useProperties = (): UsePropertiesReturn => {
   const deleteProperty = useCallback(async (id: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
+    
+    // Optimistic update: store property for rollback
+    const propertyToDelete = properties.find(p => p.id === id);
+    
+    // Remove from state immediately
+    setProperties(prev => prev.filter(p => p.id !== id));
+    
     try {
       const response = await apiClient.delete(`/properties/${id}`);
       if (response.success) {
-        setProperties(prev => prev.filter(p => p.id !== id));
+        console.log('✅ Property deleted successfully');
         return true;
+      } else {
+        // Rollback optimistic update
+        if (propertyToDelete) {
+          setProperties(prev => [...prev, propertyToDelete]);
+        }
+        throw new Error(response.error || response.message || 'Failed to delete property');
       }
-      return false;
     } catch (err: unknown) {
+      // Rollback optimistic update
+      if (propertyToDelete) {
+        setProperties(prev => [...prev, propertyToDelete]);
+      }
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete property';
       setError(errorMsg);
       console.error('Error deleting property:', err);
@@ -160,7 +176,7 @@ export const useProperties = (): UsePropertiesReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [properties]);
 
   const getPropertyById = useCallback(async (id: string): Promise<Property | null> => {
     setLoading(true);

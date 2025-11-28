@@ -54,14 +54,14 @@ export async function POST(request: NextRequest) {
     // Generate tab-specific cookie name
     const cookieName = tabId ? `session_${tabId}` : 'session_default';
     
-    // Set per-tab session cookie
+    // Set per-tab session cookie (expires on browser close)
     const cookieStore = await cookies();
     cookieStore.set(cookieName, accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      // No maxAge = session cookie that expires on browser close
     });
 
     return NextResponse.json({

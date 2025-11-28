@@ -58,13 +58,39 @@ if (!fs.existsSync(LEGAL_DOCUMENTS_DIR)) {
 
 /**
  * Multer storage configuration for legal documents
+ * Saves files under uploads/owners/{ownerId}/{docType}/ path
  */
 export const legalDocumentStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, LEGAL_DOCUMENTS_DIR);
+  destination: (req: Request, file, cb) => {
+    // Get ownerId from authenticated user
+    const authReq = req as any;
+    const ownerId = authReq.user?.id;
+    const docType = authReq.body?.docType || 'documents';
+
+    if (!ownerId) {
+      return cb(new AppError('Owner ID not found in request', 401), '');
+    }
+
+    // Create owner-specific directory structure: uploads/owners/{ownerId}/{docType}/
+    const ownerDocDir = path.join(process.cwd(), 'uploads', 'owners', ownerId, docType);
+
+    // Ensure directory exists
+    if (!fs.existsSync(ownerDocDir)) {
+      fs.mkdirSync(ownerDocDir, { recursive: true });
+    }
+
+    cb(null, ownerDocDir);
   },
-  filename: (_req, file, cb) => {
-    cb(null, getSafeFilename(file.originalname));
+  filename: (req: Request, file, cb) => {
+    // Use docType in filename for better organization
+    const authReq = req as any;
+    const docType = authReq.body?.docType || 'document';
+    const safeName = getSafeFilename(file.originalname);
+    // Format: {docType}_{originalname}_{timestamp}_{random}.ext
+    const ext = path.extname(safeName);
+    const baseName = path.basename(safeName, ext);
+    const filename = `${docType}_${baseName}${ext}`;
+    cb(null, filename);
   },
 });
 

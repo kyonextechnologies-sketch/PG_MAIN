@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { AuthRequest, JwtPayload } from '../types';
 import { AppError } from './errorHandler';
 import prisma from '../config/database';
+import { sessionCache } from '../lib/cache/redisClient';
 
 export const authenticate = async (
   req: AuthRequest,
@@ -42,19 +43,42 @@ export const authenticate = async (
       throw new AppError('No valid authentication found', 401);
     }
 
-    // Check if user exists and is active
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-      },
-    });
+    // Check cache first for session data
+    const cachedSession = await sessionCache.get(userId);
+    let user;
 
-    if (!user || !user.isActive) {
-      throw new AppError('User not found or inactive', 401);
+    if (cachedSession) {
+      // Use cached data
+      user = {
+        id: cachedSession.userId,
+        email: cachedSession.email,
+        role: cachedSession.role as 'OWNER' | 'TENANT' | 'ADMIN',
+        isActive: true, // Assume active if cached
+      };
+    } else {
+      // Check database
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true,
+        },
+      });
+
+      if (!dbUser || !dbUser.isActive) {
+        throw new AppError('User not found or inactive', 401);
+      }
+
+      user = dbUser;
+
+      // Cache session data (24 hour TTL)
+      await sessionCache.set(userId, {
+        userId: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role,
+      }, 86400);
     }
 
     // Attach user to request

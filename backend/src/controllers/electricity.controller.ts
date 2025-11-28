@@ -62,6 +62,25 @@ export const submitBill = asyncHandler(async (req: AuthRequest, res: Response) =
 
   const { month, previousReading, currentReading, imageUrl } = req.body;
 
+  // Validate required fields
+  if (!month) {
+    throw new AppError('Month is required', 400);
+  }
+  if (previousReading === undefined || previousReading === null) {
+    throw new AppError('Previous reading is required', 400);
+  }
+  if (currentReading === undefined || currentReading === null) {
+    throw new AppError('Current reading is required', 400);
+  }
+
+  // Validate numeric values
+  const prevReading = Number(previousReading);
+  const currReading = Number(currentReading);
+
+  if (isNaN(prevReading) || isNaN(currReading)) {
+    throw new AppError('Readings must be valid numbers', 400);
+  }
+
   const tenant = await prisma.tenantProfile.findFirst({
     where: { userId: req.user.id },
     include: { owner: { include: { electricitySettings: true } } },
@@ -77,13 +96,17 @@ export const submitBill = asyncHandler(async (req: AuthRequest, res: Response) =
   }
 
   // Validate readings
-  if (currentReading <= previousReading) {
+  if (currReading <= prevReading) {
     throw new AppError('Current reading must be greater than previous reading', 400);
   }
 
+  if (prevReading < 0 || currReading < 0) {
+    throw new AppError('Readings cannot be negative', 400);
+  }
+
   const { units, amount } = calculateElectricityAmount(
-    currentReading,
-    previousReading,
+    currReading,
+    prevReading,
     parseFloat(settings.ratePerUnit.toString())
   );
 
@@ -110,19 +133,37 @@ export const submitBill = asyncHandler(async (req: AuthRequest, res: Response) =
     throw new AppError('Bill already submitted for this month', 400);
   }
 
-  const bill = await prisma.electricityBill.create({
-    data: {
-      ownerId: tenant.ownerId,
-      tenantId: tenant.id,
-      month,
-      previousReading,
-      currentReading,
-      units,
-      ratePerUnit: settings.ratePerUnit,
-      amount,
-      imageUrl,
-      status: 'PENDING',
-    },
+  // Use transaction to ensure data consistency
+  const bill = await prisma.$transaction(async (tx) => {
+    // Check again for existing bill within transaction (prevent race condition)
+    const existingBill = await tx.electricityBill.findUnique({
+      where: {
+        tenantId_month: {
+          tenantId: tenant.id,
+          month,
+        },
+      },
+    });
+
+    if (existingBill) {
+      throw new AppError('Bill already submitted for this month', 400);
+    }
+
+    // Create bill
+    return await tx.electricityBill.create({
+      data: {
+        ownerId: tenant.ownerId,
+        tenantId: tenant.id,
+        month,
+        previousReading: prevReading,
+        currentReading: currReading,
+        units,
+        ratePerUnit: settings.ratePerUnit,
+        amount,
+        imageUrl: imageUrl || null,
+        status: 'PENDING',
+      },
+    });
   });
 
   res.status(201).json({

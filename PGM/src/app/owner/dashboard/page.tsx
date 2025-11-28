@@ -91,15 +91,7 @@ const mockUpcomingDues = [
   },
 ];
 
-// Chart data
-const revenueData = [
-  { name: 'Jan', value: 45000, revenue: 45000, expenses: 20000, profit: 25000 },
-  { name: 'Feb', value: 52000, revenue: 52000, expenses: 22000, profit: 30000 },
-  { name: 'Mar', value: 48000, revenue: 48000, expenses: 18000, profit: 30000 },
-  { name: 'Apr', value: 61000, revenue: 61000, expenses: 25000, profit: 36000 },
-  { name: 'May', value: 55000, revenue: 55000, expenses: 20000, profit: 35000 },
-  { name: 'Jun', value: 67000, revenue: 67000, expenses: 28000, profit: 39000 },
-];
+// Revenue data will be fetched from API
 
 
 
@@ -127,6 +119,48 @@ export default function OwnerDashboard() {
   const { invoices } = useInvoices();
   const { tickets } = useMaintenanceTickets();
   const { addNotification, setModalOpen } = useUIStore();
+
+  // Fetch revenue trend data from API
+  const [revenueData, setRevenueData] = React.useState<Array<{ name: string; value: number; revenue: number; expenses: number; profit: number }>>([]);
+  const [revenueLoading, setRevenueLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchRevenueData = async () => {
+      try {
+        setRevenueLoading(true);
+        const response = await fetch('/api/dashboard/revenue');
+        const result = await response.json();
+        
+        if (result.success && result.data?.chartData) {
+          // Transform API data to chart format
+          const chartData = result.data.chartData.map((item: { month: string; paid: number; pending: number }) => {
+            const date = new Date(item.month + '-01');
+            const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+            return {
+              name: monthName,
+              value: item.paid,
+              revenue: item.paid,
+              expenses: 0, // Expenses not tracked yet
+              profit: item.paid,
+            };
+          });
+          setRevenueData(chartData);
+        } else {
+          // Fallback to empty data if API fails
+          setRevenueData([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch revenue data:', error);
+        setRevenueData([]);
+      } finally {
+        setRevenueLoading(false);
+      }
+    };
+
+    if (session?.user && status === 'authenticated') {
+      fetchRevenueData();
+    }
+  }, [session, status]);
 
   // Calculate stats from real data
   const totalRevenue = invoices
@@ -555,9 +589,9 @@ export default function OwnerDashboard() {
             transition={{ duration: 0.6, delay: 0.6 }}
           >
             <LineChartComponent
-              data={revenueData}
+              data={revenueLoading ? [] : revenueData}
               title="Revenue Trend"
-              description="Monthly revenue over time"
+              description={revenueLoading ? "Loading revenue data..." : "Monthly revenue over time"}
             />
             <PieChartComponent
               data={occupancyData}

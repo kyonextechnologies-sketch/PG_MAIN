@@ -90,6 +90,23 @@ export const useInvoices = (): UseInvoicesReturn => {
   const createInvoice = useCallback(async (data: InvoiceData): Promise<Invoice | null> => {
     setLoading(true);
     setError(null);
+    
+    // Optimistic update: create temporary invoice
+    const tempId = `temp-${Date.now()}`;
+    const optimisticInvoice: Invoice = {
+      id: tempId,
+      ownerId: '',
+      tenantId: data.tenantId || '',
+      month: data.month,
+      amount: data.amount,
+      status: 'DUE',
+      dueDate: data.dueDate || '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    setInvoices(prev => [...prev, optimisticInvoice]);
+    
     try {
       const payload: Record<string, unknown> = { ...data };
       console.log('📤 Creating invoice with payload:', payload);
@@ -119,31 +136,18 @@ export const useInvoices = (): UseInvoicesReturn => {
           updatedAt: invoiceData.updatedAt || new Date().toISOString(),
         };
         
-        console.log('✅ Adding new invoice to state:', newInvoice);
-        setInvoices(prev => {
-          // Check if invoice already exists to avoid duplicates
-          const exists = prev.some(inv => inv.id === newInvoice.id || (inv.tenantId === newInvoice.tenantId && inv.month === newInvoice.month));
-          if (exists) {
-            console.log('⚠️ Invoice already exists, updating instead');
-            return prev.map(inv => 
-              (inv.id === newInvoice.id || (inv.tenantId === newInvoice.tenantId && inv.month === newInvoice.month))
-                ? newInvoice 
-                : inv
-            );
-          }
-          return [...prev, newInvoice];
-        });
-        
-        // Also refresh the list to ensure we have the latest data
-        setTimeout(() => {
-          fetchInvoices();
-        }, 500);
+        // Replace optimistic invoice with real one
+        setInvoices(prev => prev.map(inv => inv.id === tempId ? newInvoice : inv));
         
         return newInvoice;
+      } else {
+        // Rollback optimistic update
+        setInvoices(prev => prev.filter(inv => inv.id !== tempId));
+        throw new Error(response.error || response.message || 'Failed to create invoice');
       }
-      console.warn('⚠️ Invoice creation response not successful:', response);
-      return null;
     } catch (err: unknown) {
+      // Rollback optimistic update
+      setInvoices(prev => prev.filter(inv => inv.id !== tempId));
       const errorMsg = err instanceof Error ? err.message : 'Failed to create invoice';
       setError(errorMsg);
       console.error('❌ Error creating invoice:', err);
@@ -151,7 +155,7 @@ export const useInvoices = (): UseInvoicesReturn => {
     } finally {
       setLoading(false);
     }
-  }, [fetchInvoices]);
+  }, []);
 
   const updateInvoice = useCallback(async (id: string, data: InvoiceData) => {
     setLoading(true);
@@ -181,14 +185,30 @@ export const useInvoices = (): UseInvoicesReturn => {
   const deleteInvoice = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
+    
+    // Optimistic update: store invoice for rollback
+    const invoiceToDelete = invoices.find(inv => inv.id === id);
+    
+    // Remove from state immediately
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    
     try {
       const response = await apiClient.delete(`/invoices/${id}`);
       if (response.success) {
-        setInvoices(prev => prev.filter(inv => inv.id !== id));
+        console.log('✅ Invoice deleted successfully');
         return true;
+      } else {
+        // Rollback optimistic update
+        if (invoiceToDelete) {
+          setInvoices(prev => [...prev, invoiceToDelete]);
+        }
+        throw new Error(response.error || response.message || 'Failed to delete invoice');
       }
-      return false;
     } catch (err: unknown) {
+      // Rollback optimistic update
+      if (invoiceToDelete) {
+        setInvoices(prev => [...prev, invoiceToDelete]);
+      }
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete invoice';
       setError(errorMsg);
       console.error('Error deleting invoice:', err);
@@ -196,7 +216,7 @@ export const useInvoices = (): UseInvoicesReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [invoices]);
 
   const getInvoiceById = useCallback(async (id: string): Promise<Invoice | null> => {
     setLoading(true);

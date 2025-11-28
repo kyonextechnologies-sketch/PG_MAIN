@@ -402,12 +402,54 @@ export const checkoutTenant = asyncHandler(async (req: AuthRequest, res: Respons
  */
 export const deleteTenant = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError('Authentication required', 401);
+  if (req.user.role !== 'OWNER') throw new AppError('Only owners can delete tenants', 403);
+  
   const { id } = req.params;
 
-  const tenant = await prisma.tenantProfile.findFirst({ where: { id, ownerId: req.user.id } });
+  const tenant = await prisma.tenantProfile.findFirst({ 
+    where: { id, ownerId: req.user.id },
+    include: {
+      bed: true,
+      room: true,
+      invoices: { select: { id: true, status: true } },
+      payments: { select: { id: true, status: true } },
+    },
+  });
+  
   if (!tenant) throw new AppError('Tenant not found', 404);
   if (tenant.status === 'ACTIVE') throw new AppError('Cannot delete active tenant. Please checkout first.', 400);
 
-  await prisma.user.delete({ where: { id: tenant.userId } });
+  // Check for pending payments or invoices
+  const hasPendingPayments = tenant.payments.some(p => p.status === 'PENDING');
+  const hasUnpaidInvoices = tenant.invoices.some(inv => inv.status === 'DUE' || inv.status === 'OVERDUE');
+  
+  if (hasPendingPayments || hasUnpaidInvoices) {
+    throw new AppError('Cannot delete tenant with pending payments or unpaid invoices', 400);
+  }
+
+  // Use transaction to ensure all related data is cleaned up
+  await prisma.$transaction(async (tx) => {
+    // Free up bed and room if assigned
+    if (tenant.bedId) {
+      await tx.bed.update({
+        where: { id: tenant.bedId },
+        data: { occupied: false, tenantId: null },
+      });
+    }
+    
+    if (tenant.roomId) {
+      await tx.room.update({
+        where: { id: tenant.roomId },
+        data: { occupied: { decrement: 1 } },
+      });
+    }
+
+    // Delete tenant profile (cascades to related records)
+    await tx.tenantProfile.delete({ where: { id } });
+    
+    // Delete user account
+    await tx.user.delete({ where: { id: tenant.userId } });
+  });
+
   res.json({ success: true, message: 'Tenant deleted successfully' });
 });

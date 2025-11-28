@@ -156,12 +156,21 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
 
     const amount = invoice.amount;
     // Format amount to 2 decimal places with proper UPI standard format
-    // UPI requires amount as string with exactly 2 decimal places (e.g., "1000.00")
-    const formattedAmount = parseFloat(amount.toFixed(2)).toFixed(2);
+    // UPI requires amount as string with exactly 2 decimal places (e.g., "1.00", "1000.00")
+    // Ensure no rounding errors - validate amount is numeric and > 0
+    const numericAmount = typeof amount === 'number' ? amount : parseFloat(String(amount));
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      alert('Invalid payment amount. Please contact support.');
+      return;
+    }
+    
+    // Format to exactly 2 decimal places (no rounding, just formatting)
+    // This ensures amounts like 1.00, 1999.99, etc. are correctly encoded
+    const formattedAmount = numericAmount.toFixed(2);
     const transactionNote = `Rent payment for ${invoice.month}`;
     
     // Validate amount is within reasonable limits (UPI apps may have limits)
-    if (parseFloat(formattedAmount) > 100000) {
+    if (numericAmount > 100000) {
       alert(`Amount ₹${formattedAmount} exceeds UPI limit. Please use bank transfer for large amounts.`);
       return;
     }

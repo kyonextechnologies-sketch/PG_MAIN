@@ -17,6 +17,20 @@ interface Tenant {
   leaseEnd?: string;
   createdAt?: string;
   updatedAt?: string;
+  property?: {
+    id: string;
+    name: string;
+  };
+  room?: {
+    id: string;
+    name: string;
+    roomNumber: string;
+  };
+  bed?: {
+    id: string;
+    name: string;
+    bedNumber: string;
+  };
 }
 
 interface UseTenantsReturn {

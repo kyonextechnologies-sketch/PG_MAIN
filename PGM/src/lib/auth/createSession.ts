@@ -41,9 +41,9 @@ export async function createSession(sessionData: SessionData): Promise<void> {
   // For now, we'll store the accessToken directly and let the backend validate it
   const cookieName = getSessionCookieName();
   
-  // Store accessToken in tab-specific cookie
+  // Store accessToken in tab-specific session cookie (expires on browser close)
   // The backend will validate this token
-  setSessionCookie(sessionData.accessToken, 30);
+  setSessionCookie(sessionData.accessToken, 0); // 0 = session-only cookie
 
   // Also store session data in sessionStorage for quick access
   if (typeof window !== 'undefined') {

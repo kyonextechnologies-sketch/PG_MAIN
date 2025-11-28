@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Role } from '@/lib/types';
 
 interface RequireRoleProps {
@@ -13,6 +13,17 @@ interface RequireRoleProps {
 
 export function RequireRole({ role, children, fallback }: RequireRoleProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated' && session?.user?.role !== role) {
+      if (!fallback) {
+        router.push('/unauthorized');
+      }
+    }
+  }, [status, session, role, router, fallback]);
 
   if (status === 'loading') {
     return (
@@ -23,14 +34,14 @@ export function RequireRole({ role, children, fallback }: RequireRoleProps) {
   }
 
   if (!session) {
-    redirect('/login');
+    return null;
   }
 
   if (session.user?.role !== role) {
     if (fallback) {
       return <>{fallback}</>;
     }
-    redirect('/unauthorized');
+    return null;
   }
 
   return <>{children}</>;
@@ -43,6 +54,13 @@ interface RequireAuthProps {
 
 export function RequireAuth({ children, fallback }: RequireAuthProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated' && !fallback) {
+      router.push('/login');
+    }
+  }, [status, router, fallback]);
 
   if (status === 'loading') {
     return (
@@ -56,7 +74,7 @@ export function RequireAuth({ children, fallback }: RequireAuthProps) {
     if (fallback) {
       return <>{fallback}</>;
     }
-    redirect('/login');
+    return null;
   }
 
   return <>{children}</>;

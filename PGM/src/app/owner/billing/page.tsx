@@ -432,7 +432,10 @@ export default function BillingPage() {
                 </button>
                 <button 
                   className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center"
-                  onClick={() => handleDeleteInvoice(row.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteInvoice(row.id);
+                  }}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete

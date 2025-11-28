@@ -8,16 +8,29 @@ import { getTabId, getSessionCookieName } from './tabSession';
 
 /**
  * Set a cookie with per-tab isolation
+ * For session cookies, pass days as 0 or undefined
  */
-export function setCookie(name: string, value: string, days: number = 30): void {
+export function setCookie(name: string, value: string, days?: number): void {
   if (typeof document === 'undefined') {
     return;
   }
 
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  const isSecure = window.location.protocol === 'https:';
+  let cookieString = `${name}=${value};path=/;SameSite=Lax`;
   
-  const cookieString = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax;Secure=${window.location.protocol === 'https:'}`;
+  if (isSecure) {
+    cookieString += ';Secure';
+  }
+  
+  // If days is 0 or undefined, create a session cookie (no expires/maxAge)
+  // Session cookies expire when browser closes
+  if (days !== undefined && days > 0) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    cookieString += `;expires=${expires.toUTCString()}`;
+  }
+  // If days is 0 or undefined, don't set expires/maxAge = session cookie
+  
   document.cookie = cookieString;
 }
 
@@ -58,10 +71,12 @@ export function deleteCookie(name: string): void {
 
 /**
  * Set session cookie for this tab
+ * Session cookies expire when browser closes (no maxAge/expires)
  */
-export function setSessionCookie(token: string, days: number = 30): void {
+export function setSessionCookie(token: string, days?: number): void {
   const cookieName = getSessionCookieName();
-  setCookie(cookieName, token, days);
+  // Pass 0 or undefined to create session-only cookie
+  setCookie(cookieName, token, days === undefined ? 0 : days);
 }
 
 /**

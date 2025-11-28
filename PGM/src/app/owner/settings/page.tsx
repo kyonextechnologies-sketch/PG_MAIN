@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -27,7 +28,8 @@ import {
   X,
   Clock,
   Eye,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 import { crudToasts, showToast } from '@/lib/toast';
 import { apiClient } from '@/lib/apiClient';
@@ -102,19 +104,37 @@ export default function SettingsPage() {
     rejectionReason: string;
     submittedAt?: string | null;
     verifiedAt?: string | null;
+    separateDocuments?: {
+      aadhaarFront?: { url: string | null; status: string; rejectionReason: string | null };
+      aadhaarBack?: { url: string | null; status: string; rejectionReason: string | null };
+      pan?: { url: string | null; status: string; rejectionReason: string | null };
+      gst?: { url: string | null; status: string; rejectionReason: string | null };
+      addressProof?: { url: string | null; status: string; rejectionReason: string | null };
+      ownerPhoto?: { url: string | null; status: string; rejectionReason: string | null };
+    };
   }>({
     status: 'PENDING',
     documents: [],
     rejectionReason: '',
     submittedAt: null,
     verifiedAt: null,
+    separateDocuments: {},
   });
   const [selectedDocuments, setSelectedDocuments] = useState<File[]>([]);
   const [verificationLoading, setVerificationLoading] = useState(false);
-  const [uploadingDocuments, setUploadingDocuments] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  
+  // Change password state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Load saved data from backend on component mount (not localStorage)
   React.useEffect(() => {
@@ -171,7 +191,7 @@ export default function SettingsPage() {
   const fetchVerificationInfo = React.useCallback(async () => {
     setVerificationLoading(true);
     try {
-      const response = await apiClient.get<VerificationApiResponse>('/owners/verification');
+      const response = await apiClient.get<any>('/owners/verification');
       const payload = response.data;
       if (response.success && payload) {
         setVerificationInfo({
@@ -180,6 +200,7 @@ export default function SettingsPage() {
           rejectionReason: payload.rejectionReason || '',
           submittedAt: payload.submittedAt || null,
           verifiedAt: payload.verifiedAt || null,
+          separateDocuments: payload.documents || {},
         });
       }
     } catch (error) {
@@ -404,7 +425,7 @@ export default function SettingsPage() {
   const handleSubmitVerificationDocuments = async () => {
     if (selectedDocuments.length === 0) return;
 
-    setUploadingDocuments(true);
+    setUploadingDocuments({ legacy: true });
     try {
       const formData = new FormData();
       selectedDocuments.forEach((file) => formData.append('documents', file));
@@ -425,11 +446,83 @@ export default function SettingsPage() {
       });
       setSelectedDocuments([]);
       crudToasts.create.success('Verification documents');
+      fetchVerificationInfo(); // Refresh to get updated separate documents
     } catch (error) {
       console.error('Failed to submit verification documents:', error);
       crudToasts.create.error('Verification documents');
     } finally {
-      setUploadingDocuments(false);
+      setUploadingDocuments({});
+    }
+  };
+
+  const handleUploadSeparateDocument = async (docType: string, file: File) => {
+    setIsUploadingDocument(true);
+    setUploadingDocuments(prev => ({ ...prev, [docType]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('docType', docType);
+
+      const response = await apiClient.post('/owners/verification/document', formData);
+
+      if (!response.success) {
+        throw new Error(response.error || response.message || 'Failed to upload document');
+      }
+
+      crudToasts.create.success(`${docType} document`);
+      fetchVerificationInfo(); // Refresh to get updated status
+    } catch (error) {
+      console.error(`Failed to upload ${docType}:`, error);
+      crudToasts.create.error(`${docType} document`);
+    } finally {
+      setIsUploadingDocument(false);
+      setUploadingDocuments(prev => {
+        const updated = { ...prev };
+        delete updated[docType];
+        return updated;
+      });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      showToast.error('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast.error('New password and confirm password do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      showToast.error('Password must be at least 8 characters long');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const response = await apiClient.post('/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+
+      if (response.success) {
+        showToast.success('Password changed successfully');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        throw new Error(response.error || response.message || 'Failed to change password');
+      }
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to change password';
+      showToast.error(errorMsg);
+      console.error('Failed to change password:', error);
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -767,39 +860,53 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
-                    <h4 className="font-bold text-gray-900 text-lg">Change Password</h4>
+                    <h4 className="font-bold text-gray-900 dark:text-gray-800 text-lg">Change Password</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="currentPassword" className="text-gray-700 font-semibold">Current Password</Label>
+                        <Label htmlFor="currentPassword" className="text-gray-900 dark:text-gray-800 font-semibold">Current Password</Label>
                         <Input 
                           id="currentPassword" 
                           type="password" 
-                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          className="text-gray-900 dark:text-gray-100 bg-white dark:bg-white-800 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="newPassword" className="text-gray-700 font-semibold">New Password</Label>
+                        <Label htmlFor="newPassword" className="text-gray-900 dark:text-gray-800 font-semibold">New Password</Label>
                         <Input 
                           id="newPassword" 
                           type="password" 
-                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="confirmPassword" className="text-gray-700 font-semibold">Confirm Password</Label>
+                        <Label htmlFor="confirmPassword" className="text-gray-900 dark:text-gray-800 font-semibold">Confirm Password</Label>
                         <Input 
                           id="confirmPassword" 
                           type="password" 
-                          className="!text-black bg-gradient-to-r from-gray-50 to-red-50 border-2 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 rounded-xl font-medium transition-all duration-300"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl font-medium transition-all duration-300"
                         />
                       </div>
                     </div>
                     <Button 
-                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                      onClick={handleChangePassword}
+                      disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Key className="mr-2 h-4 w-4" />
-                      Change Password
+                      {changingPassword ? 'Changing Password...' : 'Change Password'}
                     </Button>
+                    {passwordData.newPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                      <p className="text-sm text-red-600 font-medium">Passwords do not match</p>
+                    )}
+                    {passwordData.newPassword && passwordData.newPassword.length < 8 && (
+                      <p className="text-sm text-red-600 font-medium">Password must be at least 8 characters</p>
+                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -909,40 +1016,107 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {/* Document Upload */}
-                  <div className="space-y-4">
+                  {/* Separate Document Upload Sections */}
+                  <div className="space-y-6">
                     <div>
                       <Label className="text-base font-bold text-gray-900 dark:!text-black mb-3 block">
                         Upload Legal Documents
                       </Label>
                       <p className="text-sm text-gray-600 mb-4">
-                        Upload property ownership proof, Aadhar card, PAN card, or other legal documents (PDF, JPG, PNG - Max 50MB each)
+                        Upload each document separately. All documents are required for verification (PDF, JPG, PNG - Max 50MB each)
                       </p>
                     </div>
 
-                    {/* File Upload Area */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#f5c518] transition-colors bg-gray-50">
-                      <input
-                        type="file"
-                        id="verification-docs"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="hidden"
-                        onChange={(e) => handleVerificationFileSelect(e.target.files)}
-                      />
-                      <label
-                        htmlFor="verification-docs"
-                        className="flex flex-col items-center justify-center cursor-pointer"
-                      >
-                        <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                        <p className="text-lg font-semibold text-gray-700 mb-1">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          PDF, JPG, PNG (Max 50MB per file)
-                        </p>
-                      </label>
-                    </div>
+                    {/* Document Upload Sections */}
+                    {[
+                      { key: 'aadhaarFront', label: 'Aadhar Card (Front)', required: true, placeholder: 'aadhar_front.jpg' },
+                      { key: 'aadhaarBack', label: 'Aadhar Card (Back)', required: true, placeholder: 'aadhar_back.jpg' },
+                      { key: 'pan', label: 'PAN Card', required: true, placeholder: 'pan.jpg' },
+                      { key: 'gst', label: 'GST Certificate', required: false, placeholder: 'gst.pdf' },
+                      { key: 'addressProof', label: 'Address Proof', required: true, placeholder: 'address_proof.pdf' },
+                      { key: 'ownerPhoto', label: 'Owner Photo', required: true, placeholder: 'owner_photo.jpg' },
+                    ].map(({ key, label, required, placeholder }) => {
+                      const doc = verificationInfo.separateDocuments?.[key as keyof typeof verificationInfo.separateDocuments];
+                      const isUploading = uploadingDocuments[key] || false;
+                      const docId = `doc-${key}`;
+                      
+                      return (
+                        <div key={key} className="border-2 border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 hover:border-[#f5c518] transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <Label className="text-sm font-bold text-gray-900">
+                                {label} {required && <span className="text-red-500">*</span>}
+                              </Label>
+                              {doc?.status && (
+                                <Badge className={`ml-2 ${
+                                  doc.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                  doc.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {doc.status}
+                                </Badge>
+                              )}
+                            </div>
+                            {doc?.url && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(doc.url!, '_blank')}
+                                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {doc?.rejectionReason && (
+                            <p className="text-xs text-red-600 mb-2">{doc.rejectionReason}</p>
+                          )}
+                          
+                          <input
+                            type="file"
+                            id={docId}
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleUploadSeparateDocument(key, file);
+                              }
+                            }}
+                            disabled={isUploading || isUploadingDocument}
+                          />
+                          <label
+                            htmlFor={docId}
+                            className={`flex flex-col items-center justify-center cursor-pointer p-4 rounded-lg border-2 border-dashed ${
+                              doc?.url ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white'
+                            } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="w-8 h-8 text-gray-400 mb-2 animate-spin" />
+                                <p className="text-sm text-gray-600">Uploading...</p>
+                              </>
+                            ) : doc?.url ? (
+                              <>
+                                <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
+                                <p className="text-sm font-semibold text-green-700">Uploaded</p>
+                                <p className="text-xs text-gray-500 mt-1">Click to replace</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-sm font-semibold text-gray-700">Click to upload</p>
+                                <p className="text-xs text-gray-500 mt-1">{placeholder}</p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })}
 
                     {/* Uploaded Files List */}
                     <div className="space-y-6">
@@ -1044,11 +1218,11 @@ export default function SettingsPage() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleSubmitVerificationDocuments}
-                      disabled={selectedDocuments.length === 0 || uploadingDocuments}
+                      disabled={selectedDocuments.length === 0 || isUploadingDocument}
                       className="w-full bg-gradient-to-r from-[#f5c518] to-[#ffd000] hover:from-[#ffd000] hover:to-[#f5c518] text-black font-bold py-6 text-lg"
                     >
                       <Upload className="mr-2 h-5 w-5" />
-                      {uploadingDocuments ? 'Uploading documents...' : 'Submit Documents for Verification'}
+                      {isUploadingDocument ? 'Uploading documents...' : 'Submit Documents for Verification'}
                     </Button>
 
                     {/* Requirements */}

@@ -133,8 +133,9 @@ export async function scheduleRecurringMonthlyBilling(): Promise<void> {
 
 /**
  * Generate invoices for all active tenants of an owner
+ * Exported for use in cron scripts
  */
-async function generateInvoicesForOwner(ownerId: string, month: string): Promise<number> {
+export async function generateInvoicesForOwner(ownerId: string, month: string): Promise<number> {
   let generatedCount = 0;
 
   try {
@@ -169,6 +170,11 @@ async function generateInvoicesForOwner(ownerId: string, month: string): Promise
             id: true,
             email: true,
             phone: true,
+          },
+        },
+        property: {
+          select: {
+            name: true,
           },
         },
       },
@@ -239,8 +245,11 @@ async function generateInvoicesForOwner(ownerId: string, month: string): Promise
                 baseRent,
                 electricityCharges,
                 otherCharges: 0,
+                lateFees: 0,
                 totalAmount,
                 dueDate: dueDate.toLocaleDateString(),
+                ownerName: owner.name,
+                propertyName: tenant.property?.name || 'Property',
               },
             });
           } catch (emailError) {
@@ -248,7 +257,7 @@ async function generateInvoicesForOwner(ownerId: string, month: string): Promise
           }
         }
 
-        // Send in-app notification
+        // Send in-app notification (WebSocket only - email already sent above)
         if (tenant.userId) {
           try {
             await createNotification({
@@ -262,7 +271,7 @@ async function generateInvoicesForOwner(ownerId: string, month: string): Promise
                 amount: totalAmount,
                 dueDate: dueDate.toISOString(),
               },
-              channels: ['WEBSOCKET', 'EMAIL'],
+              channels: ['WEBSOCKET'], // Email already sent above with proper template
               priority: 'HIGH',
             });
           } catch (notifError) {

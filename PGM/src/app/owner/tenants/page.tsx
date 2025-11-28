@@ -449,12 +449,18 @@ export default function TenantsPage() {
       label: 'Property & Room', 
       sortable: true,
       render: (value: string, row: any) => {
-        // Find the property for this tenant
-        const property = properties.find(p => p.id === row.propertyId);
-        // Find the room for this tenant
-        const room = rooms.find(r => r.id === row.roomId);
+        // Use room data from tenant response (includes room info from API)
+        const tenantRoom = row.room || row.roomData;
+        const tenantProperty = row.property || row.propertyData;
         
-        if (!property && !room) {
+        // Fallback: Find from properties/rooms arrays if not in tenant data
+        const property = tenantProperty || properties.find(p => p.id === row.propertyId);
+        const room = tenantRoom || rooms.find(r => r.id === row.roomId);
+        
+        // Get room number from various possible sources
+        const roomNumber = room?.roomNumber || room?.name || tenantRoom?.roomNumber || tenantRoom?.name;
+        
+        if (!property && !roomNumber) {
           return (
             <div className="text-sm text-gray-500">
               <div>N/A</div>
@@ -468,7 +474,7 @@ export default function TenantsPage() {
               {property?.name || 'N/A'}
             </div>
             <div className="text-gray-600 dark:text-gray-400">
-              {room ? `Room ${room.roomNumber}` : 'Room N/A'}
+              {roomNumber ? `Room ${roomNumber}` : 'Room N/A'}
             </div>
           </div>
         );

@@ -94,7 +94,7 @@ export default function PropertiesPage() {
   };
 
   const handleViewProperty = (property: any) => {
-    router.push(`/owner/room-occupancy?propertyId=${property.id}`);
+    window.location.href = `/owner/room-occupancy?propertyId=${property.id}`;
   };
 
   const columns: Column<typeof properties[0]>[] = [
@@ -238,14 +238,20 @@ export default function PropertiesPage() {
                 </button>
                 <button 
                   className="w-full px-4 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-blue-800 flex items-center"
-                  onClick={() => router.push(`/owner/room-occupancy?propertyId=${row.id}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = `/owner/room-occupancy?propertyId=${row.id}`;
+                  }}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View Room Details
                 </button>
                 <button 
                   className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-blue-800 flex items-center"
-                  onClick={() => handleDeleteProperty(row.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProperty(row.id);
+                  }}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -270,7 +276,7 @@ export default function PropertiesPage() {
                         className="text-base sm:text-lg font-bold text-gray-900 dark:text-black cursor-pointer hover:text-blue-600 transition-colors inline-flex items-center gap-2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/owner/room-occupancy?propertyId=${property.id}`);
+                          window.location.href = `/owner/room-occupancy?propertyId=${property.id}`;
                         }}
                       >
                         {property.name}
@@ -284,7 +290,7 @@ export default function PropertiesPage() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/owner/room-occupancy?propertyId=${property.id}`);
+                        window.location.href = `/owner/room-occupancy?propertyId=${property.id}`;
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
@@ -321,7 +327,7 @@ export default function PropertiesPage() {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/owner/room-occupancy?propertyId=${property.id}`);
+                        window.location.href = `/owner/room-occupancy?propertyId=${property.id}`;
                       }}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
                     >

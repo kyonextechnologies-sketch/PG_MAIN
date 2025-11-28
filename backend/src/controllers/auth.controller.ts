@@ -468,9 +468,18 @@ export const changePassword = asyncHandler(async (req: AuthRequest, res: Respons
     data: { password: hashedPassword },
   });
 
+  // Invalidate all sessions for this user (except current if desired)
+  const { sessionCache } = await import('../lib/cache/redisClient');
+  await sessionCache.deleteAll(req.user.id);
+
+  // Also delete refresh tokens to force re-login on all devices
+  await prisma.refreshToken.deleteMany({
+    where: { userId: req.user.id },
+  });
+
   res.json({
     success: true,
-    message: 'Password changed successfully',
+    message: 'Password changed successfully. Please login again.',
   });
 });
 

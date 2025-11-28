@@ -5,7 +5,7 @@ import prisma from '../config/database';
 import { logAdminAction } from '../middleware/auditLog';
 import { createNotification } from '../services/notification.service';
 import { Prisma } from '@prisma/client';
-import { scheduleMonthlyBilling, processOverdueInvoices } from '../services/billing.service';
+import { scheduleMonthlyBilling, processOverdueInvoices, generateInvoicesForOwner } from '../services/billing.service';
 
 /**
  * Verify admin role middleware
@@ -886,9 +886,65 @@ export const updateSubscription = asyncHandler(async (req: AuthRequest, res: Res
 export const triggerMonthlyBilling = asyncHandler(async (req: AuthRequest, res: Response) => {
   requireAdmin(req);
 
-  const { month, ownerId } = req.body;
+  const { month, ownerId, direct = false } = req.body;
 
   try {
+    // If direct=true, generate invoices immediately without queue
+    if (direct) {
+      let totalGenerated = 0;
+      let targetMonth = month;
+
+      if (!targetMonth) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const monthNum = String(now.getMonth() + 1).padStart(2, '0');
+        targetMonth = `${year}-${monthNum}`;
+      }
+
+      if (ownerId) {
+        // Generate for specific owner
+        const count = await generateInvoicesForOwner(ownerId, targetMonth);
+        totalGenerated = count;
+      } else {
+        // Generate for all owners
+        const owners = await prisma.user.findMany({
+          where: {
+            role: 'OWNER',
+            isActive: true,
+            autoGenerateInvoices: true,
+          },
+          select: { id: true },
+        });
+
+        for (const owner of owners) {
+          try {
+            const count = await generateInvoicesForOwner(owner.id, targetMonth);
+            totalGenerated += count;
+          } catch (error: any) {
+            console.error(`Failed to generate invoices for owner ${owner.id}:`, error);
+          }
+        }
+      }
+
+      await logAdminAction(req.user!.id, 'TRIGGER_BILLING_DIRECT', 'Billing', 'direct-generation', req, {
+        month: targetMonth,
+        ownerId,
+        totalGenerated,
+      });
+
+      res.json({
+        success: true,
+        message: `Generated ${totalGenerated} invoice(s) directly`,
+        data: {
+          month: targetMonth,
+          ownerId: ownerId || 'All owners',
+          totalGenerated,
+        },
+      });
+      return;
+    }
+
+    // Use queue-based approach (default)
     const jobId = await scheduleMonthlyBilling(month);
 
     if (!jobId) {

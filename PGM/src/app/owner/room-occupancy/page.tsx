@@ -69,12 +69,27 @@ export default function RoomOccupancyPage() {
   const [deleting, setDeleting] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   
-  const { properties } = useProperties();
+  const { properties, loading: propertiesLoading } = useProperties();
   const { createRoom, updateRoom } = useRooms();
   const { addNotification } = useUIStore();
   
   // Get the selected property details
   const selectedPropertyDetails = properties.find((p) => p.id === selectedProperty);
+
+  // Update selectedProperty when propertyIdParam changes
+  useEffect(() => {
+    if (propertyIdParam) {
+      setSelectedProperty(propertyIdParam);
+    }
+  }, [propertyIdParam]);
+
+  // Check if property exists after properties are loaded
+  useEffect(() => {
+    if (!propertiesLoading && selectedProperty && !selectedPropertyDetails && properties.length > 0) {
+      // Property not found, redirect back
+      router.push('/owner/properties');
+    }
+  }, [propertiesLoading, selectedProperty, selectedPropertyDetails, properties.length, router]);
 
   const getPropertyNameById = useCallback(
     (propertyId?: string) => {
@@ -325,6 +340,19 @@ useEffect(() => {
   const occupancyRate = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(1) : 0;
   const monthlyRevenue = filteredRooms.reduce((sum, room) => sum + (room.occupiedBeds * room.rentPerBed), 0);
 
+   // Show loading while properties are being fetched
+   if (propertiesLoading) {
+     return (
+       <RequireRole role="OWNER">
+         <MainLayout>
+           <div className="flex items-center justify-center min-h-screen">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+           </div>
+         </MainLayout>
+       </RequireRole>
+     );
+   }
+
    // Show error if no property selected
    if (!selectedProperty) {
      return (
@@ -347,17 +375,17 @@ useEffect(() => {
      );
    }
 
-   // Show error if property not found
-   if (selectedProperty && !selectedPropertyDetails) {
+   // If property not found after properties are loaded, show message (redirect handled in useEffect)
+   if (selectedProperty && !selectedPropertyDetails && !propertiesLoading) {
      return (
        <RequireRole role="OWNER">
          <MainLayout>
            <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-             <Building2 className="w-12 h-12 text-red-500" />
+             <Home className="w-12 h-12 text-red-500" />
              <div>
                <h1 className="text-2xl sm:text-3xl font-bold text-white">Property not found</h1>
                <p className="text-sm sm:text-base text-gray-400 mt-2">
-                 The property you&apos;re trying to view no longer exists. Please select another property.
+                 The property you're looking for doesn't exist or you don't have access to it.
                </p>
              </div>
              <Button onClick={() => router.push('/owner/properties')} className="bg-blue-600 text-white">

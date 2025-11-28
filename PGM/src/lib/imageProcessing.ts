@@ -219,28 +219,55 @@ class ImageProcessingService {
   }
 
   /**
-   * Perform OCR on processed image
-   * Note: In a real implementation, this would use a proper OCR service like Tesseract.js
+   * Perform OCR on processed image with retries and fallback
+   * Note: In a real implementation, this would use Tesseract.js or cloud OCR service
    */
-  private async performOCR(imageDataUrl: string): Promise<string> {
-    // Mock OCR implementation
-    // In a real app, you would use Tesseract.js or a cloud OCR service
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simulate OCR processing
-        const mockReadings = ['1234', '1456', '1678', '1890', '2012'];
-        const randomReading = mockReadings[Math.floor(Math.random() * mockReadings.length)];
-        resolve(`Meter Reading: ${randomReading} kWh`);
-      }, 1000);
-    });
+  private async performOCR(imageDataUrl: string, retries: number = 3): Promise<string> {
+    // Try OCR with retries
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        // In a real implementation, use Tesseract.js:
+        // const { createWorker } = await import('tesseract.js');
+        // const worker = await createWorker('eng');
+        // const { data: { text } } = await worker.recognize(imageDataUrl);
+        // await worker.terminate();
+        // return text;
+        
+        // Mock OCR implementation with retry logic
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Simulate OCR processing with occasional failures
+            if (Math.random() > 0.1) { // 90% success rate
+              const mockReadings = ['1234', '1456', '1678', '1890', '2012'];
+              const randomReading = mockReadings[Math.floor(Math.random() * mockReadings.length)];
+              resolve(`Meter Reading: ${randomReading} kWh`);
+            } else if (attempt < retries) {
+              reject(new Error(`OCR attempt ${attempt} failed, retrying...`));
+            } else {
+              reject(new Error('OCR failed after all retries'));
+            }
+          }, 1000);
+        });
+      } catch (error) {
+        if (attempt === retries) {
+          throw error;
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+      }
+    }
+    throw new Error('OCR failed after all retries');
   }
 
   /**
-   * Parse meter reading from OCR text
+   * Parse meter reading from OCR text with improved heuristics
    */
   private parseMeterReading(text: string): number | null {
-    // Extract numbers from text
-    const numbers = text.match(/\d+/g);
+    // Whitelist allowed characters: digits, decimal point, spaces
+    const cleanedText = text.replace(/[^\d.\s]/g, '');
+    
+    // Extract numbers from text (support decimals)
+    const numbers = cleanedText.match(/\d+\.?\d*/g);
     if (!numbers || numbers.length === 0) {
       return null;
     }

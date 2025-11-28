@@ -216,22 +216,34 @@ const getEmailTemplate = (template: string, data: Record<string, any>): string =
       </div>
     `,
     invoiceGenerated: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>New Invoice Generated</h2>
-        <p>Hello ${data.tenantName},</p>
-        <p>A new invoice has been generated for ${data.month}.</p>
-        <p><strong>Invoice Details:</strong></p>
-        <ul>
-          <li>Base Rent: ₹${data.baseRent}</li>
-          <li>Electricity Charges: ₹${data.electricityCharges}</li>
-          <li>Other Charges: ₹${data.otherCharges}</li>
-          <li>Late Fees: ₹${data.lateFees}</li>
-          <li><strong>Total Amount: ₹${data.totalAmount}</strong></li>
-        </ul>
-        <p>Due Date: ${data.dueDate}</p>
-        <p>Please make the payment before the due date to avoid late fees.</p>
-        <br/>
-        <p>Best regards,<br/>PG Management Team</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-top: 0; font-size: 24px;">New Invoice Generated</h2>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">Hello <strong>${data.tenantName}</strong>,</p>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">A new invoice has been generated for <strong>${data.month}</strong>.</p>
+          <div style="background-color: #f3f4f6; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="color: #1f2937; font-size: 14px; font-weight: 600; margin-top: 0; margin-bottom: 10px;">Invoice Details:</p>
+            <ul style="color: #4b5563; font-size: 14px; margin: 5px 0; padding-left: 20px;">
+              <li>Base Rent: ₹${data.baseRent?.toLocaleString('en-IN') || 0}</li>
+              <li>Electricity Charges: ₹${data.electricityCharges?.toLocaleString('en-IN') || 0}</li>
+              <li>Other Charges: ₹${data.otherCharges?.toLocaleString('en-IN') || 0}</li>
+              <li>Late Fees: ₹${data.lateFees?.toLocaleString('en-IN') || 0}</li>
+              <li style="margin-top: 10px;"><strong style="color: #1f2937;">Total Amount: ₹${data.totalAmount?.toLocaleString('en-IN') || 0}</strong></li>
+            </ul>
+          </div>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+            <strong>Due Date:</strong> ${data.dueDate}
+          </p>
+          <p style="color: #dc2626; font-size: 14px; font-weight: 600; margin: 20px 0;">
+            ⚠️ Please make the payment before the due date to avoid late fees.
+          </p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="color: #6b7280; font-size: 14px; margin-bottom: 5px;">
+            Best regards,
+          </p>
+          ${data.ownerName ? `<p style="color: #1f2937; font-size: 14px; font-weight: 600; margin: 5px 0;"><strong>${data.ownerName}</strong></p>` : ''}
+          ${data.propertyName ? `<p style="color: #6b7280; font-size: 14px; margin-top: 5px; margin-bottom: 0;">${data.propertyName}</p>` : ''}
+        </div>
       </div>
     `,
     paymentConfirmation: (data) => `

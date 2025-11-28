@@ -24,6 +24,11 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
       name: true,
       email: true,
       monthlyRent: true,
+      property: {
+        select: {
+          name: true,
+        },
+      },
     },
   });
   if (!tenant) throw new AppError('Tenant not found', 404);
@@ -82,6 +87,12 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
     include: { tenant: true },
   });
 
+  // Get owner details for email
+  const owner = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { name: true },
+  });
+
   // ✅ Safe email sending
   if (tenant.email) {
     try {
@@ -95,8 +106,11 @@ export const generateInvoice = asyncHandler(async (req: AuthRequest, res: Respon
           baseRent,
           electricityCharges,
           otherCharges,
+          lateFees: 0,
           totalAmount,
           dueDate: dueDate.toLocaleDateString(),
+          ownerName: owner?.name || 'Owner',
+          propertyName: tenant.property?.name || 'Property',
         },
       });
     } catch (err) {

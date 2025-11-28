@@ -169,15 +169,19 @@ export default function TenantRequestsPage() {
       <MainLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white dark:text-white">Maintenance Requests</h1>
-              <p className="text-sm sm:text-base text-gray-300 dark:text-gray-300 font-semibold">Submit and track maintenance requests</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Maintenance Requests</h1>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium mt-1">Submit and track maintenance requests</p>
             </div>
-            <div className="bg-black rounded-lg p-2">
-              <Button onClick={() => setIsCreatingRequest(true)}>
-                <Plus className="mr-2 h-4 w-4 text-white font-bold" />
-                <p className="text-xl font-medium text-white font-bold">New Request</p>
+            <div className="w-full sm:w-auto">
+              <Button 
+                onClick={() => setIsCreatingRequest(true)}
+                className="w-full sm:w-auto"
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span className="text-sm sm:text-base font-medium">New Request</span>
               </Button>
             </div>
           </div>

@@ -141,20 +141,40 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     if (!app) return;
 
     const amount = invoice.amount;
+    // Format amount to 2 decimal places with proper UPI standard format
+    // UPI requires amount as string with exactly 2 decimal places (e.g., "1.00", "1000.00")
+    // Ensure no rounding errors - validate amount is numeric and > 0
+    const numericAmount = typeof amount === 'number' ? amount : parseFloat(String(amount));
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      alert('Invalid payment amount. Please contact support.');
+      return;
+    }
+    
+    // Format to exactly 2 decimal places (no rounding, just formatting)
+    const formattedAmount = numericAmount.toFixed(2);
     const transactionNote = `Rent payment for ${invoice.month}`;
     
-    // Create UPI payment URL
-    const upiParams = `pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+    // Validate amount is within reasonable limits (UPI apps may have limits)
+    if (numericAmount > 100000) {
+      alert(`Amount ₹${formattedAmount} exceeds UPI limit. Please use bank transfer for large amounts.`);
+      return;
+    }
+    
+    // Create UPI payment URL with proper encoding
+    // UPI standard: pa=payeeAddress, pn=payeeName, am=amount, cu=currency, tn=transactionNote
+    // Amount must be formatted as "X.XX" (2 decimal places)
+    const upiParams = new URLSearchParams({
+      pa: upiId,
+      pn: upiName,
+      am: formattedAmount, // Already formatted to 2 decimal places
+      cu: 'INR',
+      tn: transactionNote,
+    }).toString();
     
     let url = '';
     
-    if (appId === 'upi') {
-      // Standard UPI deep link
-      url = `upi://pay?${upiParams}`;
-    } else {
-      // App-specific deep links
-      url = `${app.scheme}?${upiParams}`;
-    }
+    // Always use standard UPI deep link as primary method (works with all UPI apps)
+    url = `upi://pay?${upiParams}`;
 
     // Set the payment URL which triggers the useEffect
     setPaymentUrl(url);

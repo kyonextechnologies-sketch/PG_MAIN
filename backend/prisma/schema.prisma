@@ -98,9 +98,12 @@ model Property {
   rooms              Room[]
   tenants            TenantProfile[]
 
+  @@unique([ownerId, name], name: "ownerId_name_unique")
   @@index([ownerId])
   @@index([city])
   @@index([active])
+  @@index([ownerId, active])
+  @@index([createdAt])
 }
 
 model Room {
@@ -174,6 +177,9 @@ model TenantProfile {
   @@index([email])
   @@index([status])
   @@index([propertyId])
+  @@index([ownerId, status])
+  @@index([propertyId, status])
+  @@index([createdAt])
 }
 
 model ElectricitySettings {

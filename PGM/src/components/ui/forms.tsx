@@ -27,22 +27,48 @@ export const propertySchema = z.object({
   active: z.boolean().default(true)
 });
 
-export const tenantSchema = z.object({
+// Base tenant schema for creation
+const tenantSchemaBase = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().min(1, 'Email is required').email('Invalid email format'),
   phone: z.string().min(1, 'Phone is required'),
-  propertyId: z.string().min(1, 'Property selection is required'),
-  roomId: z.string().min(1, 'Room selection is required'),
-  bedId: z.string().min(1, 'Bed selection is required'),
   securityDeposit: z.number().min(0, 'Security deposit must be 0 or more'),
   monthlyRent: z.number().min(1, 'Monthly rent must be greater than 0'),
   moveInDate: z.string().min(1, 'Move-in date is required'),
-  kycId: z.string().optional(),
-  kycDocument: z.string().optional(),
-  password: z.string().min(1, 'Password is required').optional(),
+  kycId: z.string().nullable().optional(),
+  kycDocument: z.string().nullable().optional(),
+  password: z.string().optional(),
   emergencyContact: z.string().optional(),
   address: z.string().optional()
 });
+
+// Schema for creating new tenant (requires property/room/bed)
+export const tenantCreateSchema = tenantSchemaBase.extend({
+  propertyId: z.string().min(1, 'Property selection is required'),
+  roomId: z.string().min(1, 'Room selection is required'),
+  bedId: z.string().min(1, 'Bed selection is required'),
+});
+
+// Schema for updating tenant (property/room/bed optional, and all fields can be optional)
+export const tenantUpdateSchema = z.object({
+  name: z.string().min(1, 'Name is required').optional(),
+  email: z.string().min(1, 'Email is required').email('Invalid email format').optional(),
+  phone: z.string().min(1, 'Phone is required').optional(),
+  propertyId: z.string().optional(),
+  roomId: z.string().optional(),
+  bedId: z.string().optional(),
+  securityDeposit: z.number().min(0, 'Security deposit must be 0 or more').optional(),
+  monthlyRent: z.number().min(1, 'Monthly rent must be greater than 0').optional(),
+  moveInDate: z.string().optional(),
+  kycId: z.string().nullable().optional(),
+  kycDocument: z.string().nullable().optional(),
+  password: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  address: z.string().optional()
+});
+
+// Default schema (will be overridden in form based on isEditing)
+export const tenantSchema = tenantCreateSchema;
 
 export const invoiceSchema = z.object({
   tenantId: z.string().min(1, 'Tenant selection is required'),
@@ -241,8 +267,11 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
   rooms?: Array<any>;
   onPropertySelect?: (propertyId: string) => void;
 }) {
+  // Use different schema for editing vs creating
+  const schema = isEditing ? tenantUpdateSchema : tenantCreateSchema;
+  
   const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({
-    resolver: zodResolver(tenantSchema),
+    resolver: zodResolver(schema),
     defaultValues: initialData || {
       name: '',
       email: '',
@@ -260,6 +289,18 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
       address: '',
     }
   });
+
+  // Transform form data before submission - convert empty strings to undefined for optional fields
+  const transformFormData = (data: any) => {
+    const transformed = { ...data };
+    // Convert empty strings to undefined for optional fields
+    if (transformed.kycId === '' || transformed.kycId === null) transformed.kycId = undefined;
+    if (transformed.kycDocument === '' || transformed.kycDocument === null) transformed.kycDocument = undefined;
+    if (transformed.password === '' || transformed.password === null) transformed.password = undefined;
+    if (transformed.emergencyContact === '' || transformed.emergencyContact === null) transformed.emergencyContact = undefined;
+    if (transformed.address === '' || transformed.address === null) transformed.address = undefined;
+    return transformed;
+  };
 
   const selectedProperty = watch('propertyId');
   const selectedRoom = watch('roomId');
@@ -328,7 +369,7 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit((data) => onSubmit(transformFormData(data)))} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="name" className="text-gray-700 font-semibold">Full Name</Label>
@@ -591,7 +632,9 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
                 <Label htmlFor="kycId" className="text-gray-700 font-semibold">KYC ID (Optional)</Label>
                 <Input
                   id="kycId"
-                  {...register('kycId')}
+                  {...register('kycId', { 
+                    setValueAs: (v) => v === '' || v === null ? undefined : v 
+                  })}
                   className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                   placeholder="Enter KYC ID (Aadhaar, PAN, etc.)"
                 />
@@ -603,7 +646,9 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Label htmlFor="kycDocument" className="text-gray-700 font-semibold">KYC Document URL (Optional)</Label>
               <Input
                 id="kycDocument"
-                {...register('kycDocument')}
+                {...register('kycDocument', { 
+                  setValueAs: (v) => v === '' || v === null ? undefined : v 
+                })}
                 className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="URL to KYC document image"
               />
@@ -623,7 +668,9 @@ export function TenantForm({ onSubmit, initialData, isEditing = false, propertie
               <Input
                 id="password"
                 type="password"
-                {...register('password')}
+                {...register('password', { 
+                  setValueAs: (v) => v === '' || v === null ? undefined : v 
+                })}
                 className="bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl font-medium transition-all duration-300 placeholder:text-black !text-black"
                 placeholder="Leave blank for auto-generated password"
               />

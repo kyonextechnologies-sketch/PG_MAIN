@@ -228,36 +228,39 @@ export default function TenantProfilePage() {
           )}
           
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-        <h1 className="text-3xl font-bold text-white dark:!text-white">Profile</h1>
-        <p className="text-white-700 dark:!text-white-700 font-semibold">Manage your personal information and documents</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">Manage your personal information and documents</p>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {!isEditing ? (
                 <Button 
                   onClick={() => setIsEditing(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                  size="sm"
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Profile
+                  <span className="text-sm sm:text-base">Edit Profile</span>
                 </Button>
               ) : (
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Button 
                     onClick={handleSaveProfile}
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                    size="sm"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    {isLoading ? 'Saving...' : 'Save Changes'}
+                    <span className="text-sm sm:text-base">{isLoading ? 'Saving...' : 'Save Changes'}</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => setIsEditing(false)}
-                    className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 font-semibold"
+                    className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 font-semibold w-full sm:w-auto"
+                    size="sm"
                   >
-                    Cancel
+                    <span className="text-sm sm:text-base">Cancel</span>
                   </Button>
                 </div>
               )}

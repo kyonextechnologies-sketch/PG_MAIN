@@ -14,6 +14,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "generate-invoices": "ts-node scripts/generateMonthlyInvoices.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },
