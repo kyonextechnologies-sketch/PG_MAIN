@@ -163,18 +163,23 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     // Create UPI payment URL with proper encoding
     // UPI standard: pa=payeeAddress, pn=payeeName, am=amount, cu=currency, tn=transactionNote
     // Amount must be formatted as "X.XX" (2 decimal places)
-    const upiParams = new URLSearchParams({
-      pa: upiId,
-      pn: upiName,
-      am: formattedAmount, // Already formatted to 2 decimal places
-      cu: 'INR',
-      tn: transactionNote,
-    }).toString();
+    // All parameters must be properly URL encoded
+    const upiParams = new URLSearchParams();
+    upiParams.append('pa', upiId.trim()); // Payee address (UPI ID)
+    upiParams.append('pn', upiName.trim()); // Payee name
+    upiParams.append('am', formattedAmount); // Amount (already formatted to 2 decimal places)
+    upiParams.append('cu', 'INR'); // Currency
+    upiParams.append('tn', transactionNote); // Transaction note
     
-    let url = '';
+    // Build UPI URL - ensure proper encoding
+    const url = `upi://pay?${upiParams.toString()}`;
     
-    // Always use standard UPI deep link as primary method (works with all UPI apps)
-    url = `upi://pay?${upiParams}`;
+    // Validate UPI ID format
+    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    if (!upiIdRegex.test(upiId.trim())) {
+      alert(`Invalid UPI ID format: ${upiId}. Please check the UPI ID and try again.`);
+      return;
+    }
 
     // Set the payment URL which triggers the useEffect
     setPaymentUrl(url);

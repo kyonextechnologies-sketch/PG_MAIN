@@ -178,19 +178,23 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     // Create UPI payment URL with proper encoding
     // UPI standard: pa=payeeAddress, pn=payeeName, am=amount, cu=currency, tn=transactionNote
     // Amount must be formatted as "X.XX" (2 decimal places)
-    const upiParams = new URLSearchParams({
-      pa: upiId,
-      pn: upiName,
-      am: formattedAmount, // Already formatted to 2 decimal places
-      cu: 'INR',
-      tn: transactionNote,
-    }).toString();
+    // All parameters must be properly URL encoded
+    const upiParams = new URLSearchParams();
+    upiParams.append('pa', upiId.trim()); // Payee address (UPI ID)
+    upiParams.append('pn', upiName.trim()); // Payee name
+    upiParams.append('am', formattedAmount); // Amount (already formatted to 2 decimal places)
+    upiParams.append('cu', 'INR'); // Currency
+    upiParams.append('tn', transactionNote); // Transaction note
     
-    let url = '';
+    // Build UPI URL - ensure proper encoding
+    const url = `upi://pay?${upiParams.toString()}`;
     
-    // Always use standard UPI deep link as primary method (works with all UPI apps)
-    // This avoids app-specific limitations and QR code amount restrictions
-    url = `upi://pay?${upiParams}`;
+    // Validate UPI ID format
+    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    if (!upiIdRegex.test(upiId.trim())) {
+      alert(`Invalid UPI ID format: ${upiId}. Please check the UPI ID and try again.`);
+      return;
+    }
     
     // For app-specific deep links, use as fallback only
     if (appId !== 'upi' && app.scheme) {
@@ -573,15 +577,14 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
                       onClick={() => {
                         // Format amount to 2 decimal places with proper UPI standard format
                         const formattedAmount = parseFloat(invoice.amount.toFixed(2)).toFixed(2);
-                        const upiCollectParams = new URLSearchParams({
-                          pa: customUpiId.trim(),
-                          pn: upiName,
-                          am: formattedAmount,
-                          cu: 'INR',
-                          tn: `Rent payment for ${invoice.month}`,
-                          tr: `rent_${Date.now()}`,
-                        }).toString();
-                        const upiCollectUrl = `upi://pay?${upiCollectParams}`;
+                        const upiCollectParams = new URLSearchParams();
+                        upiCollectParams.append('pa', customUpiId.trim());
+                        upiCollectParams.append('pn', upiName.trim());
+                        upiCollectParams.append('am', formattedAmount);
+                        upiCollectParams.append('cu', 'INR');
+                        upiCollectParams.append('tn', `Rent payment for ${invoice.month}`);
+                        upiCollectParams.append('tr', `rent_${Date.now()}`);
+                        const upiCollectUrl = `upi://pay?${upiCollectParams.toString()}`;
                         setPaymentUrl(upiCollectUrl);
                       }}
                       className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors font-medium"
