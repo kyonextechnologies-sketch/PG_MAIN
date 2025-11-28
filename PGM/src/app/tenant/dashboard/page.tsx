@@ -141,9 +141,9 @@ export default function TenantDashboard() {
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-900">Welcome to your dashboard</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white dark:text-white">
+            {/* <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white dark:text-white">
               Dashboard
-            </h1>
+            </h1> */}
             <p className="text-lg sm:text-xl text-white-800 dark:text-gray-200 max-w-2xl mx-auto font-semibold">
               Welcome back, <span className="font-bold text-blue-800 dark:text-blue-300">{session?.user?.name || 'Tenant'}</span>! 
               Here's your personalized overview.

@@ -4,6 +4,7 @@ import {
   getOwners,
   getOwnerDetails,
   verifyOwner,
+  deleteOwner,
   getDashboardStats,
   getMaintenanceRequests,
   getAuditLogs,
@@ -25,6 +26,7 @@ router.get('/dashboard-stats', getDashboardStats);
 router.get('/owners', getOwners);
 router.get('/owners/:id', getOwnerDetails);
 router.post('/owners/:id/verify', verifyOwner);
+router.delete('/owners/:id', deleteOwner);
 router.get('/maintenance-requests', getMaintenanceRequests);
 router.get('/audit-logs', getAuditLogs);
 router.get('/subscriptions', getSubscriptions);

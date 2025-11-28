@@ -331,6 +331,98 @@ export const verifyOwner = asyncHandler(async (req: AuthRequest, res: Response) 
 
 /**
  * @swagger
+ * /admin/owners/{id}:
+ *   delete:
+ *     summary: Delete owner and all related data
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Owner deleted successfully
+ *       404:
+ *         description: Owner not found
+ */
+export const deleteOwner = asyncHandler(async (req: AuthRequest, res: Response) => {
+  requireAdmin(req);
+
+  const { id } = req.params;
+
+  // Check if owner exists
+  const owner = await prisma.user.findUnique({
+    where: { id, role: 'OWNER' },
+    include: {
+      _count: {
+        select: {
+          properties: true,
+          ownedTenants: true,
+        },
+      },
+    },
+  });
+
+  if (!owner) {
+    throw new AppError('Owner not found', 404);
+  }
+
+  // Delete owner and all related data in a transaction
+  // Note: Most relations have cascade delete, but TenantProfile needs manual handling
+  await prisma.$transaction(async (tx) => {
+    // First, get all tenant profiles owned by this owner
+    const tenantProfiles = await tx.tenantProfile.findMany({
+      where: { ownerId: id },
+      select: { userId: true },
+    });
+
+    // Delete tenant users (this will cascade delete their tenant profiles via userId relation)
+    // This must be done before deleting the owner to avoid foreign key constraint issues
+    for (const tenant of tenantProfiles) {
+      await tx.user.delete({
+        where: { id: tenant.userId },
+      });
+    }
+
+    // Now delete the owner user
+    // This will cascade delete:
+    // - Properties (and their rooms, beds)
+    // - OwnerVerification
+    // - Subscription
+    // - ElectricitySettings
+    // - Invoices, Payments, MaintenanceTickets, Notifications, AuditLogs, OTPs, RefreshTokens, PasswordResets, etc.
+    await tx.user.delete({
+      where: { id },
+    });
+  });
+
+  // Log admin action
+  await logAdminAction(
+    req.user!.id,
+    'DELETE_OWNER',
+    'OWNER',
+    id,
+    req,
+    {
+      ownerName: owner.name,
+      ownerEmail: owner.email,
+      propertiesCount: owner._count.properties,
+      tenantsCount: owner._count.ownedTenants,
+    }
+  );
+
+  res.json({
+    success: true,
+    message: 'Owner and all related data deleted successfully',
+  });
+});
+
+/**
+ * @swagger
  * /admin/dashboard-stats:
  *   get:
  *     summary: Get dashboard statistics

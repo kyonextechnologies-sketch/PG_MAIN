@@ -17,7 +17,8 @@ import {
   Eye,
   Calendar,
   DollarSign,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
 import { useUIStore } from '@/store/ui';
@@ -83,8 +84,11 @@ export default function TenantPaymentsPage() {
       <MainLayout>
         <div className="space-y-8">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold text-white-900 dark:text-white">Payment Management</h1>
+          <div className="text-center space-y-2"><div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-full shadow-lg">
+              <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
+              <span className="text-sm font-semibold text-gray-700">Payment Management</span>
+            </div>
+            {/* <h1 className="text-4xl font-bold text-white-900 dark:text-white">Payment Management</h1> */}
             <p className="text-lg text-white-600">Track and manage your payments</p>
           </div>
 

@@ -279,9 +279,9 @@ export default function ElectricityBillPage() {
               <Sparkles className="h-5 w-5 text-yellow-500 mr-2 animate-pulse" />
               <span className="text-sm font-semibold text-gray-700">Electricity Bill Management</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-white-900 dark:text-white">
+            {/* <h1 className="text-4xl sm:text-5xl font-bold text-white-900 dark:text-white">
               Electricity Bills
-            </h1>
+            </h1> */}
             <p className="text-xl text-white-800 max-w-2xl mx-auto font-semibold">
               Submit your meter reading and manage electricity bills
             </p>
