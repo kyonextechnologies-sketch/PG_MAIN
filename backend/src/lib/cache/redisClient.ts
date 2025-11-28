@@ -16,6 +16,10 @@ class CacheClient {
   private redis: Redis | null = null;
   private memoryCache: Map<string, CacheEntry<any>> = new Map();
   private isRedisAvailable = false;
+  private lastErrorLogTime = 0;
+  private errorLogInterval = 60000; // Log errors at most once per minute
+  private connectionAttempted = false;
+  private shouldRetry = true;
 
   constructor() {
     this.initializeRedis();
@@ -25,44 +29,77 @@ class CacheClient {
     const redisUrl = process.env.REDIS_URL;
     
     if (!redisUrl) {
-      console.log('⚠️  REDIS_URL not set, using in-memory cache');
+      if (process.env.NODE_ENV === 'production') {
+        console.log('ℹ️  REDIS_URL not set, using in-memory cache');
+      }
       return;
     }
 
     try {
       this.redis = new Redis(redisUrl, {
         retryStrategy: (times) => {
-          const delay = Math.min(times * 50, 2000);
+          // Stop retrying after 5 attempts
+          if (times > 5) {
+            this.shouldRetry = false;
+            if (!this.connectionAttempted) {
+              this.logErrorOnce('Redis connection failed after 5 retries - using in-memory cache');
+              this.connectionAttempted = true;
+            }
+            return null; // Stop retrying
+          }
+          const delay = Math.min(times * 100, 2000);
           return delay;
         },
-        maxRetriesPerRequest: 3,
-        enableReadyCheck: true,
+        maxRetriesPerRequest: 1, // Reduce retries per request
+        enableReadyCheck: false, // Disable ready check to reduce connection attempts
         lazyConnect: true,
+        connectTimeout: 5000, // 5 second timeout
+        enableOfflineQueue: false, // Don't queue commands when offline
       });
 
       this.redis.on('connect', () => {
         console.log('✅ Redis connected');
         this.isRedisAvailable = true;
+        this.shouldRetry = true;
+        this.connectionAttempted = false;
+      });
+
+      this.redis.on('ready', () => {
+        this.isRedisAvailable = true;
+        this.shouldRetry = true;
       });
 
       this.redis.on('error', (error) => {
-        console.warn('⚠️  Redis error, falling back to memory cache:', error.message);
         this.isRedisAvailable = false;
+        // Only log errors occasionally to prevent log spam
+        this.logErrorOnce(`Redis error, using memory cache: ${error.message}`);
       });
 
       this.redis.on('close', () => {
-        console.warn('⚠️  Redis connection closed, using memory cache');
         this.isRedisAvailable = false;
+        // Only log close events occasionally
+        this.logErrorOnce('Redis connection closed, using memory cache');
       });
 
-      // Attempt connection
+      // Attempt connection once
       this.redis.connect().catch(() => {
-        console.warn('⚠️  Redis connection failed, using memory cache');
         this.isRedisAvailable = false;
+        this.logErrorOnce('Redis connection failed, using memory cache');
       });
-    } catch (error) {
-      console.warn('⚠️  Redis initialization failed, using memory cache:', error);
+    } catch (error: any) {
       this.isRedisAvailable = false;
+      this.logErrorOnce(`Redis initialization failed, using memory cache: ${error.message || error}`);
+    }
+  }
+
+  /**
+   * Log error only once per interval to prevent log spam
+   */
+  private logErrorOnce(message: string): void {
+    const now = Date.now();
+    if (now - this.lastErrorLogTime > this.errorLogInterval) {
+      console.warn(`⚠️  ${message}`);
+      this.lastErrorLogTime = now;
     }
   }
 
@@ -78,7 +115,7 @@ class CacheClient {
         }
         return null;
       } catch (error) {
-        console.warn('Redis get error, falling back to memory:', error);
+        // Silently fall back to memory cache without logging
         this.isRedisAvailable = false;
       }
     }
@@ -107,7 +144,7 @@ class CacheClient {
         await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
         return;
       } catch (error) {
-        console.warn('Redis set error, falling back to memory:', error);
+        // Silently fall back to memory cache without logging
         this.isRedisAvailable = false;
       }
     }
@@ -133,7 +170,7 @@ class CacheClient {
         await this.redis.del(key);
         return;
       } catch (error) {
-        console.warn('Redis delete error, falling back to memory:', error);
+        // Silently fall back to memory cache without logging
         this.isRedisAvailable = false;
       }
     }
@@ -153,7 +190,7 @@ class CacheClient {
         }
         return;
       } catch (error) {
-        console.warn('Redis deletePattern error, falling back to memory:', error);
+        // Silently fall back to memory cache without logging
         this.isRedisAvailable = false;
       }
     }
@@ -175,7 +212,7 @@ class CacheClient {
         const result = await this.redis.exists(key);
         return result === 1;
       } catch (error) {
-        console.warn('Redis exists error, falling back to memory:', error);
+        // Silently fall back to memory cache without logging
         this.isRedisAvailable = false;
       }
     }
