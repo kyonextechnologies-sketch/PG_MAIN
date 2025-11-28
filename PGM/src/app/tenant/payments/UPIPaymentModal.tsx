@@ -148,11 +148,36 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
 
   if (!isOpen) return null;
 
+  // Validate UPI settings on mount
+  useEffect(() => {
+    if (isOpen && (!upiId || !upiId.trim() || !upiName || !upiName.trim())) {
+      console.warn('UPI settings not configured:', { upiId, upiName });
+    }
+  }, [isOpen, upiId, upiName]);
+
   const handleAppSelection = (appId: string) => {
     setSelectedApp(appId);
     
     const app = upiApps.find(a => a.id === appId);
     if (!app) return;
+
+    // Validate UPI ID and name first
+    if (!upiId || !upiId.trim()) {
+      alert('UPI ID is not configured. Please contact the property owner to set up UPI payment details.');
+      return;
+    }
+
+    if (!upiName || !upiName.trim()) {
+      alert('Payee name is not configured. Please contact the property owner to set up UPI payment details.');
+      return;
+    }
+
+    // Validate UPI ID format
+    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
+    if (!upiIdRegex.test(upiId.trim())) {
+      alert(`Invalid UPI ID format: ${upiId}. Please check the UPI ID and try again.`);
+      return;
+    }
 
     const amount = invoice.amount;
     // Format amount to 2 decimal places with proper UPI standard format
@@ -161,6 +186,12 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     const numericAmount = typeof amount === 'number' ? amount : parseFloat(String(amount));
     if (isNaN(numericAmount) || numericAmount <= 0) {
       alert('Invalid payment amount. Please contact support.');
+      return;
+    }
+    
+    // Check minimum amount (some UPI apps require minimum ₹1)
+    if (numericAmount < 1) {
+      alert('Minimum payment amount is ₹1.00. Please contact support if you need to pay a different amount.');
       return;
     }
     
@@ -179,47 +210,36 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
     // UPI standard: pa=payeeAddress, pn=payeeName, am=amount, cu=currency, tn=transactionNote
     // Amount must be formatted as "X.XX" (2 decimal places)
     // All parameters must be properly URL encoded
-    const upiParams = new URLSearchParams();
-    upiParams.append('pa', upiId.trim()); // Payee address (UPI ID)
-    upiParams.append('pn', upiName.trim()); // Payee name
-    upiParams.append('am', formattedAmount); // Amount (already formatted to 2 decimal places)
-    upiParams.append('cu', 'INR'); // Currency
-    upiParams.append('tn', transactionNote); // Transaction note
-    
-    // Build UPI URL - ensure proper encoding
-    const url = `upi://pay?${upiParams.toString()}`;
-    
-    // Validate UPI ID format
-    const upiIdRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/;
-    if (!upiIdRegex.test(upiId.trim())) {
-      alert(`Invalid UPI ID format: ${upiId}. Please check the UPI ID and try again.`);
-      return;
+    try {
+      const upiParams = new URLSearchParams();
+      upiParams.append('pa', upiId.trim()); // Payee address (UPI ID)
+      upiParams.append('pn', upiName.trim()); // Payee name
+      upiParams.append('am', formattedAmount); // Amount (already formatted to 2 decimal places)
+      upiParams.append('cu', 'INR'); // Currency
+      upiParams.append('tn', transactionNote); // Transaction note
+      
+      // Build UPI URL - ensure proper encoding
+      const url = `upi://pay?${upiParams.toString()}`;
+      
+      console.log('UPI Payment URL:', url);
+      console.log('UPI Details:', { upiId: upiId.trim(), upiName: upiName.trim(), amount: formattedAmount });
+      
+      // Set the payment URL which triggers the useEffect
+      setPaymentUrl(url);
+      
+      // Notify parent component
+      setTimeout(() => {
+        onPaymentInitiated?.(app.name, amount);
+      }, 200);
+      
+      // Show fallback message after a delay
+      setTimeout(() => {
+        setShowFallback(true);
+      }, 3000);
+    } catch (error) {
+      console.error('Error creating UPI URL:', error);
+      alert('Failed to create payment URL. Please try again or contact support.');
     }
-    
-    // For app-specific deep links, use as fallback only
-    if (appId !== 'upi' && app.scheme) {
-      // Some apps may support their own scheme, but standard upi://pay is more reliable
-      const appUrl = `${app.scheme}?${upiParams}`;
-      // Log both URLs for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('UPI URLs:', { standard: url, appSpecific: appUrl });
-      }
-    }
-
-    console.log(`Attempting to open ${app.name} with URL:`, url);
-
-    // Set the payment URL which triggers the useEffect
-    setPaymentUrl(url);
-
-    // Notify parent component
-    setTimeout(() => {
-      onPaymentInitiated?.(app.name, amount);
-    }, 200);
-
-    // Show fallback message after a delay
-    setTimeout(() => {
-      setShowFallback(true);
-    }, 3000);
   };
 
   const copyUPIDetails = async () => {
@@ -435,6 +455,21 @@ export function UPIPaymentModal({ isOpen, onClose, invoice, upiId, upiName, onPa
         </CardHeader>
 
         <CardContent className="p-6">
+          {/* Warning if UPI settings not configured */}
+          {(!upiId || !upiId.trim() || !upiName || !upiName.trim()) && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-red-900 mb-1">UPI Settings Not Configured</h4>
+                  <p className="text-sm text-red-700">
+                    UPI payment details are not set up. Please contact the property owner to configure UPI ID and name.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Payment Details */}
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-3 sm:p-4 mb-6 border border-gray-200">
             <h3 className="font-bold text-gray-900 mb-3 text-sm sm:text-base">Payment Details</h3>
