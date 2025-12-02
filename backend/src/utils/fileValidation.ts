@@ -65,7 +65,16 @@ export const legalDocumentStorage = multer.diskStorage({
     // Get ownerId from authenticated user
     const authReq = req as any;
     const ownerId = authReq.user?.id;
-    const docType = authReq.body?.docType || 'documents';
+    
+    // Get docType from body - multer should parse FormData fields into req.body
+    // But sometimes it's not available during destination callback, so we use a fallback
+    let docType = authReq.body?.docType;
+    
+    // If docType is not available in body yet (multer timing issue), use a default
+    // The actual docType will be validated in the controller
+    if (!docType || typeof docType !== 'string') {
+      docType = 'documents'; // Fallback - will be validated in controller
+    }
 
     if (!ownerId) {
       return cb(new AppError('Owner ID not found in request', 401), '');

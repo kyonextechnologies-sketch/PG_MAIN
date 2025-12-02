@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RequireRole } from '@/components/common/RBAC';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +30,8 @@ import {
   Clock,
   Eye,
   Download,
-  Loader2
+  Loader2,
+  Copy
 } from 'lucide-react';
 import { crudToasts, showToast } from '@/lib/toast';
 import { apiClient } from '@/lib/apiClient';
@@ -73,6 +75,7 @@ const formatFileSize = (bytes?: number) => {
 };
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -602,6 +605,57 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Owner ID and Document Path Info */}
+                  {session?.user?.id && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Owner Information
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start gap-2">
+                          <span className="font-medium text-blue-800 min-w-[120px]">Owner ID:</span>
+                          <span className="text-blue-900 font-mono break-all flex-1">{session.user.id}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              navigator.clipboard.writeText(session.user.id);
+                              showToast.success('Owner ID copied to clipboard');
+                            }}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="font-medium text-blue-800 min-w-[120px]">Document Path:</span>
+                          <span className="text-blue-900 font-mono break-all flex-1">
+                            uploads/owners/{session.user.id}/[docType]/
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              const path = `uploads/owners/${session.user.id}/[docType]/`;
+                              navigator.clipboard.writeText(path);
+                              showToast.success('Document path copied to clipboard');
+                            }}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-blue-200">
+                          <p className="text-xs text-blue-700">
+                            <strong>Note:</strong> Documents are saved in owner-specific folders. Each document type (aadhaarFront, aadhaarBack, pan, gst, addressProof, ownerPhoto) is stored in its own subfolder under <code className="bg-blue-100 px-1 rounded">uploads/owners/{'{'}ownerId{'}'}/[docType]/</code>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name" className="!text-black font-semibold">Full Name</Label>

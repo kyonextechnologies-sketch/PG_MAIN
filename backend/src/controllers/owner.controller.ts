@@ -192,24 +192,39 @@ export const uploadSeparateDocument = asyncHandler(async (req: AuthRequest, res:
     throw new AppError('Authentication required', 401);
   }
 
-  const { docType } = req.body;
+  // Get docType from body (multer should parse it from FormData)
+  // Also check req.body directly and handle case where it might be a string
+  let docType = req.body?.docType;
+  
+  // If docType is not in body, it might be in the request query or we need to parse it differently
+  // For FormData, multer should parse non-file fields into req.body
+  if (!docType && typeof req.body === 'object') {
+    // Try to get from body object
+    docType = (req.body as any).docType;
+  }
+  
+  // If still not found, check if it's a string (edge case)
+  if (typeof docType === 'string') {
+    docType = docType.trim();
+  }
+
   const allowedDocTypes = ['aadhaarFront', 'aadhaarBack', 'pan', 'gst', 'addressProof', 'ownerPhoto'];
 
   if (!docType || !allowedDocTypes.includes(docType)) {
-    throw new AppError(`Invalid document type. Allowed types: ${allowedDocTypes.join(', ')}`, 400);
+    console.error('Invalid or missing docType:', { docType, body: req.body, allowedTypes: allowedDocTypes });
+    throw new AppError(`Invalid document type. Allowed types: ${allowedDocTypes.join(', ')}. Received: ${docType || 'undefined'}`, 400);
   }
 
-  const files = extractFilesArray(req.files as any);
-
-  if (!files || files.length === 0) {
-    throw new AppError('Please upload a document', 400);
+  // Check if file was uploaded
+  // multer.single() stores file in req.file, not req.files
+  if (!req.file) {
+    throw new AppError('Please upload a document file', 400);
   }
 
-  if (files.length > 1) {
-    throw new AppError('Only one file allowed per document type', 400);
-  }
+  // Use req.file directly since we're using multer.single()
+  const file = req.file;
 
-  const file = files[0];
+  // Validate the uploaded file
   const validation = validateUploadedFiles([file]);
 
   if (!validation.valid) {
