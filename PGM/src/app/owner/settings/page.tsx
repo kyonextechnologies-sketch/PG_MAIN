@@ -606,7 +606,7 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Owner ID and Document Path Info */}
-                  {session?.user?.id && (
+                  {/* {session?.user?.id && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
                         <FileText className="h-4 w-4 mr-2" />
@@ -655,7 +655,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name" className="!text-black font-semibold">Full Name</Label>
