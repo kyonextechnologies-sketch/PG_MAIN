@@ -42,6 +42,7 @@ model User {
   tenantProfile       TenantProfile?       @relation("UserToTenant")
   ownerVerification   OwnerVerification?
   subscription        Subscription?
+  ownerSubscriptions  OwnerSubscription[]
   notifications       Notification[]
   auditLogs           AuditLog[]
   otps                OTP[]
@@ -383,6 +384,11 @@ enum BillingCycle {
   QUARTERLY
 }
 
+enum SubscriptionBillingPeriod {
+  MONTH
+  QUARTER
+}
+
 model OTP {
   id                 String   @id @default(uuid())
   userId             String?
@@ -505,6 +511,69 @@ model Subscription {
   @@index([ownerId])
   @@index([status])
   @@index([packageName])
+}
+
+model SubscriptionPlan {
+  id                 String                     @id @default(uuid())
+  code               String                     @unique
+  name               String
+  billingPeriod      SubscriptionBillingPeriod
+  priceInPaise       Int
+  maxProperties      Int?
+  maxTenants         Int?
+  basicReports       Boolean                    @default(false)
+  advancedReports    Boolean                    @default(false)
+  advancedAnalytics  Boolean                    @default(false)
+  autoBilling        Boolean                    @default(false)
+  prioritySupport    Boolean                    @default(false)
+  priority24x7       Boolean                    @default(false)
+  customIntegrations Boolean                    @default(false)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  ownerSubscriptions OwnerSubscription[]
+
+  @@index([code])
+}
+
+model OwnerSubscription {
+  id                String               @id @default(uuid())
+  ownerId           String
+  planId            String
+  planCode          String
+  status            SubscriptionStatus   @default(ACTIVE)
+  startDate         DateTime             @default(now())
+  endDate           DateTime?
+  autoRenew         Boolean              @default(true)
+  cancelAtPeriodEnd Boolean              @default(false)
+  cancelledAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  owner             User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  plan              SubscriptionPlan     @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments          SubscriptionPayment[]
+
+  @@index([ownerId])
+  @@index([planCode])
+  @@index([status])
+}
+
+model SubscriptionPayment {
+  id                  String             @id @default(uuid())
+  ownerSubscriptionId String
+  amountInPaise       Int
+  currency            String             @default("INR")
+  provider            String?
+  orderId             String?
+  paymentId           String?
+  status              PaymentStatus      @default(PENDING)
+  rawPayload          Json?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  ownerSubscription   OwnerSubscription  @relation(fields: [ownerSubscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([ownerSubscriptionId])
+  @@index([orderId])
+  @@index([paymentId])
 }
 
 enum NotificationType {

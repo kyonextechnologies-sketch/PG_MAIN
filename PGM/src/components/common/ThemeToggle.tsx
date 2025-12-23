@@ -28,7 +28,8 @@ export function ThemeToggle() {
     );
   }
 
-  const currentTheme = theme === 'system' ? 'system' : resolvedTheme;
+  // Prefer the resolved theme so system mode shows the active value
+  const currentTheme = resolvedTheme || theme;
 
   return (
     <DropdownMenu>
