@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { SUBSCRIPTION_PLANS } from '../src/constants/subscriptionPlans';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -8,9 +7,6 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // Clean database (order matters due to foreign key constraints)
-  await prisma.subscriptionPayment.deleteMany();
-  await prisma.ownerSubscription.deleteMany();
-  await prisma.subscriptionPlan.deleteMany();
   await prisma.maintenanceTicket.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.invoice.deleteMany();
@@ -45,46 +41,6 @@ async function main() {
 
   console.log('✅ Admin created');
 
-  // Seed subscription plans from single source of truth
-  const seededPlans = await Promise.all(
-    SUBSCRIPTION_PLANS.map((plan) =>
-      prisma.subscriptionPlan.upsert({
-        where: { code: plan.code },
-        update: {
-          name: plan.name,
-          billingPeriod: plan.billingPeriod,
-          priceInPaise: plan.priceInPaise,
-          maxProperties: plan.maxProperties,
-          maxTenants: plan.maxTenants,
-          basicReports: plan.features.basicReports,
-          advancedReports: plan.features.advancedReports,
-          advancedAnalytics: plan.features.advancedAnalytics,
-          autoBilling: plan.features.autoBilling,
-          prioritySupport: plan.features.prioritySupport,
-          priority24x7: plan.features.priority24x7,
-          customIntegrations: plan.features.customIntegrations,
-        },
-        create: {
-          code: plan.code,
-          name: plan.name,
-          billingPeriod: plan.billingPeriod,
-          priceInPaise: plan.priceInPaise,
-          maxProperties: plan.maxProperties,
-          maxTenants: plan.maxTenants,
-          basicReports: plan.features.basicReports,
-          advancedReports: plan.features.advancedReports,
-          advancedAnalytics: plan.features.advancedAnalytics,
-          autoBilling: plan.features.autoBilling,
-          prioritySupport: plan.features.prioritySupport,
-          priority24x7: plan.features.priority24x7,
-          customIntegrations: plan.features.customIntegrations,
-        },
-      })
-    )
-  );
-
-  console.log('✅ Subscription plans seeded');
-
   // Create Owner
   const owner = await prisma.user.create({
     data: {
@@ -100,28 +56,6 @@ async function main() {
   });
 
   console.log('✅ Owner created');
-
-  // Create sample owner subscription using Standard Monthly
-  const standardPlan = seededPlans.find((plan) => plan.code === 'STANDARD_M');
-  if (standardPlan) {
-    const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
-
-    await prisma.ownerSubscription.create({
-      data: {
-        ownerId: owner.id,
-        planId: standardPlan.id,
-        planCode: standardPlan.code,
-        status: 'ACTIVE',
-        startDate,
-        endDate,
-        autoRenew: true,
-      },
-    });
-
-    console.log('✅ Owner subscription created (Standard Monthly)');
-  }
 
   // Create Owner Verification record
   await prisma.ownerVerification.create({

@@ -38,7 +38,8 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-
+# Prisma
+prisma/migrations/
 
 # Firebase
 firebase-service-account.json
